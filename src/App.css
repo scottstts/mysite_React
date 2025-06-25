@@ -1,0 +1,132 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Main App Styles */
+.App {
+  /* text-align: center; removed to allow proper left alignment */
+}
+
+/* Main content visibility */
+.main-content {
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+
+.main-content.visible {
+  opacity: 1;
+}
+
+/* Tab content wrapper */
+.tab-content-wrapper {
+  min-height: 400px;
+  width: 100%;
+}
+
+/* Layout adjustments */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+/* Responsive padding */
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.md\:py-12 {
+  @media (min-width: 768px) {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.sm\:px-6 {
+  @media (min-width: 640px) {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.lg\:px-8 {
+  @media (min-width: 1024px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Main container */
+.max-w-4xl {
+  max-width: 56rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Spacing utilities */
+.space-y-8 > * + * {
+  margin-top: 2rem;
+}
+
+.md\:space-y-12 > * + * {
+  @media (min-width: 768px) {
+    margin-top: 3rem;
+  }
+}
+
+/* Ensure smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Additional responsive utilities */
+@media (max-width: 768px) {
+  .tab-content-wrapper {
+    padding: 0;
+  }
+}

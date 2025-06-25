@@ -1,0 +1,108 @@
+/* About Tab Specific Styles */
+.aboutTab {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.aboutSection {
+  padding: 2rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 2rem;
+}
+
+.philosophyText {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: #ffffff;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.missionCard,
+.strengthCard {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.missionCard:hover,
+.strengthCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.socialLink:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(4px);
+}
+
+.twitterLink:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgb(196, 181, 253);
+}
+
+.linkedinLink:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgb(147, 197, 253);
+}
+
+.githubLink:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgb(255, 255, 255);
+}
+
+.socialIcon {
+  font-size: 1.5rem;
+  transition: color 0.2s ease;
+}
+
+.socialText {
+  font-size: 1.25rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .aboutSection {
+    padding: 1.5rem;
+  }
+  
+  .philosophyText {
+    font-size: 1rem;
+  }
+  
+  .socialLink {
+    padding: 0.5rem;
+  }
+  
+  .socialIcon {
+    font-size: 1.25rem;
+  }
+  
+  .socialText {
+    font-size: 1.125rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

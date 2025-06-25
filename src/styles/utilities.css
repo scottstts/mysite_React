@@ -1,0 +1,165 @@
+/* Enhanced page title with more dramatic effect */
+.page-title {
+    background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    text-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Animated underline for page title */
+.page-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--electric-blue), var(--neon-purple));
+    border-radius: 4px;
+    transform: translateX(33%);
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: underlinePulse 4s infinite alternate;
+}
+
+/* Enhanced text highlight effect with more dynamic animation */
+.highlight-glow {
+    background: linear-gradient(120deg, #ffd700, #ffb700, #ffd700, #ffe066, #ffd700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 6s linear infinite, text-flicker 8s ease-in-out infinite;
+    position: relative;
+    display: inline-block;
+    text-shadow: 
+        0 0 1px rgba(255, 215, 0, 0.3),
+        0 0 2px rgba(255, 215, 0, 0.2),
+        0 0 3px rgba(255, 215, 0, 0.1);
+    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.2));
+    letter-spacing: 0.02em;
+}
+
+.highlight-glow::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    opacity: 0.7;
+    box-shadow: 
+        0 0 8px #ffd700,
+        0 0 12px rgba(255, 215, 0, 0.5);
+    animation: glow-line-pulse 4s ease-in-out infinite alternate;
+}
+
+.highlight-glow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(255, 215, 0, 0.15), transparent 70%);
+    opacity: 0;
+    filter: blur(5px);
+    z-index: -1;
+    animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.eater-regular {
+    font-family: "Eater", serif;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+}
+
+/* More sophisticated button styling */
+.view-button {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.view-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+        0 4px 20px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 0 30px rgba(99, 102, 241, 0.2);
+}
+
+/* More dramatic button hover effect */
+.view-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-button:hover::after {
+    transform: translateY(0);
+}
+
+/* Add subtle text animation to important content */
+.text-yellow-100,
+.text-yellow-200 {
+    position: relative;
+    display: inline;
+}
+
+.text-yellow-200::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    opacity: 0.3;
+    animation: lineGlow 4s infinite alternate;
+}
+
+/* Add subtle hover effects to links */
+a {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+a:not(.view-button):not(.tab-button):not(.fixed-footer):hover {
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+}
+
+a:not(.view-button):not(.tab-button):not(.fixed-footer)::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.6), transparent);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
+    transform: scaleX(1);
+} 

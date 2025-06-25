@@ -1,0 +1,95 @@
+/* Enhanced scroll to top button with floating effect */
+.scroll-top-button {
+    position: fixed;
+    bottom: 3.5rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.25rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 999;
+    font-size: 0.875rem;
+    box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 20px rgba(99, 102, 241, 0.2);
+    transform: translateZ(0);
+    will-change: transform;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: buttonFloat 3s ease-in-out infinite;
+    outline: none; /* Remove default outline */
+}
+
+/* Add focus styles that work consistently across browsers */
+.scroll-top-button:focus {
+    outline: none;
+    box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.15),
+        0 0 0 3px rgba(255, 255, 255, 0.3),
+        0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+/* Specific fixes for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    .scroll-top-button {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(139, 92, 246, 0.95));
+        -webkit-tap-highlight-color: transparent; /* Remove default tap highlight */
+    }
+    
+    /* Ensure Safari shows the focus ring */
+    .scroll-top-button:active {
+        box-shadow: 
+            0 8px 20px rgba(0, 0, 0, 0.15),
+            0 0 0 3px rgba(255, 255, 255, 0.3),
+            0 0 20px rgba(99, 102, 241, 0.4);
+    }
+}
+
+.scroll-top-button:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 1), rgba(139, 92, 246, 1));
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 
+        0 12px 25px rgba(99, 102, 241, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.2),
+        0 0 25px rgba(99, 102, 241, 0.3);
+}
+
+/* Ensure the focus ring remains visible when hovering after clicking */
+.scroll-top-button:focus:hover {
+    box-shadow: 
+        0 12px 25px rgba(99, 102, 241, 0.25),
+        0 0 0 3px rgba(255, 255, 255, 0.3),
+        0 0 25px rgba(99, 102, 241, 0.4);
+}
+
+.scroll-top-button.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2rem);
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+    .scroll-top-button {
+        bottom: 3.5rem;
+        right: 1.5rem;
+        padding: 0.75rem;
+    }
+    
+    .scroll-top-button svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    .scroll-top-button span {
+        font-size: 0.75rem;
+    }
+} 
