@@ -1,8 +1,8 @@
 /* Enhanced scroll to top button with floating effect */
 .scroll-top-button {
-    position: fixed;
-    bottom: 3.5rem;
-    right: 2rem;
+    position: fixed !important;
+    bottom: 3.5rem !important;
+    right: 2rem !important;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -26,6 +26,18 @@
     -webkit-backdrop-filter: blur(16px);
     animation: buttonFloat 3s ease-in-out infinite;
     outline: none; /* Remove default outline */
+}
+
+@keyframes buttonFloat {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+    100% {
+        transform: translateY(0);
+    }
 }
 
 /* Add focus styles that work consistently across browsers */
@@ -79,8 +91,8 @@
 /* Mobile optimization */
 @media (max-width: 640px) {
     .scroll-top-button {
-        bottom: 3.5rem;
-        right: 1.5rem;
+        bottom: 3.5rem !important;
+        right: 1.5rem !important;
         padding: 0.75rem;
     }
     

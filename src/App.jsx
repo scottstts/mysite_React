@@ -11,6 +11,7 @@ import InspirationsTab from './components/Tabs/InspirationsTab/InspirationsTab';
 import ScrollToTop from './components/common/ScrollToTop/ScrollToTop';
 import './styles/variables.css';
 import './styles/globals.css';
+import './styles/utilities.css';
 import './styles/animations.css';
 import './App.css';
 
@@ -50,7 +51,8 @@ function App() {
 
   // Apply proper body classes and ensure content becomes visible
   useEffect(() => {
-    document.body.className = 'min-h-screen py-8 md:py-12 px-4 sm:px-6 lg:px-8';
+    // Remove any default classes that might interfere with custom CSS
+    document.body.className = '';
   }, []);
 
   const renderActiveTab = () => {
@@ -107,7 +109,7 @@ function App() {
       <BackgroundEffects />
 
       {/* Main Content */}
-      <main className={`max-w-4xl mx-auto space-y-8 md:space-y-12 ${contentVisible ? 'visible' : ''}`}>
+      <main className={`max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8 ${contentVisible ? 'visible' : ''}`}>
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Tab Content with Animation */}

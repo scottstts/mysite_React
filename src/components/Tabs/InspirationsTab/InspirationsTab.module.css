@@ -28,36 +28,7 @@
   line-height: 1.8;
 }
 
-.inspirationImage {
-  border-radius: 1rem;
-  overflow: hidden;
-  aspect-ratio: 1;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  transition: transform 0.3s ease;
-}
-
-.inspirationImage img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.inspirationImage:hover img {
-  transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-  .inspirationCard {
-    padding: 1rem;
-  }
-  
-  .inspirationImage {
-    max-width: 300px;
-    margin: 0 auto;
-  }
-}
+/* Remove the constraining image styles - images should be full width as in original */
 
 @keyframes fadeIn {
   from {

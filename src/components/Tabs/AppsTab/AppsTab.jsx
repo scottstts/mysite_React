@@ -17,7 +17,7 @@ const AppsTab = () => {
             {/* Description */}
             <p className="text-white text-base md:text-lg mb-8 leading-relaxed text-left">
               <span className="font-semibold text-yellow-200">{app.tagline}</span><br /><br />
-              {app.description}
+              <span dangerouslySetInnerHTML={{ __html: app.description }} />
             </p>
             
             {/* Slider Container */}
@@ -52,9 +52,12 @@ const AppsTab = () => {
 
       {/* Future Project Teaser */}
       <GlassCard className="rounded-2xl overflow-hidden fade-in p-8 text-center" style={{animationDelay: '0.6s'}}>
-        <p className="text-xl md:text-2xl text-yellow-100">
-          I'm sure a new idea will hit me soon... <i className="fa-solid fa-face-laugh-wink"></i>
-        </p>
+        <p 
+          className="text-xl md:text-2xl text-yellow-100"
+          dangerouslySetInnerHTML={{ 
+            __html: `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink"></i>`
+          }}
+        />
       </GlassCard>
     </div>
   );

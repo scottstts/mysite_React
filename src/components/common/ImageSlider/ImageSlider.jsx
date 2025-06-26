@@ -2,13 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
 
 const ImageSlider = ({ images = [], videos = [], projectId, autoplay = true, autoplayDelay = 5000 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoplay);
-  const intervalRef = useRef(null);
-  const sliderRef = useRef(null);
-
-  // Combine images and videos into slides
-  const slides = [
+  // Combine images and videos into slides first to determine initial index
+  const originalSlides = [
     ...images.map((image, index) => ({
       type: 'image',
       src: `/static_assets/${image}`,
@@ -22,13 +17,26 @@ const ImageSlider = ({ images = [], videos = [], projectId, autoplay = true, aut
     }))
   ];
 
-  const totalSlides = slides.length;
+  const totalSlides = originalSlides.length;
+  
+  const [currentIndex, setCurrentIndex] = useState(totalSlides > 1 ? 1 : 0); // Start at index 1 for infinite loop, 0 for single slide
+  const [isPlaying, setIsPlaying] = useState(autoplay);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const intervalRef = useRef(null);
+  const sliderRef = useRef(null);
+
+  // Create infinite loop by duplicating slides: [last, ...original, first]
+  const slides = totalSlides > 1 ? [
+    { ...originalSlides[totalSlides - 1], id: `${originalSlides[totalSlides - 1].id}-clone-start` },
+    ...originalSlides,
+    { ...originalSlides[0], id: `${originalSlides[0].id}-clone-end` }
+  ] : originalSlides;
 
   // Auto-advance slides
   useEffect(() => {
     if (isPlaying && totalSlides > 1) {
       intervalRef.current = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % totalSlides);
+        setCurrentIndex((prevIndex) => prevIndex + 1);
       }, autoplayDelay);
     } else {
       clearInterval(intervalRef.current);
@@ -37,18 +45,38 @@ const ImageSlider = ({ images = [], videos = [], projectId, autoplay = true, aut
     return () => clearInterval(intervalRef.current);
   }, [isPlaying, totalSlides, autoplayDelay]);
 
+  // Handle infinite loop transitions
+  useEffect(() => {
+    if (totalSlides <= 1) return;
+
+    if (currentIndex === 0) {
+      // At the cloned last slide, jump to the real last slide
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentIndex(totalSlides);
+        setTimeout(() => setIsTransitioning(true), 50);
+      }, 600); // Wait for transition to complete
+    } else if (currentIndex === totalSlides + 1) {
+      // At the cloned first slide, jump to the real first slide
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentIndex(1);
+        setTimeout(() => setIsTransitioning(true), 50);
+      }, 600); // Wait for transition to complete
+    }
+  }, [currentIndex, totalSlides]);
+
   const goToSlide = (index) => {
-    setCurrentIndex(index);
+    // Convert original slide index to infinite loop index
+    setCurrentIndex(totalSlides > 1 ? index + 1 : index);
   };
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? totalSlides - 1 : prevIndex - 1
-    );
+    setCurrentIndex((prevIndex) => prevIndex - 1);
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % totalSlides);
+    setCurrentIndex((prevIndex) => prevIndex + 1);
   };
 
   const handleYouTubePlay = () => {
@@ -85,7 +113,7 @@ const ImageSlider = ({ images = [], videos = [], projectId, autoplay = true, aut
       {/* Slider Container */}
       <div className="relative overflow-hidden rounded-xl">
         <div 
-          className="flex transition-transform duration-600 ease-out"
+          className={`flex ${isTransitioning ? 'transition-transform duration-600 ease-out' : ''}`}
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {slides.map((slide, index) => (
@@ -156,14 +184,21 @@ const ImageSlider = ({ images = [], videos = [], projectId, autoplay = true, aut
       {/* Navigation Dots */}
       {totalSlides > 1 && (
         <div className="tns-nav">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`tns-nav-button ${index === currentIndex ? 'tns-nav-active' : ''}`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+          {originalSlides.map((_, index) => {
+            // Calculate the active index from the infinite loop index
+            let activeIndex = currentIndex - 1;
+            if (activeIndex < 0) activeIndex = totalSlides - 1;
+            if (activeIndex >= totalSlides) activeIndex = 0;
+            
+            return (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`tns-nav-button ${index === activeIndex ? 'tns-nav-active' : ''}`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            );
+          })}
         </div>
       )}
     </div>
