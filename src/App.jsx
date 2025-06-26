@@ -74,12 +74,12 @@ function App() {
     <>
       <Helmet>
         <title>Scott Sun</title>
-        <meta name="description" content="Scott Sun | Frontier AI Chaser and Builder, innovating on Tech-centric Solutions. A devoted Techno Optimist." />
-        <meta name="keywords" content="Scott Sun, Frontier AI Chaser, Builder, Deep Learning, Tech Innovation, AI Development, Neural Networks, Tech-centric Solutions, Techno Optimist" />
+        <meta name="description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
+        <meta name="keywords" content="Scott Sun, Frontier AI Chaser, Builder, Tech Innovation, AI Development, Tech-centric Solutions, Techno Optimist" />
         <meta name="author" content="Scott Sun" />
         
         <meta property="og:title" content="Scott Sun | Frontier AI Chaser & Techno Optimist" />
-        <meta property="og:description" content="Scott Sun | Frontier AI Chaser and Builder, innovating on Tech-centric Solutions. A devoted Techno Optimist." />
+        <meta property="og:description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://scottsun.io" />
         <meta property="og:image" content="/static_assets/logo.jpg" />
@@ -89,10 +89,10 @@ function App() {
         <meta property="og:locale" content="en_US" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@Scott_S612" />
-        <meta name="twitter:creator" content="@Scott_S612" />
+        <meta name="twitter:site" content="@scottstts" />
+        <meta name="twitter:creator" content="@scottstts" />
         <meta name="twitter:title" content="Scott Sun | Frontier AI Chaser & Techno Optimist" />
-        <meta name="twitter:description" content="Scott Sun | Frontier AI Chaser and Builder, innovating on Tech-centric Solutions. A devoted Techno Optimist." />
+        <meta name="twitter:description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
         <meta name="twitter:image" content="/static_assets/logo.jpg" />
         <meta name="twitter:image:alt" content="Scott Sun's Website logo" />
 
