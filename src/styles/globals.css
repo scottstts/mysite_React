@@ -391,115 +391,7 @@ nav::after {
     margin-bottom: 5rem;
 }
 
-/* Enhanced glassmorphism for cards with more sophisticated styling */
-.glass-card {
-    background: rgba(19, 28, 46, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-        0 10px 40px -5px rgba(0, 0, 0, 0.3),
-        0 4px 15px -5px rgba(0, 0, 0, 0.2),
-        inset 0 0 80px rgba(99, 102, 241, 0.05);
-    position: relative;
-    overflow: hidden;
-    border-radius: 1.25rem;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    --mouse-x: 0px;
-    --mouse-y: 0px;
-}
-
-.glass-card p {
-    margin-bottom: 0;
-}
-
-.glass-card p:last-child {
-    margin-bottom: 0 !important;
-}
-
-/* More dramatic hover effect for cards */
-.glass-card:hover {
-    transform: translateY(-7px) scale(1.01) !important;
-    box-shadow: 
-        0 20px 40px -5px rgba(0, 0, 0, 0.3),
-        0 10px 20px -5px rgba(0, 0, 0, 0.2),
-        inset 0 0 80px rgba(99, 102, 241, 0.1),
-        0 0 20px rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-/* Light beam animation for cards */
-.glass-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(
-        800px circle at var(--mouse-x) var(--mouse-y),
-        rgba(255, 255, 255, 0.1),
-        transparent 40%
-    );
-    transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.glass-card:hover::before {
-    left: 150%;
-}
-
-/* Add subtle border glow to cards */
-.glass-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 1.25rem;
-    pointer-events: none;
-    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.1);
-    opacity: 0;
-    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(0, 229, 255, 0.08) 50%,
-        transparent 100%
-    );
-    background-size: 100% 8px;
-    animation: scanlines 8s linear infinite;
-}
-
-.glass-card:hover::after {
-    opacity: 1;
-}
-
-/* Comprehensive video and slider exclusions */
-.glass-card .video-container,
-.glass-card .video-container *,
-.glass-card .slider-container,
-.glass-card iframe,
-.glass-card [class*="slider"],
-.glass-card [id*="youtube"],
-.glass-card [src*="youtube"] {
-    transform: none !important;
-    transition: none !important;
-}
-
-.glass-card:hover .video-container,
-.glass-card:hover .video-container *,
-.glass-card:hover .video-container iframe,
-.glass-card:hover .slider-container,
-.glass-card:hover iframe,
-.glass-card:hover [class*="slider"],
-.glass-card:hover [id*="youtube"],
-.glass-card:hover [src*="youtube"] {
-    transform: none !important;
-    transition: none !important;
-}
+/* Glass card styles moved to consolidated glassCardEffect.css file */
 
 /* Enhanced text highlight effect with more dynamic animation */
 .highlight-glow {
@@ -763,32 +655,12 @@ html {
 }
 
 /* Add subtle parallax effect to images on hover - EXCLUDE slider and video elements */
-.glass-card img {
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform;
-    border-radius: 0.75rem;
-}
-
-/* Only apply image hover effects to standalone images, NOT in sliders or video containers */
-.glass-card:hover img:not(.slider-container img):not(.video-container img):not([class*="slider"] img) {
-    transform: scale(1.03) translateY(-3px);
-}
+/* Glass card image styles moved to consolidated glassCardEffect.css file */
 
 /* Ensure videos and slider content stay fixed during card hover */
 
 
-/* Enhance social media links with more sophisticated interactions */
-.glass-card a[href*="x.com"],
-.glass-card a[href*="linkedin.com"],
-.glass-card a[href*="github.com"] {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card a[href*="x.com"]:hover,
-.glass-card a[href*="linkedin.com"]:hover,
-.glass-card a[href*="github.com"]:hover {
-    transform: translateY(-3px) scale(1.02);
-}
+/* Social media link styles moved to consolidated glassCardEffect.css file */
 
 /* Add subtle text animation to important content */
 .text-yellow-100,

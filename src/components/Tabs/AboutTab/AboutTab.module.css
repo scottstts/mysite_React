@@ -25,11 +25,12 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.missionCard:hover,
+/* Removed conflicting hover rule that was overriding glass-card effect */
+/* .missionCard:hover,
 .strengthCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
+} */
 
 .socialLink {
   display: flex;
