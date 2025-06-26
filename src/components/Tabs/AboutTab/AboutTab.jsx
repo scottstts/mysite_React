@@ -9,7 +9,7 @@ const AboutTab = () => {
       <GlassCard className="rounded-2xl p-8 fade-in">
         <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left">Into The Unknown</h2>
         <p className="text-lg text-white font-bold italic leading-relaxed mb-8 text-left">
-          From the infinite potential of energy to the total actualization of entropy, <span className="highlight-glow text-xl">intelligence</span> charts a course for the pursuit of <span className="highlight-glow text-xl">meaning</span>, <span className="highlight-glow text-xl">mission</span> and <span className="highlight-glow text-xl">love</span>.
+        <br />From the infinite potential of energy to the total actualization of entropy, <span className="highlight-glow text-xl">intelligence</span> charts a course for the pursuit of <span className="highlight-glow text-xl">meaning</span>, <span className="highlight-glow text-xl">mission</span> and <span className="highlight-glow text-xl">love</span>.<br /><br />
         </p>
         <p 
           className="text-lg text-white leading-relaxed text-left"

@@ -1,5 +1,5 @@
 #root {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -100,7 +100,7 @@
 
 /* Main container */
 .max-w-4xl {
-  max-width: 56rem;
+  max-width: 72rem;
 }
 
 .mx-auto {

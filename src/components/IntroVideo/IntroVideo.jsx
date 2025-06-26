@@ -12,7 +12,7 @@ const IntroVideo = ({ onVideoFinished }) => {
     // Function to handle video completion (ended, error, skipped)
     const handleVideoFinished = () => {
       if (videoPlaybackFinished) return; // Prevent multiple calls
-      console.log("Video playback finished (ended, error, or skipped)."); // For debugging
+      // console.log("Video playback finished (ended, error, or skipped)."); // For debugging
       setVideoPlaybackFinished(true); // Set the flag
       
       // Hide video container and trigger parent callback
