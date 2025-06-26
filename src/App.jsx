@@ -133,7 +133,7 @@ function App() {
 
       {/* Fixed Footer */}
       {contentVisible && (
-        <a href="https://github.com/scottstts/mysite" target="_blank" rel="noopener noreferrer" className="fixed-footer">
+        <a href="https://github.com/scottstts/mysite_React" target="_blank" rel="noopener noreferrer" className="fixed-footer">
           <div className="footer-content">
             <span className="font-bold text-blue-300">View Source Repo</span>
             <i className="fa-solid fa-code"></i>
