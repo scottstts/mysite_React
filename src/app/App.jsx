@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import IntroVideo from './components/IntroVideo/IntroVideo';
-import BackgroundEffects from './components/BackgroundEffects/BackgroundEffects';
-import Navigation from './components/Navigation/Navigation';
-import AboutTab from './components/Tabs/AboutTab/AboutTab';
-import ProjectsTab from './components/Tabs/ProjectsTab/ProjectsTab';
-import AppsTab from './components/Tabs/AppsTab/AppsTab';
-import InspirationsTab from './components/Tabs/InspirationsTab/InspirationsTab';
-import ScrollToTop from './components/common/ScrollToTop/ScrollToTop';
-import './styles/variables.css';
-import './styles/globals.css';
-import './styles/utilities.css';
-import './styles/animations.css';
+import IntroVideo from '@/ui-kit/IntroVideo/IntroVideo';
+import BackgroundEffects from '@/ui-kit/BackgroundEffects/BackgroundEffects';
+import Navigation from '@/ui-kit/Navigation/Navigation';
+import AboutTab from '@/features/about/AboutTab';
+import ProjectsTab from '@/features/projects/ProjectsTab';
+import AppsTab from '@/features/apps/AppsTab';
+import InspirationsTab from '@/features/inspirations/InspirationsTab';
+import ScrollToTop from '@/ui-kit/ScrollToTop/ScrollToTop';
+import '@/styles/variables.css';
+import '@/styles/globals.css';
+import '@/styles/utilities.css';
+import '@/styles/animations.css';
 import './App.css';
 
 function App() {

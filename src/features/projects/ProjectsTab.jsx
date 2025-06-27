@@ -1,7 +1,7 @@
 import React from 'react';
-import GlassCard from '../../common/GlassCard/GlassCard';
-import ImageSlider from '../../common/ImageSlider/ImageSlider';
-import { projects } from '../../../data/projects';
+import GlassCard from '@/ui-kit/GlassCard/GlassCard';
+import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
+import { projects } from './projects.data';
 
 const ProjectsTab = () => {
   return (

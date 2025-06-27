@@ -1,7 +1,7 @@
 import React from 'react';
-import GlassCard from '../../common/GlassCard/GlassCard';
-import ImageSlider from '../../common/ImageSlider/ImageSlider';
-import { apps } from '../../../data/apps';
+import GlassCard from '@/ui-kit/GlassCard/GlassCard';
+import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
+import { apps } from './apps.data';
 
 const AppsTab = () => {
   return (

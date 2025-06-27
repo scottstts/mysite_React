@@ -1,5 +1,5 @@
 import React from 'react';
-import GlassCard from '../../common/GlassCard/GlassCard';
+import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 
 const AboutTab = () => {
   return (

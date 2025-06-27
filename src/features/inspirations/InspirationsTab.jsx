@@ -1,6 +1,6 @@
 import React from 'react';
-import GlassCard from '../../common/GlassCard/GlassCard';
-import { inspirations } from '../../../data/inspirations';
+import GlassCard from '@/ui-kit/GlassCard/GlassCard';
+import { inspirations } from './inspirations.data';
 import './InspirationsTab.module.css';
 
 const InspirationsTab = () => {
