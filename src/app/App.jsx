@@ -15,6 +15,7 @@ import '@/styles/variables.css';
 import '@/styles/globals.css';
 import '@/styles/utilities.css';
 import '@/styles/animations.css';
+import '@/styles/glassCardEffect.css';
 import './App.css';
 
 function App() {
