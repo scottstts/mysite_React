@@ -85,16 +85,55 @@ Follow the numbered sections sequentially; every bullet is a concrete change an 
 
 ## 3 ↠ Styling & CSS consolidation
 
-> Target state: **one Tailwind build, scoped CSS Modules, and one shared `animations.css`** (no duplicated keyframes).
+Below is a **surgical, file‑and‑line–level blueprint** for executing § 3 ↠ Styling & CSS consolidation **without altering the current visual output**.
 
-1. **Remove Tailwind CDN** from `index.html` (line 41) , then:
+### 0 ― Ground rules
+
+| Risk                                                             | Mitigation                                                                                         |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Tailwind Preflight overrides** (margins on `h*`, `body`, etc.) | Disable Preflight (`corePlugins: { preflight: false }`).                                           |
+| **JIT tree‑shaking removes classes created at runtime**          | Add a `safelist` and glob all JSX `className` strings.                                             |
+| Duplicate keyframes / glass‑card styles shadow each other        | Keep *one* canonical copy in the shared files and **delete every other copy**.                     |
+| Merge order breaks cascade                                       | In `globals.css` put **Tailwind directives first**, then your existing reset so the original wins. |
+
+### 1 ― Integrate Tailwind as a build‑time stylesheet
+
+1. **Remove CDN link**
+   Delete lines 38 ‑ 44 in `index.html` (Tailwind script tag).
+
+2. **Install & scaffold**
 
    ```bash
    npm i -D tailwindcss postcss autoprefixer
    npx tailwindcss init -p
    ```
 
-   Prepend
+3. **Edit `tailwind.config.js`**
+
+   ```js
+   /** @type {import('tailwindcss').Config} */
+   module.exports = {
+     content: ["./index.html", "./src/**/*.{js,jsx}"],
+     corePlugins: { preflight: false },   // ⬅ critical
+     safelist: [
+       "fade-in", "fade-out",             // static utility wrappers
+       { pattern: /^tns-,^embla/ },       // third‑party slider classes
+     ],
+     theme: { extend: {
+       animation: {                         // expose our canonical keyframes
+         "fade-in": "fadeIn 0.6s ease-out both",
+         "fade-out": "fadeOut 0.6s ease-out both",
+       },
+       keyframes: {
+         fadeIn: { from:{opacity:"0",transform:"translateY(20px)"}, to:{opacity:"1",transform:"translateY(0)"} },
+         fadeOut:{ from:{opacity:"1"}, to:{opacity:"0"} },
+       }
+     }},
+     plugins: [],
+   };
+   ```
+
+4. **Prepend Tailwind directives** to the *top* of `src/styles/globals.css`:
 
    ```css
    @tailwind base;
@@ -102,45 +141,94 @@ Follow the numbered sections sequentially; every bullet is a concrete change an 
    @tailwind utilities;
    ```
 
-   to `src/styles/globals.css`.
+---
 
-2. **Standardise classes**
+### 2 ― Canonicalise keyframes in `src/styles/animations.css`
 
-   * Keep Tailwind for layout (`flex`, `gap-8`).
-   * Keep or add `.module.css` for bespoke visuals (e.g. `.glass-card`).
+#### 2.1  Copy in canonical definitions (if not already present)
 
-3. **Centralise keyframes**
+Add **once** inside `animations.css`:
 
-   * Edit `src/styles/animations.css`; add one canonical `@keyframes fadeIn` / `fadeOut`.
-   * Delete duplicates in:
+```css
+@keyframes fadeIn   { from {opacity:0;transform:translateY(20px)} to {opacity:1;transform:translateY(0)} }
+@keyframes fadeOut  { from {opacity:1;}                       to {opacity:0;} }
+```
 
-     * `AppsTab.module.css` (42-51)&#x20;
-     * `AboutTab.module.css` (100-109)&#x20;
-     * `ImageSlider.module.css` (403-406)&#x20;
-     * any other matches (`grep -R "@keyframes fadeIn"`).
-   * Either use Tailwind utilities (`@apply animate-fadeIn`) or add:
+(Check that they already exist at lines 57‑61 & 138‑142 – if so keep only one copy).
 
-     ```css
-     .fade-in { animation: fadeIn 0.6s ease-out both; }
-     ```
+#### 2.2  Delete duplicates
 
-4. **Globals vs Modules**
+| File                                             | Lines to delete          | Why                                          |                                                |
+| ------------------------------------------------ | ------------------------ | -------------------------------------------- | ---------------------------------------------- |
+| `AboutTab.module.css`                            | 97 ‑ 109                 | duplicate **fadeIn**                         |                                                |
+| `ImageSlider.module.css`                         | 404 ‑ 406                | duplicate **fadeIn**                         |                                                |
+| `codebase.txt` (legacy dump) tiny‑slider section | 2050 ‑ 2056, 2055 ‑ 2057 | **fadeIn/Out** in HTML dump                  |                                                |
+| Any other \`@keyframes fadeIn                    | fadeOut                  | glow-\*`found by`grep -R "@keyframes fade"\` | Remove – they are already in `animations.css`. |
 
-   * Keep global:
+#### 2.3  Convert helper class
 
-     * `globals.css` (reset/vars)
-     * `variables.css` (CSS custom props)
-     * `glassCardEffect.css` (shared)
-     * `animations.css` (keyframes)
-   * Move others (`Navigation.css`, `ScrollToTop.css`, …) next to their components as `.module.css`, camel-casing class imports.
+Keep the utility wrapper, but make it build‑time:
 
-5. **Purge dead selectors**
+```css
+/* in globals.css, under Tailwind directives */
+.fade-in  {@apply animate-fade-in;}
+.fade-out {@apply animate-fade-out;}
+```
 
-   ```bash
-   npx tailwindcss --content "src/**/*.{js,jsx,html}" --watch
-   ```
+---
 
-   Remove unused utilities and any `.tns-*` (tiny-slider) remnants.
+### 3 ― Glass‑card single source‑of‑truth
+
+`src/styles/glassCardEffect.css` already contains the *good* version at lines 4‑18.
+
+Delete the duplicates:
+
+* `codebase.txt` dump `glass-card` 502 ‑ 518
+* Any `glass-card` block inside per‑tab CSS.
+
+Then import the shared file once in `App.jsx` (top level) or via Vite `main.jsx`:
+
+```js
+import "@/styles/glassCardEffect.css";
+```
+
+---
+
+### 4 ― Move stray global component styles into co‑located modules
+
+| Global file                                                    | Action                                                                                                                                                 |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Navigation.css`, `ScrollToTop.css`, `Footer.css` (if present) | Rename to `Navigation.module.css` etc. Place next to the component, import with `import styles from './Navigation.module.css'`, convert class strings. |
+| Inline `<style>` blocks in components                          | Move rules into the new module files.                                                                                                                  |
+
+Because Preflight is **off**, there is no risk of conflicting resets.
+
+---
+
+### 5 ― Purge dead selectors
+
+Run once:
+
+```bash
+npx tailwindcss --content "src/**/*.{js,jsx,html}" --dry-run | less
+```
+
+Manually delete:
+
+* `.tns-*` rules in `globals.css` lines 1181‑1208 etc.
+* Any selector that the dry‑run marks as unused.
+
+---
+
+### 6 ― Regression test checklist
+
+1. `npm run dev` – visually diff against the original. No spacing or font‑weight shifts should appear (pre‑flight is off).
+2. In DevTools ► **Styles** ensure every `.fade-in` now pulls its animation from one place (`animations.css`).
+3. Lighthouse → performance/CLS unchanged.
+4. Search once more: `grep -R "@keyframes fadeIn" src` → should return **only** `animations.css`.
+5. Build: `npm run build && npm run preview` – confirm bundle size drops (duplicate CSS gone).
+
+Follow the blueprint above and the refactor will *finally* have **one Tailwind build + scoped modules + one animations file**—with **zero pixel drift**.
 
 ---
 
