@@ -1,10 +1,16 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { safeHtml } from '@/lib/safeHtml';
 
 const AboutTab = () => {
   return (
-    <div className="about-tab space-y-8">
+    <>
+      <Helmet>
+        <title>About - Scott Sun</title>
+        <meta name="description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist. Learn about my mission and source of strength." />
+      </Helmet>
+      <div className="about-tab space-y-8">
       <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
         Techno Optimist
       </h1>
@@ -37,7 +43,7 @@ const AboutTab = () => {
 
             Technology has also been historically proven to be the only robust, consistent, and effective means to combat various social disparities, both directly and indirectly.<br /><br />
 
-            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span> <i class="fa-solid fa-ghost"></i>.`)}
+            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span> <i class="fa-solid fa-ghost" aria-hidden="true"></i>.`)}
         />
       </GlassCard>
 
@@ -104,7 +110,7 @@ const AboutTab = () => {
               rel="noopener noreferrer"
               className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-purple-900/30 hover:border-purple-300"
             >
-              <i className="fa-brands fa-square-x-twitter text-2xl md:text-3xl text-purple-300 group-hover:text-purple-200"></i>
+              <i className="fa-brands fa-square-x-twitter text-2xl md:text-3xl text-purple-300 group-hover:text-purple-200" aria-hidden="true"></i>
               <span className="text-xl text-purple-300 group-hover:text-purple-200">
                 @scottstts
               </span>
@@ -117,7 +123,7 @@ const AboutTab = () => {
               rel="noopener noreferrer"
               className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-blue-900/30 hover:border-blue-300"
             >
-              <i className="fa-brands fa-linkedin text-2xl md:text-3xl text-blue-400 group-hover:text-blue-300"></i>
+              <i className="fa-brands fa-linkedin text-2xl md:text-3xl text-blue-400 group-hover:text-blue-300" aria-hidden="true"></i>
               <span className="text-xl text-blue-400 group-hover:text-blue-300">
                 Scott Sun
               </span>
@@ -129,7 +135,7 @@ const AboutTab = () => {
               rel="noopener noreferrer"
               className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-white/30 hover:border-white"
             >
-              <i className="fa-brands fa-github text-2xl md:text-3xl text-white group-hover:text-white"></i>
+              <i className="fa-brands fa-github text-2xl md:text-3xl text-white group-hover:text-white" aria-hidden="true"></i>
               <span className="text-xl text-white group-hover:text-white">
                 scottstts
               </span>
@@ -138,6 +144,7 @@ const AboutTab = () => {
         </GlassCard>
       </div>
     </div>
+    </>
   );
 };
 

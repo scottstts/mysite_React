@@ -25,7 +25,7 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     animation: buttonFloat 3s ease-in-out infinite;
-    outline: none; /* Remove default outline */
+    /* Outline removed - keyboard focus will use custom box-shadow */
 }
 
 @keyframes buttonFloat {
@@ -42,7 +42,7 @@
 
 /* Add focus styles that work consistently across browsers */
 .scroll-top-button:focus {
-    outline: none;
+    /* Use custom box-shadow instead of outline: none */
     box-shadow: 
         0 8px 20px rgba(0, 0, 0, 0.15),
         0 0 0 3px rgba(255, 255, 255, 0.3),

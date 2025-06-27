@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
 import { projects } from './projects.data';
@@ -6,7 +7,12 @@ import { safeHtml } from '@/lib/safeHtml';
 
 const ProjectsTab = () => {
   return (
-    <div id="projects" className="projects-tab space-y-8">
+    <>
+      <Helmet>
+        <title>Projects - Scott Sun</title>
+        <meta name="description" content="Scott Sun's learning journey and projects - from programming to deep learning, AI, Blender, Unity, and app development." />
+      </Helmet>
+      <div id="projects" className="projects-tab space-y-8">
       <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
         Learning Journey
       </h1>
@@ -58,7 +64,7 @@ const ProjectsTab = () => {
 
             I never had a CS degree (except if you count Harvard CS50), and I am not a professional engineer. But what you can never take away from me is my starving hunger for learning. I love this Naval tweet, I'd like to think I'm a smart person, and there is immense joy for me in self learning interesting and useful new things. I will never stop learning.<br /><br />
             
-            It has been a long journey. I am super excited about what's to come <i class="fa-solid fa-fire"></i>!`)}
+            It has been a long journey. I am super excited about what's to come <i class="fa-solid fa-fire" aria-hidden="true"></i>!`)}
         />
         <img
           src="/static_assets/naval_tweet.jpeg"
@@ -68,6 +74,7 @@ const ProjectsTab = () => {
         />
       </GlassCard>
     </div>
+    </>
   );
 };
 

@@ -60,11 +60,7 @@ function App() {
   return (
     <>
       <Helmet>
-        <title>Scott Sun</title>
-        <meta
-          name="description"
-          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
-        />
+        {/* Global meta tags that apply to all pages */}
         <meta
           name="keywords"
           content="Scott Sun, Frontier AI Chaser, Builder, Tech Innovation, AI Development, Tech-centric Solutions, Techno Optimist"
@@ -152,7 +148,7 @@ function App() {
         >
           <div className="footer-content">
             <span className="font-bold text-blue-300">View Source Repo</span>
-            <i className="fa-solid fa-code"></i>
+            <i className="fa-solid fa-code" aria-hidden="true"></i>
           </div>
         </a>
       )}

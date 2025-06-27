@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { inspirations } from './inspirations.data';
 import { safeHtml } from '@/lib/safeHtml';
@@ -6,7 +7,12 @@ import './InspirationsTab.module.css';
 
 const InspirationsTab = () => {
   return (
-    <div className="inspirations-tab space-y-8">
+    <>
+      <Helmet>
+        <title>Inspirations - Scott Sun</title>
+        <meta name="description" content="Scott Sun's inspirations - people who inspire and motivate through their brilliance and hard work in AI and technology." />
+      </Helmet>
+      <div className="inspirations-tab space-y-8">
       <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
         My Inspirations
       </h1>
@@ -49,12 +55,13 @@ const InspirationsTab = () => {
           <p
             className="text-xl md:text-2xl text-yellow-100"
             dangerouslySetInnerHTML={safeHtml(
-              `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart"></i>`
+              `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart" aria-hidden="true"></i>`
             )}
           />
         </GlassCard>
       </div>
     </div>
+    </>
   );
 };
 

@@ -76,6 +76,8 @@ const IntroVideo = ({ onVideoFinished }) => {
     <div
       id="intro-video-container"
       className={`fixed inset-0 z-50 bg-black ${!isVisible ? 'hidden' : ''}`}
+      role="banner"
+      aria-label="Introduction video"
     >
       <video
         ref={videoRef}

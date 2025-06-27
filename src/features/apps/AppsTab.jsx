@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
 import { apps } from './apps.data';
@@ -6,7 +7,12 @@ import { safeHtml } from '@/lib/safeHtml';
 
 const AppsTab = () => {
   return (
-    <div className="apps-tab space-y-8">
+    <>
+      <Helmet>
+        <title>Apps - Scott Sun</title>
+        <meta name="description" content="Scott Sun's apps and projects - Vacation Planner and Transcrilate. Practical solutions built with modern technologies." />
+      </Helmet>
+      <div className="apps-tab space-y-8">
       <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
         My Apps
       </h1>
@@ -71,11 +77,12 @@ const AppsTab = () => {
         <p
           className="text-xl md:text-2xl text-yellow-100"
           dangerouslySetInnerHTML={safeHtml(
-            `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink"></i>`
+            `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink" aria-hidden="true"></i>`
           )}
         />
       </GlassCard>
     </div>
+    </>
   );
 };
 
