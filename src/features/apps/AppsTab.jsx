@@ -2,6 +2,7 @@ import React from 'react';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
 import { apps } from './apps.data';
+import { safeHtml } from '@/lib/safeHtml';
 
 const AppsTab = () => {
   return (
@@ -29,7 +30,7 @@ const AppsTab = () => {
               </span>
               <br />
               <br />
-              <span dangerouslySetInnerHTML={{ __html: app.description }} />
+              <span dangerouslySetInnerHTML={safeHtml(app.description)} />
             </p>
 
             {/* Slider Container */}
@@ -69,9 +70,9 @@ const AppsTab = () => {
       >
         <p
           className="text-xl md:text-2xl text-yellow-100"
-          dangerouslySetInnerHTML={{
-            __html: `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink"></i>`,
-          }}
+          dangerouslySetInnerHTML={safeHtml(
+            `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink"></i>`
+          )}
         />
       </GlassCard>
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { inspirations } from './inspirations.data';
+import { safeHtml } from '@/lib/safeHtml';
 import './InspirationsTab.module.css';
 
 const InspirationsTab = () => {
@@ -26,7 +27,7 @@ const InspirationsTab = () => {
               {/* Description */}
               <p
                 className="text-white text-base md:text-lg mb-6 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: inspiration.description }}
+                dangerouslySetInnerHTML={safeHtml(inspiration.description)}
               />
 
               {/* Image - matching original structure exactly */}
@@ -47,9 +48,9 @@ const InspirationsTab = () => {
         >
           <p
             className="text-xl md:text-2xl text-yellow-100"
-            dangerouslySetInnerHTML={{
-              __html: `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart"></i>`,
-            }}
+            dangerouslySetInnerHTML={safeHtml(
+              `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart"></i>`
+            )}
           />
         </GlassCard>
       </div>

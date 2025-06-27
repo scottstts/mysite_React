@@ -1,5 +1,6 @@
 import React from 'react';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
+import { safeHtml } from '@/lib/safeHtml';
 
 const AboutTab = () => {
   return (
@@ -26,8 +27,7 @@ const AboutTab = () => {
         </p>
         <p
           className="text-lg text-white leading-relaxed text-left"
-          dangerouslySetInnerHTML={{
-            __html: `I believe that all problems are eventually solvable through technology without introducing any additional externality. Technology evolves—gradually or rapidly—to match the complexity of problems. Today's flawed solutions will never capture how easily these problems may be resolved in the future.<br /><br />
+          dangerouslySetInnerHTML={safeHtml(`I believe that all problems are eventually solvable through technology without introducing any additional externality. Technology evolves—gradually or rapidly—to match the complexity of problems. Today's flawed solutions will never capture how easily these problems may be resolved in the future.<br /><br />
 
             Technology emerges from the interactions between intelligent entities and the universe they inhabit, while intelligence improves and evolves through technology. Technology is not only an external manifestation of intelligence but it stands as the ultimate culmination.<br /><br />
 
@@ -37,8 +37,7 @@ const AboutTab = () => {
 
             Technology has also been historically proven to be the only robust, consistent, and effective means to combat various social disparities, both directly and indirectly.<br /><br />
 
-            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span> <i class="fa-solid fa-ghost"></i>.`,
-          }}
+            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span> <i class="fa-solid fa-ghost"></i>.`)}
         />
       </GlassCard>
 
