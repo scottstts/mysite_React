@@ -9,8 +9,15 @@ export const apps = [
 Interact seamlessly with AI: chat to ask questions about the video or select any sentence from the report for deeper elaboration. Generate Mind Map on the fly for conceptual and structural understanding. Save and share the insights by exporting reports to PDF, and keep your projects organized in the Collection tab for easy access anytime.<br><br>
 
 Tailored for YouTube—especially long-form interviews and podcasts—LearnTube is your dedicated companion, saving time with quick TL;DW (Too Long; Didn't Watch) summaries or offering in-depth explorations, all at your fingertips.`,
-    images: ['learntube1.jpeg', 'learntube2.jpeg', 'learntube3.jpeg', 'learntube4.jpeg', 'learntube5.jpeg', 'learntube6.jpeg'],
-    link: 'https://learntube.scottsun.io'
+    images: [
+      'learntube1.jpeg',
+      'learntube2.jpeg',
+      'learntube3.jpeg',
+      'learntube4.jpeg',
+      'learntube5.jpeg',
+      'learntube6.jpeg',
+    ],
+    link: 'https://learntube.scottsun.io',
   },
   {
     id: 'jobguru',
@@ -23,7 +30,7 @@ What makes Job Guru truly unique is its innovative keyword match analysis. This 
 
 With Job Guru, you're not just writing—you're crafting a tailored, strategic application that boosts your chances of landing the job.`,
     images: ['jobguru1.jpeg', 'jobguru2.jpeg', 'jobguru3.jpeg'],
-    link: 'https://jobguru.scottsun.io'
+    link: 'https://jobguru.scottsun.io',
   },
   {
     id: 'imgsherlock',
@@ -36,6 +43,6 @@ You see, SoTA AI image generation has become so advanced that depending solely o
 
 ImgSherlock is a web app that allows you to upload an image, identify if it's likely AI-generated, and get a detailed analysis.<br><br>`,
     images: ['imgsherlock1.jpeg', 'imgsherlock2.jpeg', 'imgsherlock3.jpeg'],
-    link: 'https://imgsherlock.scottsun.io'
-  }
-]; 
+    link: 'https://imgsherlock.scottsun.io',
+  },
+];

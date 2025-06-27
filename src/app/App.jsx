@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import IntroVideo from '@/ui-kit/IntroVideo/IntroVideo';
@@ -9,6 +10,7 @@ import ProjectsTab from '@/features/projects/ProjectsTab';
 import AppsTab from '@/features/apps/AppsTab';
 import InspirationsTab from '@/features/inspirations/InspirationsTab';
 import ScrollToTop from '@/ui-kit/ScrollToTop/ScrollToTop';
+import useMouseParallax from '@/ui-kit/hooks/useMouseParallax';
 import '@/styles/variables.css';
 import '@/styles/globals.css';
 import '@/styles/utilities.css';
@@ -16,9 +18,27 @@ import '@/styles/animations.css';
 import './App.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('about');
+  const location = useLocation();
   const [introComplete, setIntroComplete] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
+
+  // Determine active tab from route
+  const getActiveTabFromPath = (pathname) => {
+    switch (pathname) {
+      case '/projects':
+        return 'projects';
+      case '/apps':
+        return 'apps';
+      case '/inspirations':
+        return 'inspirations';
+      case '/':
+      case '/about':
+      default:
+        return 'about';
+    }
+  };
+
+  const activeTab = getActiveTabFromPath(location.pathname);
 
   // Handle intro video completion
   const handleVideoFinished = () => {
@@ -29,25 +49,7 @@ function App() {
   };
 
   // Add mouse movement tracking for background effects
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (window.innerWidth < 768) return; // Skip on mobile
-      
-      const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
-      const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
-      
-      document.body.style.setProperty('--mouse-x', `${moveX}deg`);
-      document.body.style.setProperty('--mouse-y', `${moveY}deg`);
-      
-      document.body.style.backgroundPosition = `calc(50% + ${moveX}px) calc(50% + ${moveY}px)`;
-    };
-
-    document.addEventListener('mousemove', handleMouseMove, { passive: true });
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
+  useMouseParallax();
 
   // Apply proper body classes and ensure content becomes visible
   useEffect(() => {
@@ -55,31 +57,28 @@ function App() {
     document.body.className = '';
   }, []);
 
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'about':
-        return <AboutTab />;
-      case 'projects':
-        return <ProjectsTab />;
-      case 'apps':
-        return <AppsTab />;
-      case 'inspirations':
-        return <InspirationsTab />;
-      default:
-        return <AboutTab />;
-    }
-  };
-
   return (
     <>
       <Helmet>
         <title>Scott Sun</title>
-        <meta name="description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
-        <meta name="keywords" content="Scott Sun, Frontier AI Chaser, Builder, Tech Innovation, AI Development, Tech-centric Solutions, Techno Optimist" />
+        <meta
+          name="description"
+          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
+        />
+        <meta
+          name="keywords"
+          content="Scott Sun, Frontier AI Chaser, Builder, Tech Innovation, AI Development, Tech-centric Solutions, Techno Optimist"
+        />
         <meta name="author" content="Scott Sun" />
-        
-        <meta property="og:title" content="Scott Sun | Frontier AI Chaser & Techno Optimist" />
-        <meta property="og:description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
+
+        <meta
+          property="og:title"
+          content="Scott Sun | Frontier AI Chaser & Techno Optimist"
+        />
+        <meta
+          property="og:description"
+          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
+        />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://scottsun.io" />
         <meta property="og:image" content="/static_assets/logo.jpg" />
@@ -91,8 +90,14 @@ function App() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@scottstts" />
         <meta name="twitter:creator" content="@scottstts" />
-        <meta name="twitter:title" content="Scott Sun | Frontier AI Chaser & Techno Optimist" />
-        <meta name="twitter:description" content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist." />
+        <meta
+          name="twitter:title"
+          content="Scott Sun | Frontier AI Chaser & Techno Optimist"
+        />
+        <meta
+          name="twitter:description"
+          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
+        />
         <meta name="twitter:image" content="/static_assets/logo.jpg" />
         <meta name="twitter:image:alt" content="Scott Sun's Website logo" />
 
@@ -101,16 +106,16 @@ function App() {
       </Helmet>
 
       {/* Intro Video */}
-      {!introComplete && (
-        <IntroVideo onVideoFinished={handleVideoFinished} />
-      )}
+      {!introComplete && <IntroVideo onVideoFinished={handleVideoFinished} />}
 
       {/* Background Effects */}
       <BackgroundEffects />
 
       {/* Main Content */}
-      <main className={`max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8 ${contentVisible ? 'visible' : ''}`}>
-        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <main
+        className={`max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8 ${contentVisible ? 'visible' : ''}`}
+      >
+        <Navigation activeTab={activeTab} />
 
         {/* Tab Content with Animation */}
         <AnimatePresence mode="wait">
@@ -123,7 +128,13 @@ function App() {
             className="react-tab-content space-y-8"
             style={{ display: 'block', opacity: 1, position: 'relative' }}
           >
-            {renderActiveTab()}
+            <Routes>
+              <Route path="/" element={<AboutTab />} />
+              <Route path="/about" element={<AboutTab />} />
+              <Route path="/projects" element={<ProjectsTab />} />
+              <Route path="/apps" element={<AppsTab />} />
+              <Route path="/inspirations" element={<InspirationsTab />} />
+            </Routes>
           </motion.div>
         </AnimatePresence>
       </main>
@@ -133,7 +144,12 @@ function App() {
 
       {/* Fixed Footer */}
       {contentVisible && (
-        <a href="https://github.com/scottstts/mysite_React" target="_blank" rel="noopener noreferrer" className="fixed-footer">
+        <a
+          href="https://github.com/scottstts/mysite_React"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed-footer"
+        >
           <div className="footer-content">
             <span className="font-bold text-blue-300">View Source Repo</span>
             <i className="fa-solid fa-code"></i>
@@ -144,4 +160,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

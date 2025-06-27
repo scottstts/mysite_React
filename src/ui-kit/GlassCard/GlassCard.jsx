@@ -6,11 +6,11 @@ const GlassCard = ({ children, className = '', ...props }) => {
   const setVars = (e) => {
     if (window.innerWidth < 768) return; // Skip on mobile
     if (!e.currentTarget) return; // Guard against null currentTarget
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
     e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
   };
@@ -30,7 +30,7 @@ const GlassCard = ({ children, className = '', ...props }) => {
   };
 
   return (
-    <div 
+    <div
       className={`glass-card ${className}`}
       onMouseEnter={setVars}
       onMouseMove={handleMove}
@@ -42,4 +42,4 @@ const GlassCard = ({ children, className = '', ...props }) => {
   );
 };
 
-export default GlassCard; 
+export default GlassCard;

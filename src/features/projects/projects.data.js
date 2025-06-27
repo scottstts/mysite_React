@@ -10,7 +10,7 @@ I chose the book <span class="italic font-semibold">Python Crash Course</span> a
 
 Programming is only a subdomain of computer science, and a programming language itself can be tedious. So I have learned the basics and intermediate Python, the immediate question that hit me was—what do I use it for?`,
     images: ['alien_invasion.jpeg', 'bookshare.jpeg'],
-    videos: []
+    videos: [],
   },
   {
     id: 'deep-learning',
@@ -23,7 +23,7 @@ It was around the same time that a thing called "GPT" came out of nowhere (GPT-3
 
 I knew absolutely nothing about AI, machine learning, and deep learning at the time. Zero. From an initial toe dipping, I realized learning AI required a tremendous amount of understanding in math and quite sophisticated coding skills. I wasn't sure I was up for it, but I decided to give it a try. That decision has led me such a long way here in retrospect.`,
     images: ['poi.jpeg', 'early_chatgpt.jpeg'],
-    videos: []
+    videos: [],
   },
   {
     id: 'learn-things',
@@ -40,7 +40,7 @@ I followed along every step in his building GPT video, doing side research whene
 
 Later I reviewed everything I learned from the mini-GPT dev and I pre-trained a GPT-like (100M Params) LLM from scratch using a portion of the Common Crawl dataset, and further finetuned it with some instruction datasets I could find at the time. The model achieved above 20 on Hellaswag.`,
     images: ['karpathy_tutorial.jpeg', 'makemore.jpeg', 'miniGPT.jpeg'],
-    videos: []
+    videos: [],
   },
   {
     id: 'blender-unity',
@@ -57,10 +57,11 @@ I also started to learn some game dev with Unity. I made a few simple but intere
       {
         id: 'youtube-player-1',
         videoId: '3NA4uyCcUD4',
-        title: 'Blender Renders'
-      }
+        title: 'Blender Renders',
+      },
     ],
-    googleDriveLink: 'https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing'
+    googleDriveLink:
+      'https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing',
   },
   {
     id: 'autodrive',
@@ -75,9 +76,9 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
       {
         id: 'youtube-player-2',
         videoId: 'Ur7uA-IiZck',
-        title: 'AutoDrive'
-      }
-    ]
+        title: 'AutoDrive',
+      },
+    ],
   },
   {
     id: 'msc-certificates',
@@ -90,7 +91,7 @@ In the meantime, I went into a little bit of a tech certificate phase. Did a ful
                         
 But eventually, I realized that the best way to learn is after all project building. When you build, you're forced to think about things from first principles, and you're forced to go through every single technical detail instead of just going through them in your mind, which makes you super sharp in every part of the tech stack.`,
     images: ['cs50.jpeg', 'cs50_cert.jpeg'],
-    videos: []
+    videos: [],
   },
   {
     id: 'app-dev-ai',
@@ -104,7 +105,12 @@ You have a vacation idea, I turn it into a travel plan. I wrote this project in 
 Transcrilate was the first sorta serious node.js project in React. It can transcribe English speech and translate it into 19 most common languages. The transcription and translation are separately handled by open models via HuggingFace transformers, both running inference locally.<br><br>
 
 Gradually I have gotten into the habit of reading frontier AI research papers. Every morning one of the first things I do is check the Hugging Face Daily Papers section for interesting papers, and of course not all of them would make it to HF, and so 𝕏 is my paper hunting safety net. Reading raw AI papers forces me to constantly replenish my knowledge pool. Luckily there are tools like Claude and NotebookLM that make this process easier for me.`,
-    images: ['vacation_planner.jpeg', 'transcrilate.jpeg', 'hf_daily_papers.jpeg', 'arxiv.jpeg'],
-    videos: []
-  }
-]; 
+    images: [
+      'vacation_planner.jpeg',
+      'transcrilate.jpeg',
+      'hf_daily_papers.jpeg',
+      'arxiv.jpeg',
+    ],
+    videos: [],
+  },
+];

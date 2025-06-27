@@ -1,39 +1,39 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-const Navigation = ({ activeTab, onTabChange }) => {
+const Navigation = ({ activeTab }) => {
   const tabs = [
-    { id: 'about', label: 'Me & My Beliefs' },
-    { id: 'projects', label: 'My Learning & Projects' },
-    { id: 'apps', label: 'My Apps' },
-    { id: 'inspirations', label: 'My Inspirations' }
+    { id: 'about', label: 'Me & My Beliefs', path: '/about' },
+    { id: 'projects', label: 'My Learning & Projects', path: '/projects' },
+    { id: 'apps', label: 'My Apps', path: '/apps' },
+    { id: 'inspirations', label: 'My Inspirations', path: '/inspirations' },
   ];
 
-  const handleTabClick = (tabId) => {
-    onTabChange(tabId);
-    
+  const handleTabClick = () => {
     // Scroll to top smoothly after the switch
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
   return (
     <nav>
       {tabs.map((tab) => (
-        <button
+        <Link
           key={tab.id}
+          to={tab.path}
           className={`tab-button text-lg font-semibold px-4 py-2 ${
             activeTab === tab.id ? 'active' : ''
           }`}
-          onClick={() => handleTabClick(tab.id)}
+          onClick={handleTabClick}
           data-tab={tab.id}
         >
           {tab.label}
-        </button>
+        </Link>
       ))}
     </nav>
   );
 };
 
-export default Navigation; 
+export default Navigation;

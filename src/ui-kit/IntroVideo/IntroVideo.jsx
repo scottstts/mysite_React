@@ -14,11 +14,11 @@ const IntroVideo = ({ onVideoFinished }) => {
       if (videoPlaybackFinished) return; // Prevent multiple calls
       // console.log("Video playback finished (ended, error, or skipped)."); // For debugging
       setVideoPlaybackFinished(true); // Set the flag
-      
+
       // Hide video container and trigger parent callback
       setIsVisible(false);
       onVideoFinished();
-      
+
       // Clean up video container after transition
       setTimeout(() => {
         window.scrollTo(0, 0); // Ensure scroll to top after content appears
@@ -30,8 +30,8 @@ const IntroVideo = ({ onVideoFinished }) => {
 
     // When video can play through, play it
     const handleCanPlayThrough = () => {
-      video.play().catch(error => {
-        console.error("Video play failed:", error);
+      video.play().catch((error) => {
+        console.error('Video play failed:', error);
         handleVideoFinished(); // Treat inability to play as an error/skip
       });
     };
@@ -43,7 +43,7 @@ const IntroVideo = ({ onVideoFinished }) => {
 
     // If video fails to load or play
     const handleError = (e) => {
-      console.error("Intro video error:", e);
+      console.error('Intro video error:', e);
       handleVideoFinished();
     };
 
@@ -51,7 +51,7 @@ const IntroVideo = ({ onVideoFinished }) => {
     const videoLoadTimeout = setTimeout(() => {
       // Check readyState: < 3 means it hasn't reached HAVE_FUTURE_DATA/CAN_PLAY_THROUGH
       if (!videoPlaybackFinished && video.readyState < 3) {
-        console.log("Video fallback timeout triggered (5s). Skipping video."); // Debug log
+        console.warn('Video fallback timeout triggered (5s). Skipping video.'); // Debug log
         handleVideoFinished();
       }
     }, 5000); // 5 seconds
@@ -73,13 +73,16 @@ const IntroVideo = ({ onVideoFinished }) => {
   if (!isVisible) return null;
 
   return (
-    <div id="intro-video-container" className={`fixed inset-0 z-50 bg-black ${!isVisible ? 'hidden' : ''}`}>
-      <video 
+    <div
+      id="intro-video-container"
+      className={`fixed inset-0 z-50 bg-black ${!isVisible ? 'hidden' : ''}`}
+    >
+      <video
         ref={videoRef}
-        id="intro-video" 
-        className="w-full h-full object-cover" 
-        playsInline 
-        muted 
+        id="intro-video"
+        className="w-full h-full object-cover"
+        playsInline
+        muted
         preload="auto"
       >
         <source src="/static_assets/intro.mp4" type="video/mp4" />
@@ -88,4 +91,4 @@ const IntroVideo = ({ onVideoFinished }) => {
   );
 };
 
-export default IntroVideo; 
+export default IntroVideo;
