@@ -271,21 +271,6 @@ Follow the blueprint above and the refactor will *finally* have **one Tailwind b
 
 ---
 
-## 6 ↠ Dead code & assets
-
-1. **Remove legacy tokens** – delete the `.images` / `.videos` placeholders fixed in §2.
-2. **Drop tiny-slider CSS** – remove `.tns-*` rules in `globals.css` (144-149)  and the HTML dump (2050-2064).
-3. **Prune unused images**:
-
-   ```bash
-   npx globby "public/static_assets/**/*" \
-     | grep -v -f <(grep -Roh "static_assets/[A-Za-z0-9._-]*" src | sort -u) \
-     | xargs rm
-   ```
-4. **Delete commented blocks** – clear the starfield/nebula code at HTML dump lines 2012-2018.&#x20;
-
----
-
 ### What you gain
 
 * Shallow imports and co-located data make features easy to move or delete.
