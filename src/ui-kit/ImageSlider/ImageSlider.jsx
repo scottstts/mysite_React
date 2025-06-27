@@ -233,7 +233,7 @@ const ImageSlider = ({
                 <img
                   src={slide.src}
                   alt={slide.alt}
-                  className="rounded-xl w-full object-cover"
+                  className="rounded-xl w-full object-contain"
                   style={{ aspectRatio: '16/9' }}
                 />
               ) : (

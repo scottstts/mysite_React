@@ -44,6 +44,7 @@ function App() {
   // Handle intro video completion
   const handleVideoFinished = () => {
     setIntroComplete(true);
+    document.body.classList.remove('intro-video-playing');
     setTimeout(() => {
       setContentVisible(true);
     }, 100);
@@ -56,7 +57,10 @@ function App() {
   useEffect(() => {
     // Remove any default classes that might interfere with custom CSS
     document.body.className = '';
-  }, []);
+    if (!introComplete) {
+      document.body.classList.add('intro-video-playing');
+    }
+  }, [introComplete]);
 
   return (
     <>

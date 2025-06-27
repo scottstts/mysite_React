@@ -692,19 +692,21 @@ html {
 }
 
 @keyframes lineGlow {
-    0% {
-        opacity: 0.2;
-        transform: scaleX(0.8);
-    }
-    100% {
+    from {
         opacity: 0.5;
-        transform: scaleX(1);
+    }
+    to {
+        opacity: 1;
     }
 }
 
-/* Add fancy scrollbar */
+body.intro-video-playing {
+    overflow-y: hidden; /* Hide scrollbar */
+}
+
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 12px;
+    background-color: rgba(3, 7, 17, 0.85);
 }
 
 ::-webkit-scrollbar-track {
@@ -894,7 +896,7 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
         0 4px 12px var(--card-shadow),
         0 0 0 1px rgba(255, 255, 255, 0.05);
     opacity: 0.8;
-    margin: 0 -8px;
+    margin: 0 8px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
