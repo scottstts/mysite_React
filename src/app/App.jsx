@@ -41,6 +41,19 @@ function App() {
 
   const activeTab = getActiveTabFromPath(location.pathname);
 
+  // Dynamically update the document title when route changes
+  useEffect(() => {
+    const titles = {
+      about: 'About - Scott Sun',
+      projects: 'Projects - Scott Sun',
+      apps: 'Apps - Scott Sun',
+      inspirations: 'Inspirations - Scott Sun',
+    };
+
+    // Fallback title if the route is unknown
+    document.title = titles[activeTab] || 'Scott Sun';
+  }, [activeTab]);
+
   // Handle intro video completion
   const handleVideoFinished = () => {
     setIntroComplete(true);

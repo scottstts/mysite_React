@@ -14,6 +14,7 @@ This project is organized for easy navigation, high modularity, and straightforw
     - The only top-level stateful component
     - Handles routing and global app effects (intro video, parallax, conditional rendering)
     - Defines React Router routes for all main tabs: `/about`, `/projects`, `/apps`, `/inspirations`, etc.
+    - Manages dynamic browser tab titles via `useEffect` that updates based on active tab
   - **`features/`** - Self-contained feature folders for each tab
   - **`ui-kit/`** - Reusable UI widgets
   - **`styles/`** - Design tokens and global styling
@@ -50,13 +51,29 @@ The `GlassCard` component handles all dynamic mouse and highlight logic, leaving
 - Feature-specific CSS modules never duplicate or override core effects
 - Every tab gets the same glass look and responsive polish
 
+#### Dynamic Browser Tab Titles
+- The `App.jsx` component includes a `useEffect` hook that watches the `activeTab` state and updates `document.title` accordingly
+- Implementation uses a `titles` object mapping tab names to page titles:
+  ```javascript
+  const titles = {
+    about: 'About - Scott Sun',
+    projects: 'Projects - Scott Sun',
+    apps: 'Apps - Scott Sun',
+    inspirations: 'Inspirations - Scott Sun',
+  };
+  document.title = titles[activeTab] || 'Scott Sun';
+  ```
+- When users click different tabs, the browser tab title changes immediately
+- Falls back to 'Scott Sun' for unknown routes
+- This works alongside existing Helmet tags for SEO metadata
+
 #### Security & Best Practices
 - Custom utility `src/lib/safeHtml.js` sanitizes all user-authored rich text before rendering
 - Absolute imports using `@/` prefix (configured in Vite) eliminate ugly relative paths
 
 ### Additional Project Files
 - **`original_website_codebase.txt`** - Frozen reference of the original static site
-- **`refactor_docs/`** - Explain the rationale and structure behind this refactor
+- **Planning and improvement guides** - Explain the rationale and structure behind this refactor
 
 ## 🚀 How to Add Tabs, Cards, or New Content
 
@@ -120,12 +137,22 @@ const BooksTab = () => (
 export default BooksTab;
 ```
 
-#### 4. Register the Route
+#### 4. Register the Route & Dynamic Title
 In `src/app/App.jsx`:
 1. Import your new tab component
 2. Add a new route inside the `<Routes>` section:
    ```jsx
    <Route path="/books" element={<BooksTab />} />
+   ```
+3. Update the `titles` object in the `useEffect` hook to include your new tab:
+   ```javascript
+   const titles = {
+     about: 'About - Scott Sun',
+     projects: 'Projects - Scott Sun',
+     apps: 'Apps - Scott Sun',
+     inspirations: 'Inspirations - Scott Sun',
+     books: 'Books - Scott Sun',  // Add your new tab here
+   };
    ```
 
 #### 5. Add to Navigation
@@ -159,7 +186,7 @@ The `GlassCard` component handles all highlight, parallax, and mouse tracking lo
 | Task | Files to Update |
 |------|----------------|
 | Add a card to existing tab | Just the `*.data.js` file |
-| Add a new tab | Create feature folder (3 files) + update `App.jsx` + update `Navigation.jsx` |
+| Add a new tab | Create feature folder (3 files) + update `App.jsx` (route & titles) + update `Navigation.jsx` |
 | Add custom styling | Feature's `*.module.css` file |
 | Add media assets | Drop in `public/static_assets/` |
 
@@ -172,6 +199,7 @@ The `GlassCard` component handles all highlight, parallax, and mouse tracking lo
    - Don't duplicate glassmorphism or global styles (they're centrally defined)
 4. **Imports**: Use absolute imports (`@/...`) for cleaner code
 5. **Animation**: Handle custom animations inline or in the feature's CSS module
+6. **Browser Titles**: Remember to add your new tab to the `titles` object in `App.jsx` for dynamic title updates
 
 ### Architecture Benefits
 
@@ -180,5 +208,6 @@ The `GlassCard` component handles all highlight, parallax, and mouse tracking lo
 ✅ **Consistent design** - Core visual style is single-source  
 ✅ **Easy maintenance** - Delete or modify features without side effects  
 ✅ **No duplication** - Glass cards and global styles stay DRY  
+✅ **Enhanced UX** - Dynamic browser tab titles update instantly when switching tabs  
 
 This system ensures your site remains maintainable, extensible, and visually consistent as it grows.
