@@ -3,6 +3,9 @@
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 1rem;
     padding: 1rem;
+    /* Performance optimization: skip off-screen rendering */
+    content-visibility: auto;
+    contain-intrinsic-size: 900px; /* prevents layout shift when unseen */
 }
 
 .masonryItem {

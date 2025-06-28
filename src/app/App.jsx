@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import IntroVideo from '@/ui-kit/IntroVideo/IntroVideo';
@@ -121,6 +121,11 @@ function App() {
 
         <meta name="robots" content="index, follow" />
         <meta name="googlebot" content="index, follow" />
+
+        {/* Instagram preconnect optimizations */}
+        <link rel="dns-prefetch" href="https://www.instagram.com" />
+        <link rel="preconnect" href="https://www.instagram.com" />
+        <link rel="preconnect" href="https://scontent.cdninstagram.com" crossOrigin="anonymous" />
       </Helmet>
 
       {/* Intro Video */}
@@ -136,24 +141,53 @@ function App() {
         <Navigation activeTab={activeTab} />
 
         {/* Tab Content with Animation */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
             className="react-tab-content space-y-8"
             style={{ display: 'block', opacity: 1, position: 'relative' }}
           >
-            <Routes>
-              <Route path="/" element={<AboutTab />} />
-              <Route path="/about" element={<AboutTab />} />
-              <Route path="/projects" element={<ProjectsTab />} />
-              <Route path="/apps" element={<AppsTab />} />
-              <Route path="/inspirations" element={<InspirationsTab />} />
-              <Route path="/art-of-life" element={<ArtOfLifeTab />} />
-            </Routes>
+            <motion.section 
+              hidden={activeTab !== 'about'}
+              animate={{ opacity: activeTab === 'about' ? 1 : 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ pointerEvents: activeTab === 'about' ? 'auto' : 'none' }}
+            >
+              <AboutTab />
+            </motion.section>
+            <motion.section 
+              hidden={activeTab !== 'projects'}
+              animate={{ opacity: activeTab === 'projects' ? 1 : 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ pointerEvents: activeTab === 'projects' ? 'auto' : 'none' }}
+            >
+              <ProjectsTab />
+            </motion.section>
+            <motion.section 
+              hidden={activeTab !== 'apps'}
+              animate={{ opacity: activeTab === 'apps' ? 1 : 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ pointerEvents: activeTab === 'apps' ? 'auto' : 'none' }}
+            >
+              <AppsTab />
+            </motion.section>
+            <motion.section 
+              hidden={activeTab !== 'inspirations'}
+              animate={{ opacity: activeTab === 'inspirations' ? 1 : 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ pointerEvents: activeTab === 'inspirations' ? 'auto' : 'none' }}
+            >
+              <InspirationsTab />
+            </motion.section>
+            <motion.section 
+              hidden={activeTab !== 'art-of-life'}
+              animate={{ opacity: activeTab === 'art-of-life' ? 1 : 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ pointerEvents: activeTab === 'art-of-life' ? 'auto' : 'none' }}
+            >
+              <ArtOfLifeTab />
+            </motion.section>
           </motion.div>
         </AnimatePresence>
       </main>
