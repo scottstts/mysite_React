@@ -35,6 +35,7 @@ const enhanceIframeAccessibility = (container) => {
 const LazyEmbed = ({ htmlContent, index }) => {
     const ref = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -64,28 +65,39 @@ const LazyEmbed = ({ htmlContent, index }) => {
     // Effect to process embeds when they become visible
     useEffect(() => {
         if (isVisible && window.instgrm) {
-            const result = window.instgrm.Embeds.process();
+            const processEmbed = () => {
+                const result = window.instgrm.Embeds.process();
+
+                const onProcessed = () => {
+                    if (ref.current) {
+                        enhanceIframeAccessibility(ref.current);
+                    }
+                    setIsLoaded(true);
+                };
+
+                // Handle both Promise and non-Promise returns
+                if (result && typeof result.then === 'function') {
+                    result.then(onProcessed);
+                } else {
+                    // If process() doesn't return a Promise, use a timeout to ensure processing is complete
+                    setTimeout(onProcessed, 500);
+                }
+            };
             
-            // Handle both Promise and non-Promise returns
-            if (result && typeof result.then === 'function') {
-                result.then(() => {
-                    if (ref.current) {
-                        enhanceIframeAccessibility(ref.current);
-                    }
-                });
+            if (document.readyState === "complete") {
+                processEmbed();
             } else {
-                // If process() doesn't return a Promise, use a timeout to ensure processing is complete
-                setTimeout(() => {
-                    if (ref.current) {
-                        enhanceIframeAccessibility(ref.current);
-                    }
-                }, 500);
+                window.addEventListener("load", processEmbed);
+                return () => window.removeEventListener("load", processEmbed);
             }
         }
     }, [isVisible]);
 
     return (
-        <div ref={ref} className={styles.embedContainer}>
+        <div
+            ref={ref}
+            className={`${styles.embedContainer} ${isLoaded ? styles.loaded : ''}`}
+        >
             {isVisible && <div dangerouslySetInnerHTML={{ __html: htmlContent }} />}
         </div>
     );

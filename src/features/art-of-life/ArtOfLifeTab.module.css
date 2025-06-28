@@ -28,6 +28,12 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.5s ease-in-out; /* Smooth transition */
+}
+
+.embedContainer.loaded {
+    opacity: 1; /* Fade in when loaded */
 }
 
 .embedContainer > div {
