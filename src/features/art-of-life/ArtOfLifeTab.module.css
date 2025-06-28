@@ -1,1 +1,48 @@
-/* Styles for Art of Life Tab */ 
+.masonryGrid {
+    column-count: 3;
+    column-gap: 1rem;
+    padding: 1rem;
+}
+
+.masonryItem {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 1rem;
+    break-inside: avoid; /* Prevent items from breaking across columns */
+}
+
+/* Add a slight random rotation to each item for the post-it note feel */
+.masonryItem:nth-child(5n+1) { transform: rotate(1.5deg); }
+.masonryItem:nth-child(5n+2) { transform: rotate(-1deg); }
+.masonryItem:nth-child(5n+3) { transform: rotate(0.5deg); }
+.masonryItem:nth-child(5n+4) { transform: rotate(-1.5deg); }
+.masonryItem:nth-child(5n+5) { transform: rotate(1deg); }
+
+
+.embedContainer {
+    min-height: 400px; /* Placeholder height to prevent layout shift */
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #2a2a2a; /* A placeholder background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.embedContainer > div {
+    width: 100%;
+}
+
+
+@media (max-width: 1024px) {
+    .masonryGrid {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 767px) {
+    .masonryGrid {
+        column-count: 1;
+    }
+} 
