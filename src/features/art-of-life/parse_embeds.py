@@ -1,5 +1,6 @@
 # Run this script once to build the data js file for this tab.
 # This script is designed to be run every time the embed.md file is updated.
+# It automatically adds data-instgrm-class="loading-lazy" for native lazy loading optimization.
 
 import re
 import os
@@ -34,6 +35,13 @@ def parse_embed_md(input_file, output_file):
         
         # Replace the URL in both data-instgrm-permalink and the href attributes
         template_html = template_tag.replace(first_url, placeholder)
+        
+        # Add the data-instgrm-class="loading-lazy" attribute for native lazy loading
+        template_html = template_html.replace(
+            'data-instgrm-version="14"',
+            'data-instgrm-version="14" data-instgrm-class="loading-lazy"'
+        )
+        
         template_html = template_html.replace('`', '\\`').replace('\\n', ' ').replace('\n', ' ').strip()
         
         # Build the JS output

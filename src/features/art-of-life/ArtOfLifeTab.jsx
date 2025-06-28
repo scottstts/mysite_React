@@ -13,7 +13,7 @@ const shuffleArray = (array) => {
   return newArray;
 };
 
-// Function to enhance iframe accessibility
+// Function to enhance iframe accessibility with lazy loading
 const enhanceIframeAccessibility = (container) => {
     const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
     iframes.forEach((iframe, index) => {
@@ -24,14 +24,19 @@ const enhanceIframeAccessibility = (container) => {
         // Ensure iframe has proper role
         iframe.setAttribute('role', 'img');
         
-        // Add loading attribute for better performance
+        // Add native lazy loading for better performance
         if (!iframe.hasAttribute('loading')) {
             iframe.setAttribute('loading', 'lazy');
+        }
+        
+        // Check for data-instgrm-class attribute for custom lazy loading
+        if (iframe.dataset.instgrmClass === 'loading-lazy') {
+            iframe.loading = 'lazy';
         }
     });
 };
 
-// Lazy-loading component for Instagram embeds
+// Lazy-loading component for Instagram embeds - processes per card
 const LazyEmbed = ({ htmlContent }) => {
     const ref = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
@@ -61,6 +66,15 @@ const LazyEmbed = ({ htmlContent }) => {
         };
     }, []);
 
+    // Process Instagram embed when the card becomes visible
+    useEffect(() => {
+        if (isVisible && ref.current && window.instgrm) {
+            // Only process this card, not the whole page
+            window.instgrm.Embeds.process(ref.current);
+            enhanceIframeAccessibility(ref.current);
+        }
+    }, [isVisible]);
+
     return (
         <div
             ref={ref}
@@ -74,57 +88,12 @@ const LazyEmbed = ({ htmlContent }) => {
 
 const ArtOfLifeTab = () => {
     const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
-    const gridRef = useRef(null);
 
     useEffect(() => {
         setShuffledEmbeds(shuffleArray(artOfLifeData));
     }, []);
 
-    useEffect(() => {
-        const scriptId = 'instagram-embed-script';
-        const scriptSrc = 'https://www.instagram.com/embed.js';
-
-        if (document.getElementById(scriptId)) {
-            if (window.instgrm) {
-                window.instgrm.Embeds.process();
-            }
-        } else {
-            const script = document.createElement('script');
-            script.id = scriptId;
-            script.src = scriptSrc;
-            script.async = true;
-            document.body.appendChild(script);
-        }
-
-        const container = gridRef.current;
-        if (!container) return;
-
-        let timeoutId;
-        const debouncedProcess = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                if (window.instgrm) {
-                    window.instgrm.Embeds.process();
-                }
-            }, 100);
-        };
-
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    debouncedProcess();
-                    return;
-                }
-            }
-        });
-
-        observer.observe(container, { childList: true, subtree: true });
-
-        return () => {
-            observer.disconnect();
-            clearTimeout(timeoutId);
-        };
-    }, []);
+    // No longer needed - Instagram SDK is loaded in HTML and processing is handled per-card
 
     return (
         <>
@@ -138,7 +107,7 @@ const ArtOfLifeTab = () => {
                     Art of Life
                 </h1>
 
-                <div className={styles.masonryGrid} ref={gridRef}>
+                <div className={styles.masonryGrid}>
                     {shuffledEmbeds.map((embedHtml, index) => (
                         <div key={index} className={styles.masonryItem}>
                            <LazyEmbed htmlContent={embedHtml} />

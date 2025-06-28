@@ -140,54 +140,21 @@ function App() {
       >
         <Navigation activeTab={activeTab} />
 
-        {/* Tab Content with Animation */}
-        <AnimatePresence mode="sync" initial={false}>
+        {/* Tab Content with Conditional Mounting - Only active tab is mounted */}
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="react-tab-content space-y-8"
-            style={{ display: 'block', opacity: 1, position: 'relative' }}
           >
-            <motion.section 
-              hidden={activeTab !== 'about'}
-              animate={{ opacity: activeTab === 'about' ? 1 : 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ pointerEvents: activeTab === 'about' ? 'auto' : 'none' }}
-            >
-              <AboutTab />
-            </motion.section>
-            <motion.section 
-              hidden={activeTab !== 'projects'}
-              animate={{ opacity: activeTab === 'projects' ? 1 : 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ pointerEvents: activeTab === 'projects' ? 'auto' : 'none' }}
-            >
-              <ProjectsTab />
-            </motion.section>
-            <motion.section 
-              hidden={activeTab !== 'apps'}
-              animate={{ opacity: activeTab === 'apps' ? 1 : 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ pointerEvents: activeTab === 'apps' ? 'auto' : 'none' }}
-            >
-              <AppsTab />
-            </motion.section>
-            <motion.section 
-              hidden={activeTab !== 'inspirations'}
-              animate={{ opacity: activeTab === 'inspirations' ? 1 : 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ pointerEvents: activeTab === 'inspirations' ? 'auto' : 'none' }}
-            >
-              <InspirationsTab />
-            </motion.section>
-            <motion.section 
-              hidden={activeTab !== 'art-of-life'}
-              animate={{ opacity: activeTab === 'art-of-life' ? 1 : 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ pointerEvents: activeTab === 'art-of-life' ? 'auto' : 'none' }}
-            >
-              <ArtOfLifeTab />
-            </motion.section>
+            {activeTab === 'about' && <AboutTab />}
+            {activeTab === 'projects' && <ProjectsTab />}
+            {activeTab === 'apps' && <AppsTab />}
+            {activeTab === 'inspirations' && <InspirationsTab />}
+            {activeTab === 'art-of-life' && <ArtOfLifeTab />}
           </motion.div>
         </AnimatePresence>
       </main>
