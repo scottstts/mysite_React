@@ -1,3 +1,6 @@
+# Run this script once to build the data js file for this tab.
+# This script is designed to be run every time the embed.md file is updated.
+
 import re
 import os
 
