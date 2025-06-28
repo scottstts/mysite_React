@@ -2,100 +2,87 @@
 
 ## 📋 Project Structure and How It All Comes Together
 
-This project is organized for easy navigation, high modularity, and straightforward extension. 
+This project is organized for easy navigation, high modularity, and straightforward extension. The architecture separates concerns, ensuring that content, logic, and shared UI are kept distinct.
 
 ### Directory Overview
 
-- **`public/static_assets/`** - All static media (images, video covers, UI references)
-  - Simply link to these from React code—no manual build steps needed
-- **`src/`** - All application logic and UI code
-  - **`main.jsx`** - Entry point that bootstraps the app, applies global CSS, and mounts the main App component with React Router and SEO support via Helmet
-  - **`app/`** - Contains `App.jsx` and its CSS
-    - The only top-level stateful component
-    - Handles routing and global app effects (intro video, parallax, conditional rendering)
-    - Defines React Router routes for all main tabs: `/about`, `/projects`, `/apps`, `/inspirations`, etc.
-    - Manages dynamic browser tab titles via `useEffect` that updates based on active tab
-  - **`features/`** - Self-contained feature folders for each tab
-  - **`ui-kit/`** - Reusable UI widgets
-  - **`styles/`** - Design tokens and global styling
-  - **`lib/`** - Utility libraries
+  * **`public/static_assets/`**: All static media (images, video covers, UI references). These are directly accessible in the code without needing to be imported or processed by the build system.
+  * **`src/`**: All application logic and UI code.
+      * **`app/`**: Contains `App.jsx` and its CSS. `App.jsx` is the main stateful component that handles routing, global effects (like the intro video and parallax background), and renders the primary layout.
+      * **`features/`**: Contains self-contained folders for each main tab of the website (e.g., `about`, `projects`, `apps`, `inspirations`, `art-of-life`). This is the core of the website's content.
+      * **`ui-kit/`**: Contains reusable UI components and hooks that are shared across different features. This includes the `Navigation`, `Footer` , `GlassCard`, `ImageSlider`, and the `useMouseParallax` hook.
+      * **`styles/`**: Holds global CSS files, including design tokens (variables), animations, and base styles.
+      * **`lib/`**: Contains utility functions, such as the `safeHtml.js` sanitizer.
+      * **`main.jsx`**: The application's entry point. It sets up the React root, routing with `HashRouter`, and the `HelmetProvider` for SEO management.
 
 ### Key Architecture Decisions
 
 #### Feature-Based Organization
-All primary user-facing content is separated into self-contained feature folders inside `src/features`. Each tab (like "about", "projects", "apps", "inspirations") follows this structure:
+
+All primary content is separated into self-contained feature folders inside `src/features`. Each tab (like "about", "projects", "apps") follows a consistent structure:
 
 ```
 src/features/[feature-name]/
-├── [FeatureName]Tab.jsx      # Main tab component
-├── [FeatureName]Tab.module.css # Scoped styles
-└── [featureName].data.js      # Content as plain data
+├── [FeatureName]Tab.jsx      # Main component for the tab
+├── [FeatureName]Tab.module.css # Scoped styles for the tab
+└── [featureName].data.js      # Content for the tab, kept as plain data
 ```
 
-This separation keeps presentation and logic clean—you never need to modify JSX just to update content.
+This separation ensures that content updates only require editing a `.js` data file, leaving the component's JSX structure untouched.
 
-#### Shared UI Components
-The `src/ui-kit` directory contains:
-- Navigation bar
-- Intro video
-- Background effects
-- Image sliders
-- Glass card component (central to the glassmorphism UI)
-- Hooks folder for shared utilities (e.g., mouse parallax)
+#### Route-Based Navigation
 
-The `GlassCard` component handles all dynamic mouse and highlight logic, leaving only presentation and content to be managed by feature components.
+The application uses `react-router-dom` to manage navigation. Instead of using component state to show/hide tabs, `App.jsx` defines a series of routes:
 
-#### Styling Architecture
-- Design tokens and global styling are in `src/styles`
-- Loaded once from the top-level App
-- Feature-specific CSS modules never duplicate or override core effects
-- Every tab gets the same glass look and responsive polish
+  * `/about` (or `/`) maps to the `AboutTab`
+  * `/projects` maps to the `ProjectsTab`
+  * `/apps` maps to the `AppsTab`
+  * `/inspirations` maps to the `InspirationsTab`
+  * `/art-of-life` maps to the `ArtOfLifeTab`
+
+This approach provides unique URLs for each section, improving deep linking and browser history management.
 
 #### Dynamic Browser Tab Titles
-- The `App.jsx` component includes a `useEffect` hook that watches the `activeTab` state and updates `document.title` accordingly
-- Implementation uses a `titles` object mapping tab names to page titles:
-  ```javascript
-  const titles = {
-    about: 'About - Scott Sun',
-    projects: 'Projects - Scott Sun',
-    apps: 'Apps - Scott Sun',
-    inspirations: 'Inspirations - Scott Sun',
-  };
-  document.title = titles[activeTab] || 'Scott Sun';
-  ```
-- When users click different tabs, the browser tab title changes immediately
-- Falls back to 'Scott Sun' for unknown routes
-- This works alongside existing Helmet tags for SEO metadata
+
+The `App.jsx` component uses a `useEffect` hook that listens for changes in the route's location. It dynamically updates the `document.title` based on the active tab, ensuring the browser tab always reflects the current content. This works alongside `react-helmet-async` for managing other SEO meta tags.
+
+#### Styling Architecture
+
+The project uses a hybrid styling strategy for consistency and maintainability:
+
+  * **Global Styles**: Core design tokens (`variables.css`), keyframe animations (`animations.css`), and global resets (`globals.css`) are defined in `src/styles` and loaded once in `App.jsx`.
+  * **Shared Component Styles**: Reusable UI components like `GlassCard` have their styles defined in a central file (`src/styles/glassCardEffect.css`) to ensure a consistent look and feel everywhere.
+  * **Scoped Styles**: Each feature tab and UI component uses its own `.module.css` file (e.g., `AppsTab.module.css`). This scopes class names and prevents style conflicts between different parts of the application.
+  * **Utility Classes**: Tailwind CSS is integrated into the build process, allowing for the use of utility classes directly in the JSX for fine-grained layout and styling adjustments.
 
 #### Security & Best Practices
-- Custom utility `src/lib/safeHtml.js` sanitizes all user-authored rich text before rendering
-- Absolute imports using `@/` prefix (configured in Vite) eliminate ugly relative paths
 
-### Additional Project Files
-- **`original_website_codebase.txt`** - Frozen reference of the original static site
-- **Planning and improvement guides** - Explain the rationale and structure behind this refactor
+  * **HTML Sanitization**: A custom `safeHtml` utility in `src/lib/safeHtml.js` uses `DOMPurify` to sanitize any rich text content from data files before it is rendered with `dangerouslySetInnerHTML`, preventing XSS attacks.
+  * **Absolute Imports**: The project is configured with a Vite alias, allowing for clean, absolute imports starting with `@/` (e.g., `import GlassCard from '@/ui-kit/GlassCard/GlassCard'`) instead of fragile relative paths.
+
+-----
 
 ## 🚀 How to Add Tabs, Cards, or New Content
 
-The project uses standardized patterns for effortless expansion.
+The project is designed for easy expansion. Follow these patterns to add new content.
 
 ### Adding a New Tab
 
-#### 1. Create the Feature Structure
+#### 1\. Create the Feature Structure
+
 Create a new folder under `src/features` (e.g., `src/features/books`) with three files:
-- `BooksTab.jsx`
-- `BooksTab.module.css`
-- `books.data.js`
 
-#### 2. Build Your Data File
-Create an exported array of objects with at least:
-- `id`
-- `title`
-- `description`
-- Plus any media, dates, or links you need
+  * `BooksTab.jsx`
+  * `BooksTab.module.css`
+  * `books.data.js`
 
-#### 3. Create the Tab Component
-Follow this pattern in your `BooksTab.jsx`:
+#### 2\. Build Your Data File
+
+In `books.data.js`, create and export an array of objects. Each object should represent a card and contain keys like `id`, `title`, and `description`.
+
+#### 3\. Create the Tab Component
+
+In `BooksTab.jsx`, import React, `Helmet` for SEO, `GlassCard`, your data file, and the `safeHtml` utility. The component should map over your data array and render a `GlassCard` for each item.
 
 ```jsx
 import React from 'react';
@@ -108,7 +95,7 @@ const BooksTab = () => (
   <>
     <Helmet>
       <title>Books – Scott Sun</title>
-      <meta name="description" content="..." />
+      <meta name="description" content="A list of my favorite books and what I've learned." />
     </Helmet>
     
     <div className="books-tab space-y-8">
@@ -116,17 +103,17 @@ const BooksTab = () => (
         My Bookshelf
       </h1>
       
-      {books.map((bk, i) => (
+      {books.map((book, i) => (
         <GlassCard 
-          key={bk.id}
+          key={book.id}
           className="rounded-2xl overflow-hidden fade-in"
-          style={{ animationDelay: i === 0 ? '0.4s' : '0.2s' }}>
+          style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
           <div className="p-5 md:p-8">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200">
-              {bk.title}
+              {book.title}
             </h2>
             <p className="text-white text-base md:text-lg leading-relaxed"
-               dangerouslySetInnerHTML={safeHtml(bk.description)} />
+               dangerouslySetInnerHTML={safeHtml(book.description)} />
           </div>
         </GlassCard>
       ))}
@@ -137,77 +124,66 @@ const BooksTab = () => (
 export default BooksTab;
 ```
 
-#### 4. Register the Route & Dynamic Title
-In `src/app/App.jsx`:
-1. Import your new tab component
-2. Add a new route inside the `<Routes>` section:
-   ```jsx
-   <Route path="/books" element={<BooksTab />} />
-   ```
-3. Update the `titles` object in the `useEffect` hook to include your new tab:
-   ```javascript
-   const titles = {
-     about: 'About - Scott Sun',
-     projects: 'Projects - Scott Sun',
-     apps: 'Apps - Scott Sun',
-     inspirations: 'Inspirations - Scott Sun',
-     books: 'Books - Scott Sun',  // Add your new tab here
-   };
-   ```
+#### 4\. Register the Route & Dynamic Title
 
-#### 5. Add to Navigation
-In `Navigation.jsx`, add an entry to the `tabs` array:
+In `src/app/App.jsx`:
+
+1.  Import your new `BooksTab` component.
+2.  Inside the `AnimatePresence` block, add a new line to render your component when its route is active: `{activeTab === 'books' && <BooksTab />}`.
+3.  Update the `getActiveTabFromPath` function to recognize the new path: `case '/books': return 'books';`.
+4.  Update the `titles` object in the `useEffect` hook to include the title for your new tab: `books: 'Books - Scott Sun'`.
+
+#### 5\. Add to Navigation
+
+In `src/ui-kit/Navigation/Navigation.jsx`, add a new entry to the `tabs` array:
+
 ```javascript
 { id: 'books', label: 'My Books', path: '/books' }
 ```
 
-#### 6. Add Media Assets
-Drop any images or video covers into `public/static_assets/` and reference them by filename in your data array.
+### Adding "Art of Life" Instagram Posts
+
+The "Art of Life" tab has a unique, streamlined update process:
+
+1.  **Add Embed Code**: Open `src/features/art-of-life/embed.md`.
+2.  **Paste New Post**: Paste the full `<blockquote>` embed code for a new Instagram post into this file.
+3.  **Run Script**: Execute the helper script from the feature's directory: `python3 parse_embeds.py`.
+4.  **Done**: The script will automatically parse the new embed code, extract the URL, and update the `artOfLife.data.js` file. The website will pick up the new post and display it in the masonry grid on the next reload.
 
 ### Adding Glass Cards to Existing Tabs
 
-To add new cards to any tab:
+To add new content (like a new project or app) to an existing tab:
 
-1. **Edit the data file** - Simply append new objects to the feature's `*.data.js` file
-2. **Automatic rendering** - Each new object will be picked up by the tab's `map` function and rendered in its own glass card
-3. **No JSX changes needed** - Just update the data!
+1.  **Edit the data file**: Open the relevant `*.data.js` file (e.g., `src/features/projects/projects.data.js`).
+2.  **Append a new object**: Add a new object to the exported array with the required content.
+3.  The tab component will automatically render the new entry in its own `GlassCard`—no changes to the JSX are needed.
 
-### Customizing Cards
-
-The `GlassCard` component handles all highlight, parallax, and mouse tracking logic automatically. You can customize:
-- **Animation delay**: Use `style={{ animationDelay: '...' }}`
-- **Styling**: Add classes via the `className` prop
-- **Layout**: Wrap content however you need inside the card
+-----
 
 ## 📝 General Guidelines for Extension
 
 ### Quick Reference
 
 | Task | Files to Update |
-|------|----------------|
-| Add a card to existing tab | Just the `*.data.js` file |
-| Add a new tab | Create feature folder (3 files) + update `App.jsx` (route & titles) + update `Navigation.jsx` |
-| Add custom styling | Feature's `*.module.css` file |
-| Add media assets | Drop in `public/static_assets/` |
+| :--- | :--- |
+| Add a card to an existing tab | Just the `*.data.js` file for that feature. |
+| Add a new "Art of Life" post | `src/features/art-of-life/embed.md`, then run `parse_embeds.py`. |
+| Add a new tab | Create a feature folder (3 files), then update `App.jsx` (routing logic & title) and `Navigation.jsx`. |
+| Add custom styling | The feature's `*.module.css` file for scoped styles, or `tailwind.config.js` for global theme changes. |
+| Add media assets | Drop files into `public/static_assets/` and reference them by their path (e.g., `/static_assets/my-image.jpeg`). |
 
 ### Best Practices
 
-1. **Security**: Always pipe rich text through `safeHtml` when using `dangerouslySetInnerHTML`
-2. **Media**: Reference files from `public/static_assets` by name
-3. **Styling**: 
-   - Use feature CSS modules for tab-specific styles
-   - Don't duplicate glassmorphism or global styles (they're centrally defined)
-4. **Imports**: Use absolute imports (`@/...`) for cleaner code
-5. **Animation**: Handle custom animations inline or in the feature's CSS module
-6. **Browser Titles**: Remember to add your new tab to the `titles` object in `App.jsx` for dynamic title updates
+1.  **Security**: Always wrap HTML content from data files in the `safeHtml()` utility before rendering with `dangerouslySetInnerHTML`.
+2.  **Styling**: Use feature-specific CSS modules for styles that only apply to one tab. Avoid duplicating global effects like the glass card styling.
+3.  **Imports**: Use absolute `@/` imports for cleaner, more maintainable code.
+4.  **Browser Titles**: Remember to add an entry for any new tab to the `titles` object in `App.jsx` to ensure the document title updates correctly.
+5.  **UX**: The `GlassCard` handles its own hover and parallax effects automatically. Focus on the content and layout within the card.
 
 ### Architecture Benefits
 
-✅ **Isolated changes** - Each feature is self-contained  
-✅ **Clean version control** - Diffs stay focused  
-✅ **Consistent design** - Core visual style is single-source  
-✅ **Easy maintenance** - Delete or modify features without side effects  
-✅ **No duplication** - Glass cards and global styles stay DRY  
-✅ **Enhanced UX** - Dynamic browser tab titles update instantly when switching tabs  
-
-This system ensures your site remains maintainable, extensible, and visually consistent as it grows.
+✅ **Isolated Changes**: Each feature is self-contained, so adding or removing one won't break others.
+✅ **Clean Version Control**: Content changes (in `.data.js` files) are separate from logic changes (in `.jsx` files), making code reviews easier.
+✅ **Consistent Design**: Core visual styles are defined once and reused, preventing style drift.
+✅ **Easy Maintenance**: The modular structure makes it simple to find and update code without causing unintended side effects.
+✅ **Enhanced UX**: Route-based navigation provides shareable links to specific sections, and dynamic browser titles improve user orientation.

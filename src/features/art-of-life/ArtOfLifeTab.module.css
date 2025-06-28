@@ -62,7 +62,24 @@
 @media (max-width: 767px) {
     .masonryGrid {
         grid-template-columns: 1fr;
-        padding-left: 0;
-        padding-right: 0;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .embedContainer {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .embedContainer > div > blockquote {
+        min-width: unset !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ensure Instagram iframes are responsive on mobile */
+    .embedContainer iframe {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 } 
