@@ -32,10 +32,9 @@ const enhanceIframeAccessibility = (container) => {
 };
 
 // Lazy-loading component for Instagram embeds
-const LazyEmbed = ({ htmlContent, index }) => {
+const LazyEmbed = ({ htmlContent }) => {
     const ref = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -62,41 +61,10 @@ const LazyEmbed = ({ htmlContent, index }) => {
         };
     }, []);
 
-    // Effect to process embeds when they become visible
-    useEffect(() => {
-        if (isVisible && window.instgrm) {
-            const processEmbed = () => {
-                const result = window.instgrm.Embeds.process();
-
-                const onProcessed = () => {
-                    if (ref.current) {
-                        enhanceIframeAccessibility(ref.current);
-                    }
-                    setIsLoaded(true);
-                };
-
-                // Handle both Promise and non-Promise returns
-                if (result && typeof result.then === 'function') {
-                    result.then(onProcessed);
-                } else {
-                    // If process() doesn't return a Promise, use a timeout to ensure processing is complete
-                    setTimeout(onProcessed, 500);
-                }
-            };
-            
-            if (document.readyState === "complete") {
-                processEmbed();
-            } else {
-                window.addEventListener("load", processEmbed);
-                return () => window.removeEventListener("load", processEmbed);
-            }
-        }
-    }, [isVisible]);
-
     return (
         <div
             ref={ref}
-            className={`${styles.embedContainer} ${isLoaded ? styles.loaded : ''}`}
+            className={`${styles.embedContainer} ${isVisible ? styles.loaded : ''}`}
         >
             {isVisible && <div dangerouslySetInnerHTML={{ __html: htmlContent }} />}
         </div>
@@ -106,49 +74,55 @@ const LazyEmbed = ({ htmlContent, index }) => {
 
 const ArtOfLifeTab = () => {
     const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
+    const gridRef = useRef(null);
 
     useEffect(() => {
         setShuffledEmbeds(shuffleArray(artOfLifeData));
     }, []);
 
     useEffect(() => {
-        // Instagram's embed script
         const scriptId = 'instagram-embed-script';
         const scriptSrc = 'https://www.instagram.com/embed.js';
 
         if (document.getElementById(scriptId)) {
-            return;
+            if (window.instgrm) {
+                window.instgrm.Embeds.process();
+            }
+        } else {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = scriptSrc;
+            script.async = true;
+            document.body.appendChild(script);
         }
 
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = scriptSrc;
-        script.async = true;
-        document.body.appendChild(script);
+        const container = gridRef.current;
+        if (!container) return;
 
-        // Set up a mutation observer to catch dynamically created iframes
+        let timeoutId;
+        const debouncedProcess = () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                if (window.instgrm) {
+                    window.instgrm.Embeds.process();
+                }
+            }, 100);
+        };
+
         const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        enhanceIframeAccessibility(node);
-                    }
-                });
-            });
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    debouncedProcess();
+                    return;
+                }
+            }
         });
 
-        // Start observing
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        observer.observe(container, { childList: true, subtree: true });
 
         return () => {
-            const existingScript = document.getElementById(scriptId);
-            if (existingScript) {
-                 document.body.removeChild(existingScript);
-            }
             observer.disconnect();
+            clearTimeout(timeoutId);
         };
     }, []);
 
@@ -164,10 +138,10 @@ const ArtOfLifeTab = () => {
                     Art of Life
                 </h1>
 
-                <div className={styles.masonryGrid}>
+                <div className={styles.masonryGrid} ref={gridRef}>
                     {shuffledEmbeds.map((embedHtml, index) => (
                         <div key={index} className={styles.masonryItem}>
-                           <LazyEmbed htmlContent={embedHtml} index={index} />
+                           <LazyEmbed htmlContent={embedHtml} />
                         </div>
                     ))}
                 </div>
