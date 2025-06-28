@@ -127,7 +127,6 @@ But it's more than that. For those who are constantly curious, and those who alw
       'karpathy_like.jpeg',
       'msft_guest.jpeg',
       'google_guest.jpeg',
-      'train.jpeg',
     ],
     videos: [],
   },
