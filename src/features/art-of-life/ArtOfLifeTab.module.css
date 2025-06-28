@@ -24,7 +24,7 @@
     min-height: 400px; /* Placeholder height to prevent layout shift */
     border-radius: 12px;
     overflow: hidden;
-    background-color: #2a2a2a; /* A placeholder background */
+    background: linear-gradient(to right, #4f46e5, #f5e882); /* A placeholder background */
     display: flex;
     align-items: center;
     justify-content: center;
