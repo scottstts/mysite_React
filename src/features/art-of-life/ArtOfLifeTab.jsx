@@ -13,8 +13,26 @@ const shuffleArray = (array) => {
   return newArray;
 };
 
+// Function to enhance iframe accessibility
+const enhanceIframeAccessibility = (container) => {
+    const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
+    iframes.forEach((iframe, index) => {
+        // Add accessibility attributes
+        iframe.setAttribute('title', `Instagram post by Scott Sun - Art of Life photo ${index + 1}`);
+        iframe.setAttribute('aria-label', 'Instagram post featuring natural scenery photography');
+        
+        // Ensure iframe has proper role
+        iframe.setAttribute('role', 'img');
+        
+        // Add loading attribute for better performance
+        if (!iframe.hasAttribute('loading')) {
+            iframe.setAttribute('loading', 'lazy');
+        }
+    });
+};
+
 // Lazy-loading component for Instagram embeds
-const LazyEmbed = ({ htmlContent }) => {
+const LazyEmbed = ({ htmlContent, index }) => {
     const ref = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -46,7 +64,23 @@ const LazyEmbed = ({ htmlContent }) => {
     // Effect to process embeds when they become visible
     useEffect(() => {
         if (isVisible && window.instgrm) {
-            window.instgrm.Embeds.process();
+            const result = window.instgrm.Embeds.process();
+            
+            // Handle both Promise and non-Promise returns
+            if (result && typeof result.then === 'function') {
+                result.then(() => {
+                    if (ref.current) {
+                        enhanceIframeAccessibility(ref.current);
+                    }
+                });
+            } else {
+                // If process() doesn't return a Promise, use a timeout to ensure processing is complete
+                setTimeout(() => {
+                    if (ref.current) {
+                        enhanceIframeAccessibility(ref.current);
+                    }
+                }, 500);
+            }
         }
     }, [isVisible]);
 
@@ -80,11 +114,29 @@ const ArtOfLifeTab = () => {
         script.async = true;
         document.body.appendChild(script);
 
+        // Set up a mutation observer to catch dynamically created iframes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        enhanceIframeAccessibility(node);
+                    }
+                });
+            });
+        });
+
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
         return () => {
             const existingScript = document.getElementById(scriptId);
             if (existingScript) {
                  document.body.removeChild(existingScript);
             }
+            observer.disconnect();
         };
     }, []);
 
@@ -103,7 +155,7 @@ const ArtOfLifeTab = () => {
                 <div className={styles.masonryGrid}>
                     {shuffledEmbeds.map((embedHtml, index) => (
                         <div key={index} className={styles.masonryItem}>
-                           <LazyEmbed htmlContent={embedHtml} />
+                           <LazyEmbed htmlContent={embedHtml} index={index} />
                         </div>
                     ))}
                 </div>
