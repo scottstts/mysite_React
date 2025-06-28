@@ -35,6 +35,7 @@
 
 .embedContainer.loaded {
     opacity: 1; /* Fade in when loaded */
+    min-height: auto;
 }
 
 .embedContainer > div {
