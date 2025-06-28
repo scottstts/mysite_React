@@ -96,20 +96,38 @@ But eventually, I realized that the best way to learn is after all project build
   {
     id: 'app-dev-ai',
     projectId: 7,
-    title: 'Recreational App Dev, JS, & Frontier AI Chase',
-    date: 'Jan. 2024 onward',
-    description: `Making apps that solve a little but practical problem is recreational and good for the soul.<br><br>
+    title: 'Recreational App Dev & Frontier AI Chase',
+    date: 'Jan. 2024',
+    description: `Making apps that solve small but practical problems is recreational and good for the soul.<br><br>
 
-You have a vacation idea, I turn it into a travel plan. I wrote this project in Python only, leveraging OpenAI GPT-4o-mini (a big deal at the time if you remember) API as the underlying LLM for validating and generating travel plans, as well as parsing locational information. Then it uses Google Maps API to find locations and plan optimal routes. Lastly, it generates an interactive map to display planned stops and routes in the travel plan.<br><br>
+I suppose building things is addictive. Once you get a taste of the process, you can't help but see real world problems with the perspective of “can I build something to make this easier, or better?” Sometimes it's not even about practical value, but simply to watch something you built work. I've built many things along the way, most are crude and primitive, and didn't make it out of the project phase. But they were sure fun to build and valuable for learning how to iterate. Some did get refined and deployed, so anyone can use them.<br><br>
 
-Transcrilate was the first sorta serious node.js project in React. It can transcribe English speech and translate it into 19 most common languages. The transcription and translation are separately handled by open models via HuggingFace transformers, both running inference locally.<br><br>
-
-Gradually I have gotten into the habit of reading frontier AI research papers. Every morning one of the first things I do is check the Hugging Face Daily Papers section for interesting papers, and of course not all of them would make it to HF, and so 𝕏 is my paper hunting safety net. Reading raw AI papers forces me to constantly replenish my knowledge pool. Luckily there are tools like Claude and NotebookLM that make this process easier for me.`,
+Gradually, I have also gotten into the habit of reading frontier AI research papers. Every week I would check the Hugging Face Daily Papers section for interesting papers, and of course not all of them would make it to HF, and so 𝕏 is my paper hunting safety net. Reading raw AI papers forces me to constantly replenish my knowledge pool. Luckily there are tools like Claude and NotebookLM that make this process easier for me.`,
     images: [
       'vacation_planner.jpeg',
       'transcrilate.jpeg',
       'hf_daily_papers.jpeg',
       'arxiv.jpeg',
+    ],
+    videos: [],
+  },
+  {
+    id: 'ai_profession_days',
+    projectId: 8,
+    title: 'Can You Even Imagine Life Without AI?',
+    date: 'Feb. 2025 onward',
+    description: `It's only been a couple of years, but it's hard to remember the time before AI.<br><br>
+
+It's remarkable if you think about it. A little seed of progress that turned out to be literally world-changing. AI has become my work, and my work has become AI.<br><br>
+
+But it's more than that. For those who are constantly curious, and those who always want to build stuff and push limits, AI is the best thing ever. You'd have several genius level assistants at your beck and call 24/7, augmenting you non stop. Having AI like a suit of armor around your brain is immense freedom, freedom from ignorance, from helplessness, and from limits. 
+`,
+    images: [
+      'ai_engineering.jpeg',
+      'karpathy_like.jpeg',
+      'msft_guest.jpeg',
+      'google_guest.jpeg',
+      'train.jpeg',
     ],
     videos: [],
   },

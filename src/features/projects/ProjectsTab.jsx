@@ -60,11 +60,7 @@ const ProjectsTab = () => {
       >
         <p
           className="text-xl md:text-2xl text-yellow-100 mb-8 text-left"
-          dangerouslySetInnerHTML={safeHtml(`Now I'm buried by countless AI papers on arXiv and bombarded with AI/Tech development news on 𝕏 on a daily basis. Although I never stopped making more useful apps both for practical use, keeping skills sharp, and for some fun, only I've been taking them even further and exploring actually deploying the app, CI/CD, taking in user feedback for continuous improvements, as well as getting more users.<br /><br /> 
-
-            I never had a CS degree (except if you count Harvard CS50), and I am not a professional engineer. But what you can never take away from me is my starving hunger for learning. I love this Naval tweet, I'd like to think I'm a smart person, and there is immense joy for me in self learning interesting and useful new things. I will never stop learning.<br /><br />
-            
-            It has been a long journey. I am super excited about what's to come <i class="fa-solid fa-fire" aria-hidden="true"></i>!`)}
+          dangerouslySetInnerHTML={safeHtml(`I love this Naval tweet! There is immense joy for me in learning interesting and useful new things. I will never stop learning. It has been a long journey. I am super excited about what's to come <i class="fa-solid fa-fire" aria-hidden="true"></i>!`)}
         />
         <img
           src="/static_assets/naval_tweet.jpeg"
