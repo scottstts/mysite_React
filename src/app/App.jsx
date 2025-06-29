@@ -9,7 +9,7 @@ import AboutTab from '@/features/about/AboutTab';
 import ProjectsTab from '@/features/projects/ProjectsTab';
 import AppsTab from '@/features/apps/AppsTab';
 import InspirationsTab from '@/features/inspirations/InspirationsTab';
-import ArtOfLifeTab from '@/features/art-of-life/ArtOfLifeTab';
+import ArtInLifeTab from '@/features/art-in-life/ArtInLifeTab';
 import ScrollToTop from '@/ui-kit/ScrollToTop/ScrollToTop';
 import useMouseParallax from '@/ui-kit/hooks/useMouseParallax';
 import '@/styles/variables.css';
@@ -33,8 +33,8 @@ function App() {
         return 'apps';
       case '/inspirations':
         return 'inspirations';
-      case '/art-of-life':
-        return 'art-of-life';
+      case '/art-in-life':
+        return 'art-in-life';
       case '/':
       case '/about':
       default:
@@ -51,7 +51,7 @@ function App() {
       projects: 'Projects - Scott Sun',
       apps: 'Apps - Scott Sun',
       inspirations: 'Inspirations - Scott Sun',
-      'art-of-life': 'Art of Life - Scott Sun',
+      'art-in-life': 'Art in Life - Scott Sun',
     };
 
     // Fallback title if the route is unknown
@@ -154,7 +154,7 @@ function App() {
             {activeTab === 'projects' && <ProjectsTab />}
             {activeTab === 'apps' && <AppsTab />}
             {activeTab === 'inspirations' && <InspirationsTab />}
-            {activeTab === 'art-of-life' && <ArtOfLifeTab />}
+            {activeTab === 'art-in-life' && <ArtInLifeTab />}
           </motion.div>
         </AnimatePresence>
       </main>

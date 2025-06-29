@@ -9,7 +9,7 @@ This project is organized for easy navigation, high modularity, and straightforw
   * **`public/static_assets/`**: All static media (images, video covers, UI references). These are directly accessible in the code without needing to be imported or processed by the build system.
   * **`src/`**: All application logic and UI code.
       * **`app/`**: Contains `App.jsx` and its CSS. `App.jsx` is the main stateful component that handles routing, global effects (like the intro video and parallax background), and renders the primary layout.
-      * **`features/`**: Contains self-contained folders for each main tab of the website (e.g., `about`, `projects`, `apps`, `inspirations`, `art-of-life`). This is the core of the website's content.
+      * **`features/`**: Contains self-contained folders for each main tab of the website (e.g., `about`, `projects`, `apps`, `inspirations`, `art-in-life`). This is the core of the website's content.
       * **`ui-kit/`**: Contains reusable UI components and hooks that are shared across different features. This includes the `Navigation`, `Footer` , `GlassCard`, `ImageSlider`, and the `useMouseParallax` hook.
       * **`styles/`**: Holds global CSS files, including design tokens (variables), animations, and base styles.
       * **`lib/`**: Contains utility functions, such as the `safeHtml.js` sanitizer.
@@ -38,7 +38,7 @@ The application uses `react-router-dom` to manage navigation. Instead of using c
   * `/projects` maps to the `ProjectsTab`
   * `/apps` maps to the `AppsTab`
   * `/inspirations` maps to the `InspirationsTab`
-  * `/art-of-life` maps to the `ArtOfLifeTab`
+  * `/art-in-life` maps to the `ArtInLifeTab`
 
 This approach provides unique URLs for each section, improving deep linking and browser history management.
 
@@ -141,14 +141,14 @@ In `src/ui-kit/Navigation/Navigation.jsx`, add a new entry to the `tabs` array:
 { id: 'books', label: 'My Books', path: '/books' }
 ```
 
-### Adding "Art of Life" Instagram Posts
+### Adding "Art in Life" Instagram Posts
 
-The "Art of Life" tab has a unique, streamlined update process:
+The "Art in Life" tab has a unique, streamlined update process:
 
-1.  **Add Embed Code**: Open `src/features/art-of-life/embed.md`.
+1.  **Add Embed Code**: Open `src/features/art-in-life/embed.md`.
 2.  **Paste New Post**: Paste the full `<blockquote>` embed code for a new Instagram post into this file.
 3.  **Run Script**: Execute the helper script from the feature's directory: `python3 parse_embeds.py`.
-4.  **Done**: The script will automatically parse the new embed code, extract the URL, and update the `artOfLife.data.js` file. The website will pick up the new post and display it in the masonry grid on the next reload.
+4.  **Done**: The script will automatically parse the new embed code, extract the URL, and update the `artInLife.data.js` file. The website will pick up the new post and display it in the masonry grid on the next reload.
 
 ### Adding Glass Cards to Existing Tabs
 
@@ -167,7 +167,7 @@ To add new content (like a new project or app) to an existing tab:
 | Task | Files to Update |
 | :--- | :--- |
 | Add a card to an existing tab | Just the `*.data.js` file for that feature. |
-| Add a new "Art of Life" post | `src/features/art-of-life/embed.md`, then run `parse_embeds.py`. |
+| Add a new "Art in Life" post | `src/features/art-in-life/embed.md`, then run `parse_embeds.py`. |
 | Add a new tab | Create a feature folder (3 files), then update `App.jsx` (routing logic & title) and `Navigation.jsx`. |
 | Add custom styling | The feature's `*.module.css` file for scoped styles, or `tailwind.config.js` for global theme changes. |
 | Add media assets | Drop files into `public/static_assets/` and reference them by their path (e.g., `/static_assets/my-image.jpeg`). |

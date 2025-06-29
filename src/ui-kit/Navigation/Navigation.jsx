@@ -7,7 +7,7 @@ const Navigation = ({ activeTab }) => {
     { id: 'projects', label: 'My Learning & Projects', path: '/projects' },
     { id: 'apps', label: 'My Apps', path: '/apps' },
     { id: 'inspirations', label: 'My Inspirations', path: '/inspirations' },
-    { id: 'art-of-life', label: 'Art of Life', path: '/art-of-life' },
+    { id: 'art-in-life', label: 'Art in Life', path: '/art-in-life' },
   ];
 
   const handleTabClick = () => {

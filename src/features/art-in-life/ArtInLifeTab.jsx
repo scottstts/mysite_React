@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { artOfLifeData } from './artOfLife.data.js';
-import styles from './ArtOfLifeTab.module.css';
+import { artInLifeData } from './artInLife.data.js';
+import styles from './ArtinLifeTab.module.css';
 
 // Helper function to shuffle an array
 const shuffleArray = (array) => {
@@ -18,7 +18,7 @@ const enhanceIframeAccessibility = (container) => {
     const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
     iframes.forEach((iframe, index) => {
         // Add accessibility attributes
-        iframe.setAttribute('title', `Instagram post by Scott Sun - Art of Life photo ${index + 1}`);
+        iframe.setAttribute('title', `Instagram post by Scott Sun - Art in Life photo ${index + 1}`);
         iframe.setAttribute('aria-label', 'Instagram post featuring natural scenery photography');
         
         // Ensure iframe has proper role
@@ -86,11 +86,11 @@ const LazyEmbed = ({ htmlContent }) => {
 };
 
 
-const ArtOfLifeTab = () => {
+const ArtInLifeTab = () => {
     const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
 
     useEffect(() => {
-        setShuffledEmbeds(shuffleArray(artOfLifeData));
+        setShuffledEmbeds(shuffleArray(artInLifeData));
     }, []);
 
     // No longer needed - Instagram SDK is loaded in HTML and processing is handled per-card
@@ -98,13 +98,13 @@ const ArtOfLifeTab = () => {
     return (
         <>
             <Helmet>
-                <title>Art of Life – Scott Sun</title>
+                <title>Art in Life – Scott Sun</title>
                 <meta name="description" content="A collection of natural scenery photos." />
             </Helmet>
 
-            <div className="art-of-life-tab">
+            <div className="art-in-life-tab">
                 <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
-                    Art of Life
+                    Art in Life
                 </h1>
 
                 <div className={styles.masonryGrid}>
@@ -119,4 +119,4 @@ const ArtOfLifeTab = () => {
     );
 };
 
-export default ArtOfLifeTab; 
+export default ArtInLifeTab; 

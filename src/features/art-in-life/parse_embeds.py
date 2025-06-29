@@ -54,7 +54,7 @@ def parse_embed_md(input_file, output_file):
             js_output += f'  "{url}",\n'
         js_output += "];\n\n"
         
-        js_output += "export const artOfLifeData = urls.map(url => {\n"
+        js_output += "export const artInLifeData = urls.map(url => {\n"
         js_output += f"  return embedTemplate.replace(/{placeholder}/g, url);\n"
         js_output += "});\n"
 
@@ -72,5 +72,5 @@ def parse_embed_md(input_file, output_file):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_md = os.path.join(script_dir, 'embed.md')
-    output_js = os.path.join(script_dir, 'artOfLife.data.js')
+    output_js = os.path.join(script_dir, 'artInLife.data.js')
     parse_embed_md(input_md, output_js) 

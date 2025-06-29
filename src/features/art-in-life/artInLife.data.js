@@ -67,6 +67,6 @@ const urls = [
   "https://www.instagram.com/p/DLW1Sedsam1/?utm_source=ig_embed&amp;utm_campaign=loading",
 ];
 
-export const artOfLifeData = urls.map(url => {
+export const artInLifeData = urls.map(url => {
   return embedTemplate.replace(/URL_PLACEHOLDER/g, url);
 });
