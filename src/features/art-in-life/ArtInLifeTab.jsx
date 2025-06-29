@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { artInLifeData } from './artInLife.data.js';
+import { safeHtml } from '../../lib/safeHtml.js';
 import styles from './ArtinLifeTab.module.css';
 
 // Helper function to shuffle an array
@@ -15,25 +16,31 @@ const shuffleArray = (array) => {
 
 // Function to enhance iframe accessibility with lazy loading
 const enhanceIframeAccessibility = (container) => {
-    const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
-    iframes.forEach((iframe, index) => {
-        // Add accessibility attributes
-        iframe.setAttribute('title', `Instagram post by Scott Sun - Art in Life photo ${index + 1}`);
-        iframe.setAttribute('aria-label', 'Instagram post featuring natural scenery photography');
-        
-        // Ensure iframe has proper role
-        iframe.setAttribute('role', 'img');
-        
-        // Add native lazy loading for better performance
-        if (!iframe.hasAttribute('loading')) {
-            iframe.setAttribute('loading', 'lazy');
-        }
-        
-        // Check for data-instgrm-class attribute for custom lazy loading
-        if (iframe.dataset.instgrmClass === 'loading-lazy') {
-            iframe.loading = 'lazy';
-        }
-    });
+  const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
+  iframes.forEach((iframe, index) => {
+    // Add accessibility attributes
+    iframe.setAttribute(
+      'title',
+      `Instagram post by Scott Sun - Art in Life photo ${index + 1}`
+    );
+    iframe.setAttribute(
+      'aria-label',
+      'Instagram post featuring natural scenery photography'
+    );
+
+    // Ensure iframe has proper role
+    iframe.setAttribute('role', 'img');
+
+    // Add native lazy loading for better performance
+    if (!iframe.hasAttribute('loading')) {
+      iframe.setAttribute('loading', 'lazy');
+    }
+
+    // Check for data-instgrm-class attribute for custom lazy loading
+    if (iframe.dataset.instgrmClass === 'loading-lazy') {
+      iframe.loading = 'lazy';
+    }
+  });
 };
 
 // Lazy-loading component for Instagram embeds - processes per card
@@ -103,9 +110,18 @@ const ArtInLifeTab = () => {
             </Helmet>
 
             <div className="art-in-life-tab">
-                <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
+                <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-4 fade-in">
                     Art in Life
                 </h1>
+                
+                <div className="w-full mb-8">
+                    <p
+                        className="font-semibold text-yellow-200 text-left"
+                        dangerouslySetInnerHTML={safeHtml(
+                            `&nbsp;&nbsp;&nbsp;&nbsp;Make an effort to see... <i class="fa-solid fa-eye" aria-hidden="true"></i>`
+                        )}
+                    />
+                </div>
 
                 <div className={styles.masonryGrid}>
                     {shuffledEmbeds.map((embedHtml, index) => (
