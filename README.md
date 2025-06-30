@@ -6,7 +6,7 @@ This is my website *modular React project*.
 
 The website was originally a plain html, css, javascript website. I now refactored it into a modular React project for better maintenance and expansion.
 
-The original website is archived in [Original Website Codebase](refactor_archive/original_website_codebase.txt) - frozen reference. Additional docs for the refactor process are also in [Refactor Archive](refector_archive).
+The original website is archived in [Original Website Codebase](refactor_archive/original_website_codebase.txt) - frozen reference. Additional docs used for the refactor process are in [Refactor Archive](./refector_archive).
 
 ## 📋 Project Structure and How It All Comes Together
 
