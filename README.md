@@ -191,7 +191,11 @@ To add new content (like a new project or app) to an existing tab:
 ### Architecture Benefits
 
 ✅ **Isolated Changes**: Each feature is self-contained, so adding or removing one won't break others.
+
 ✅ **Clean Version Control**: Content changes (in `.data.js` files) are separate from logic changes (in `.jsx` files), making code reviews easier.
+
 ✅ **Consistent Design**: Core visual styles are defined once and reused, preventing style drift.
+
 ✅ **Easy Maintenance**: The modular structure makes it simple to find and update code without causing unintended side effects.
+
 ✅ **Enhanced UX**: Route-based navigation provides shareable links to specific sections, and dynamic browser titles improve user orientation.
