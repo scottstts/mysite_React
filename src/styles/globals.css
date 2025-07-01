@@ -8,23 +8,6 @@
     @apply animate-fade-out;
 }
 
-:root {
-    --primary-bg: #0a0e17;
-    --card-bg: #131c2e;
-    --text-primary: #f8fafc;
-    --text-secondary: #e2e8f0;
-    --button-bg: #6366f1;
-    --button-hover: #4f46e5;
-    --nav-dot: #4a4a4a;
-    --nav-dot-active: #6366f1;
-    --card-shadow: rgba(0, 0, 0, 0.25);
-    --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
-    --accent-glow: rgba(99, 102, 241, 0.5);
-    --electric-blue: #00e5ff;
-    --neon-purple: #8b5cf6;
-    --deep-space: #030711;
-}
-
 /* Improved body background with more sophisticated effects */
 body {
     background-color: var(--deep-space);
