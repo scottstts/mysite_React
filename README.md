@@ -4,6 +4,8 @@
 
 This is my website *modular React project*.
 
+**Visit at *https://scottsun.io***
+
 The website was originally a plain html, css, javascript website. I now refactored it into a modular React project for better maintenance and expansion.
 
 The original website is archived in [Original Website Codebase](refactor_archive/original_website_codebase.txt) - frozen reference. Additional docs used for the refactor process are in [Refactor Archive](./refactor_archive).
