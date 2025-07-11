@@ -3,6 +3,12 @@ const embedTemplate = (
 );
 
 const urls = [
+  "https://www.instagram.com/p/DL92tQiMSet/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DL5gLJlM_is/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DLwn7CZMsdO/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DLua5wcs-T5/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DLpOj6MMQGU/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DLmy-dcscqy/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DLahCwAsB48/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DLCd_idsWb7/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DKywiOsMnwT/?utm_source=ig_embed&amp;utm_campaign=loading",
