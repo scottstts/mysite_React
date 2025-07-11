@@ -45,94 +45,96 @@ const enhanceIframeAccessibility = (container) => {
 
 // Lazy-loading component for Instagram embeds - processes per card
 const LazyEmbed = ({ htmlContent }) => {
-    const ref = useRef(null);
-    const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
-                }
-            },
-            {
-                rootMargin: '0px 0px 200px 0px', // Load 200px before it enters the viewport
-            }
-        );
-
-        const currentRef = ref.current;
-        if (currentRef) {
-            observer.observe(currentRef);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
         }
-
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
-            }
-        };
-    }, []);
-
-    // Process Instagram embed when the card becomes visible
-    useEffect(() => {
-        if (isVisible && ref.current && window.instgrm) {
-            // Only process this card, not the whole page
-            window.instgrm.Embeds.process(ref.current);
-            enhanceIframeAccessibility(ref.current);
-        }
-    }, [isVisible]);
-
-    return (
-        <div
-            ref={ref}
-            className={`${styles.embedContainer} ${isVisible ? styles.loaded : ''}`}
-        >
-            {isVisible && <div dangerouslySetInnerHTML={{ __html: htmlContent }} />}
-        </div>
+      },
+      {
+        rootMargin: '0px 0px 200px 0px', // Load 200px before it enters the viewport
+      }
     );
-};
 
+    const currentRef = ref.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
+
+  // Process Instagram embed when the card becomes visible
+  useEffect(() => {
+    if (isVisible && ref.current && window.instgrm) {
+      // Only process this card, not the whole page
+      window.instgrm.Embeds.process(ref.current);
+      enhanceIframeAccessibility(ref.current);
+    }
+  }, [isVisible]);
+
+  return (
+    <div
+      ref={ref}
+      className={`${styles.embedContainer} ${isVisible ? styles.loaded : ''}`}
+    >
+      {isVisible && <div dangerouslySetInnerHTML={{ __html: htmlContent }} />}
+    </div>
+  );
+};
 
 const ArtInLifeTab = () => {
-    const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
+  const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
 
-    useEffect(() => {
-        setShuffledEmbeds(shuffleArray(artInLifeData));
-    }, []);
+  useEffect(() => {
+    setShuffledEmbeds(shuffleArray(artInLifeData));
+  }, []);
 
-    // No longer needed - Instagram SDK is loaded in HTML and processing is handled per-card
+  // No longer needed - Instagram SDK is loaded in HTML and processing is handled per-card
 
-    return (
-        <>
-            <Helmet>
-                <title>Art in Life – Scott Sun</title>
-                <meta name="description" content="A collection of natural scenery photos." />
-            </Helmet>
+  return (
+    <>
+      <Helmet>
+        <title>Art in Life – Scott Sun</title>
+        <meta
+          name="description"
+          content="A collection of natural scenery photos."
+        />
+      </Helmet>
 
-            <div className="art-in-life-tab">
-                <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-4 fade-in">
-                    Art in Life
-                </h1>
-                
-                <div className="w-full mb-8">
-                    <p
-                        className="font-semibold text-yellow-200 text-left"
-                        dangerouslySetInnerHTML={safeHtml(
-                            `&nbsp;&nbsp;&nbsp;&nbsp;Make an effort to see... <i class="fa-solid fa-eye" aria-hidden="true"></i>`
-                        )}
-                    />
-                </div>
+      <div className="art-in-life-tab">
+        <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-4 fade-in">
+          Art in Life
+        </h1>
 
-                <div className={styles.masonryGrid}>
-                    {shuffledEmbeds.map((embedHtml, index) => (
-                        <div key={index} className={styles.masonryItem}>
-                           <LazyEmbed htmlContent={embedHtml} />
-                        </div>
-                    ))}
-                </div>
+        <div className="w-full mb-8">
+          <p
+            className="font-semibold text-yellow-200 text-left"
+            dangerouslySetInnerHTML={safeHtml(
+              `&nbsp;&nbsp;&nbsp;&nbsp;Make an effort to see... <i class="fa-solid fa-eye" aria-hidden="true"></i>`
+            )}
+          />
+        </div>
+
+        <div className={styles.masonryGrid}>
+          {shuffledEmbeds.map((embedHtml, index) => (
+            <div key={index} className={styles.masonryItem}>
+              <LazyEmbed htmlContent={embedHtml} />
             </div>
-        </>
-    );
+          ))}
+        </div>
+      </div>
+    </>
+  );
 };
 
-export default ArtInLifeTab; 
+export default ArtInLifeTab;
