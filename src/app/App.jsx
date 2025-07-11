@@ -125,7 +125,11 @@ function App() {
         {/* Instagram preconnect optimizations */}
         <link rel="dns-prefetch" href="https://www.instagram.com" />
         <link rel="preconnect" href="https://www.instagram.com" />
-        <link rel="preconnect" href="https://scontent.cdninstagram.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://scontent.cdninstagram.com"
+          crossOrigin="anonymous"
+        />
       </Helmet>
 
       {/* Intro Video */}

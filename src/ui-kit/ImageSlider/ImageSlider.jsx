@@ -199,9 +199,9 @@ const ImageSlider = ({
 
   // Cleanup YouTube players on unmount
   useEffect(() => {
+    const playersSnapshot = youtubePlayersRef.current;
     return () => {
-      const players = youtubePlayersRef.current;
-      Object.values(players).forEach((player) => {
+      Object.values(playersSnapshot).forEach((player) => {
         try {
           if (player && typeof player.destroy === 'function') {
             player.destroy();
