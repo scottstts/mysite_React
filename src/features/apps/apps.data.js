@@ -26,7 +26,12 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
     description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
     
     Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.`,
-    images: ['mycraft_start.jpeg', 'mycraft_world.jpeg', 'mycraft_sunset.jpeg'],
+    images: [
+      'mycraft_start.jpeg',
+      'mycraft_world.jpeg',
+      'mycraft_sunset.jpeg',
+      'mycraft_underwater.jpeg',
+    ],
     link: 'https://mycraft.scottsun.io',
   },
   {
