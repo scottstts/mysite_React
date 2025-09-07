@@ -32,6 +32,13 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
       'mycraft_sunset.jpeg',
       'mycraft_underwater.jpeg',
     ],
+    videos: [
+      {
+        id: 'youtube-player-3',
+        videoId: 'Jxn7g5fzAto',
+        title: 'MyCraft',
+      },
+    ],
     link: 'https://mycraft.scottsun.io',
   },
   {

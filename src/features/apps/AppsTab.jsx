@@ -43,12 +43,13 @@ const AppsTab = () => {
               </p>
 
               {/* Slider Container */}
-              {app.images && app.images.length > 0 && (
+              {((app.images && app.images.length > 0) ||
+                (app.videos && app.videos.length > 0)) && (
                 <div className="relative mt-8">
                   <div className="slider-container p-3 md:p-4">
                     <ImageSlider
                       images={app.images}
-                      videos={[]}
+                      videos={app.videos || []}
                       projectId={app.projectId}
                       autoplay={true}
                       autoplayDelay={4000}
