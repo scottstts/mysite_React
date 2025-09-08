@@ -1,5 +1,5 @@
 .masonryGrid {
-    display: grid;
+    display: block; /* switch from grid to CSS columns for true masonry stacking */
     /*
       Responsive columns with a hard cap of 3.
       - Start with 3 columns when space allows.
@@ -7,15 +7,13 @@
     */
     --card-min: 340px;            /* minimum width for each column */
     --gap: clamp(1rem, 2vw, 2rem); /* healthy gap to prevent rotated overlap */
-    gap: var(--gap);
+    column-count: 3;
+    column-gap: var(--gap);
     padding: clamp(0.75rem, 2vw, 1.5rem);
     margin: 0 auto;
     align-items: start;
     /* Enable container query units for smarter scaling on narrow screens */
     container-type: inline-size;
-
-    /* default to three columns; switch to 2/1 via media queries below */
-    grid-template-columns: repeat(3, minmax(0, 1fr));
 
     /* Performance optimization: skip off-screen rendering */
     content-visibility: auto;
@@ -27,9 +25,11 @@
     justify-content: center;
     align-items: flex-start; /* Prevent vertical stretching */
     width: 100%;
-    margin-bottom: 0.5rem;
+    /* Vertical spacing between items within each column */
+    margin-bottom: var(--gap);
     padding: 0.25rem; /* buffer so rotated items don't touch neighbors */
     break-inside: avoid; /* Prevent items from breaking across columns */
+    break-inside: avoid-column; /* Safari/WebKit */
     will-change: transform;
     transform-origin: 50% 0; /* rotate around top center to reduce horizontal overshoot */
     overflow: visible; /* never clip scaled/rotated content */
@@ -107,7 +107,7 @@
 */
 @media (max-width: 1120px) {
     .masonryGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-count: 2;
     }
 }
 
@@ -116,7 +116,7 @@
 */
 @media (max-width: 760px) {
     .masonryGrid {
-        grid-template-columns: 1fr;
+        column-count: 1;
         /* minimize side padding so the card gets maximum horizontal room */
         padding-left: clamp(0.25rem, 2vw, 0.5rem);
         padding-right: clamp(0.25rem, 2vw, 0.5rem);
