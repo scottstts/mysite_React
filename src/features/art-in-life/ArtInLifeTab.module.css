@@ -1,8 +1,20 @@
 .masonryGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
+    /*
+      Responsive columns with a hard cap of 3.
+      - Start with 3 columns when space allows.
+      - Drop to 2 and then 1 only when space is insufficient.
+    */
+    --card-min: 340px;            /* minimum width for each column */
+    --gap: clamp(1rem, 2vw, 2rem); /* healthy gap to prevent rotated overlap */
+    gap: var(--gap);
+    padding: clamp(0.75rem, 2vw, 1.5rem);
+    margin: 0 auto;
+    align-items: start;
+
+    /* default to three columns; switch to 2/1 via media queries below */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
     /* Performance optimization: skip off-screen rendering */
     content-visibility: auto;
     contain-intrinsic-size: 900px; /* prevents layout shift when unseen */
@@ -13,8 +25,10 @@
     justify-content: center;
     align-items: flex-start; /* Prevent vertical stretching */
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem; /* buffer so rotated items don't touch neighbors */
     break-inside: avoid; /* Prevent items from breaking across columns */
+    will-change: transform;
 }
 
 /* Add a slight random rotation to each item for the post-it note feel */
@@ -27,16 +41,19 @@
 
 .embedContainer {
     width: 100%;
-    max-width: 540px; /* Constrain the max width to match Instagram's embed */
-    display: flex; /* Revert to flex to allow stretching */
-    padding-bottom: 0.2rem; /* Add consistent margin at the bottom */
+    max-width: 540px; /* Constrain to Instagram's max embed width */
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.2rem; /* consistent bottom space */
     border-radius: 12px;
     overflow: hidden;
-    background: linear-gradient(to right, #4f46e5, #f5e882); /* A placeholder background */
-    justify-content: center;
+    background: linear-gradient(to right, #4f46e5, #f5e882); /* placeholder background */
     box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
     opacity: 0; /* Initially hidden */
     transition: opacity 0.5s ease-in-out; /* Smooth transition */
+
+    /* Ensure card never collapses before lazy content loads */
+    min-height: 360px;
 }
 
 .embedContainer.loaded {
@@ -49,37 +66,39 @@
     justify-content: center;
 }
 
+/*
+  Prevent right-side cropping: IG embed sets a min-width inline.
+  Override it so cards can shrink fluidly all the way down to 1 column.
+*/
 .embedContainer > div > blockquote {
-    min-width: 320px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
-@media (max-width: 1024px) {
+/*
+  Drop from 3 columns -> 2 when container can't fit 3 columns at --card-min.
+  Approx threshold: 3 * 340px + 2 * gap ≈ ~1100px (incl. padding).
+*/
+@media (max-width: 1120px) {
     .masonryGrid {
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-@media (max-width: 767px) {
+/*
+  Drop from 2 columns -> 1 when space is tighter than ~720px.
+*/
+@media (max-width: 760px) {
     .masonryGrid {
         grid-template-columns: 1fr;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding-left: clamp(0.5rem, 2vw, 0.75rem);
+        padding-right: clamp(0.5rem, 2vw, 0.75rem);
     }
-    
-    .embedContainer {
-        max-width: 100%;
-        width: 100%;
-    }
-    
-    .embedContainer > div > blockquote {
-        min-width: unset !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    
-    /* Ensure Instagram iframes are responsive on mobile */
-    .embedContainer iframe {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-} 
+}
+
+/* Ensure Instagram iframes are responsive at all widths */
+.embedContainer iframe {
+    max-width: 100% !important;
+    width: 100% !important;
+}
