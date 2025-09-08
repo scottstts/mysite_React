@@ -11,6 +11,8 @@
     padding: clamp(0.75rem, 2vw, 1.5rem);
     margin: 0 auto;
     align-items: start;
+    /* Enable container query units for smarter scaling on narrow screens */
+    container-type: inline-size;
 
     /* default to three columns; switch to 2/1 via media queries below */
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -29,6 +31,8 @@
     padding: 0.25rem; /* buffer so rotated items don't touch neighbors */
     break-inside: avoid; /* Prevent items from breaking across columns */
     will-change: transform;
+    transform-origin: 50% 0; /* rotate around top center to reduce horizontal overshoot */
+    overflow: visible; /* never clip scaled/rotated content */
 }
 
 /* Add a slight random rotation to each item for the post-it note feel */
@@ -54,6 +58,9 @@
 
     /* Ensure card never collapses before lazy content loads */
     min-height: 360px;
+
+    /* Prepare for responsive scaling without layout overflow */
+    transform-origin: top center;
 }
 
 .embedContainer.loaded {
@@ -76,6 +83,24 @@
     max-width: 100% !important;
 }
 
+/* Stronger guardrails: ensure all nested elements never overflow horizontally */
+.embedContainer,
+.embedContainer * {
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Instagram sometimes injects inline min-widths; neutralize them */
+.embedContainer [style*="min-width"] {
+    min-width: 0 !important;
+}
+
+/* Anchor wrapper inside the IG blockquote should not exceed container */
+.embedContainer a {
+    display: block;
+    width: 100% !important;
+}
+
 /*
   Drop from 3 columns -> 2 when container can't fit 3 columns at --card-min.
   Approx threshold: 3 * 340px + 2 * gap ≈ ~1100px (incl. padding).
@@ -92,8 +117,9 @@
 @media (max-width: 760px) {
     .masonryGrid {
         grid-template-columns: 1fr;
-        padding-left: clamp(0.5rem, 2vw, 0.75rem);
-        padding-right: clamp(0.5rem, 2vw, 0.75rem);
+        /* minimize side padding so the card gets maximum horizontal room */
+        padding-left: clamp(0.25rem, 2vw, 0.5rem);
+        padding-right: clamp(0.25rem, 2vw, 0.5rem);
     }
 }
 
@@ -101,4 +127,53 @@
 .embedContainer iframe {
     max-width: 100% !important;
     width: 100% !important;
+}
+
+/*
+  On ultra-narrow screens, the Instagram iframe enforces an internal min width (~326px).
+  We cannot override inside the cross-origin iframe, so scale the container visually
+  based on available container width using container query units (cqw).
+*/
+@supports (width: 1cqw) {
+  .embedContainer {
+    /* 326px is the smallest IG embed width; compute a safe scale */
+    --ig-min: 326;
+    --scale: clamp(0.85, calc(100cqw / (var(--ig-min) * 1px)), 1);
+    transform: scale(var(--scale));
+  }
+}
+
+/* Fallback for browsers without container query units: approximate via viewport width */
+@supports not (width: 1cqw) {
+  @media (max-width: 340px) {
+    .embedContainer { transform: scale(calc((100vw - 32px) / 326)); }
+  }
+}
+
+/*
+  Ultra-narrow safety: progressively reduce rotation amplitude and apply a light scale
+  so the card fits fully inside the viewport without right-edge cropping.
+*/
+@media (max-width: 420px) {
+    .masonryItem:nth-child(5n+1) { transform: rotate(1deg) scale(0.995); }
+    .masonryItem:nth-child(5n+2) { transform: rotate(-0.7deg) scale(0.995); }
+    .masonryItem:nth-child(5n+3) { transform: rotate(0.4deg) scale(0.995); }
+    .masonryItem:nth-child(5n+4) { transform: rotate(-1deg) scale(0.995); }
+    .masonryItem:nth-child(5n+5) { transform: rotate(0.7deg) scale(0.995); }
+}
+
+@media (max-width: 360px) {
+    .masonryItem:nth-child(5n+1) { transform: rotate(0.8deg) scale(0.985); }
+    .masonryItem:nth-child(5n+2) { transform: rotate(-0.6deg) scale(0.985); }
+    .masonryItem:nth-child(5n+3) { transform: rotate(0.3deg) scale(0.985); }
+    .masonryItem:nth-child(5n+4) { transform: rotate(-0.8deg) scale(0.985); }
+    .masonryItem:nth-child(5n+5) { transform: rotate(0.6deg) scale(0.985); }
+}
+
+@media (max-width: 320px) {
+    .masonryItem:nth-child(5n+1) { transform: rotate(0.6deg) scale(0.965); }
+    .masonryItem:nth-child(5n+2) { transform: rotate(-0.5deg) scale(0.965); }
+    .masonryItem:nth-child(5n+3) { transform: rotate(0.25deg) scale(0.965); }
+    .masonryItem:nth-child(5n+4) { transform: rotate(-0.6deg) scale(0.965); }
+    .masonryItem:nth-child(5n+5) { transform: rotate(0.5deg) scale(0.965); }
 }

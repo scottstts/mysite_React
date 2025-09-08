@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { artInLifeData } from './artInLife.data.js';
 import { safeHtml } from '../../lib/safeHtml.js';
-import styles from './ArtinLifeTab.module.css';
+import styles from './ArtInLifeTab.module.css';
 
 // Helper function to shuffle an array
 const shuffleArray = (array) => {
