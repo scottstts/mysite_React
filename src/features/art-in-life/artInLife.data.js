@@ -3,6 +3,20 @@ const embedTemplate = (
 );
 
 const urls = [
+  "https://www.instagram.com/p/DPyENcZiv_E/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPvbfuaikI4/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPtOdT6ChWq/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPoJVTMDMPQ/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPlMM37ihgh/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPikRJwiqIA/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPgDIFxCnC0/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPdZCdpisB2/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPbMBeQitxv/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPYUxY6Cmwv/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPVuxseis_5/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPTK2vfCqQv/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPQsbwZCq-v/?utm_source=ig_embed&amp;utm_campaign=loading",
+  "https://www.instagram.com/p/DPO3mKVCrqB/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DPLQM3zCps5/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DPJTcgWioow/?utm_source=ig_embed&amp;utm_campaign=loading",
   "https://www.instagram.com/p/DPGShNCio8z/?utm_source=ig_embed&amp;utm_campaign=loading",
