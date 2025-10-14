@@ -1,9 +1,59 @@
-import React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { safeHtml } from '@/lib/safeHtml';
 
+const IM_ON_ILLUSTRATION = '/static_assets/logo.png';
+
 const AboutTab = () => {
+  const linksRef = useRef(null);
+  const [imageHeight, setImageHeight] = useState('auto');
+
+  const updateImageHeight = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+
+    if (isDesktop && linksRef.current) {
+      setImageHeight(linksRef.current.offsetHeight);
+    } else {
+      setImageHeight('auto');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    updateImageHeight();
+
+    window.addEventListener('resize', updateImageHeight);
+
+    let observer;
+    if ('ResizeObserver' in window && linksRef.current) {
+      observer = new ResizeObserver(() => updateImageHeight());
+      observer.observe(linksRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateImageHeight);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [updateImageHeight]);
+
+  const imageStyle = {
+    ...(imageHeight === 'auto' ? {} : { height: `${imageHeight}px` }),
+    WebkitMaskImage:
+      'radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 68%, rgba(0, 0, 0, 0) 98%)',
+    maskImage:
+      'radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 68%, rgba(0, 0, 0, 0) 98%)',
+  };
+
   return (
     <>
       <Helmet>
@@ -105,53 +155,66 @@ const AboutTab = () => {
             <h3 className="text-xl font-bold mb-4 text-gray-200 text-left">
               I'm on
             </h3>
-            <div className="flex flex-col space-y-4">
-              {/* X (Twitter) Link */}
-              <a
-                href="https://x.com/scottstts"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-purple-900/30 hover:border-purple-300"
-              >
-                <i
-                  className="fa-brands fa-square-x-twitter text-2xl md:text-3xl text-purple-300 group-hover:text-purple-200"
-                  aria-hidden="true"
-                ></i>
-                <span className="text-xl text-purple-300 group-hover:text-purple-200">
-                  @scottstts
-                </span>
-              </a>
+            <div className="flex flex-col md:flex-row gap-6 md:gap-10 md:items-start md:justify-between">
+              <div ref={linksRef} className="flex flex-col space-y-4 flex-1">
+                {/* X (Twitter) Link */}
+                <a
+                  href="https://x.com/scottstts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-purple-900/30 hover:border-purple-300"
+                >
+                  <i
+                    className="fa-brands fa-square-x-twitter text-2xl md:text-3xl text-purple-300 group-hover:text-purple-200"
+                    aria-hidden="true"
+                  ></i>
+                  <span className="text-xl text-purple-300 group-hover:text-purple-200">
+                    @scottstts
+                  </span>
+                </a>
 
-              {/* LinkedIn Link */}
-              <a
-                href="https://www.linkedin.com/in/st-scottsun-inireland/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-blue-900/30 hover:border-blue-300"
-              >
-                <i
-                  className="fa-brands fa-linkedin text-2xl md:text-3xl text-blue-400 group-hover:text-blue-300"
-                  aria-hidden="true"
-                ></i>
-                <span className="text-xl text-blue-400 group-hover:text-blue-300">
-                  Scott Sun
-                </span>
-              </a>
+                {/* LinkedIn Link */}
+                <a
+                  href="https://www.linkedin.com/in/st-scottsun-inireland/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-blue-900/30 hover:border-blue-300"
+                >
+                  <i
+                    className="fa-brands fa-linkedin text-2xl md:text-3xl text-blue-400 group-hover:text-blue-300"
+                    aria-hidden="true"
+                  ></i>
+                  <span className="text-xl text-blue-400 group-hover:text-blue-300">
+                    Scott Sun
+                  </span>
+                </a>
 
-              <a
-                href="https://github.com/scottstts"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-white/30 hover:border-white"
-              >
-                <i
-                  className="fa-brands fa-github text-2xl md:text-3xl text-white group-hover:text-white"
-                  aria-hidden="true"
-                ></i>
-                <span className="text-xl text-white group-hover:text-white">
-                  scottstts
-                </span>
-              </a>
+                <a
+                  href="https://github.com/scottstts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-white/30 hover:border-white"
+                >
+                  <i
+                    className="fa-brands fa-github text-2xl md:text-3xl text-white group-hover:text-white"
+                    aria-hidden="true"
+                  ></i>
+                  <span className="text-xl text-white group-hover:text-white">
+                    scottstts
+                  </span>
+                </a>
+              </div>
+
+              <div className="flex justify-center md:justify-end items-start flex-shrink-0 md:pl-6">
+                <img
+                  src={IM_ON_ILLUSTRATION}
+                  alt="Logo"
+                  className="w-48 sm:w-56 md:w-auto max-w-full h-auto object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)] rounded-2xl"
+                  style={imageStyle}
+                  loading="lazy"
+                  onLoad={updateImageHeight}
+                />
+              </div>
             </div>
           </GlassCard>
         </div>

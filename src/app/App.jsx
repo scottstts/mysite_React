@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Helmet } from 'react-helmet-async';
 import IntroVideo from '@/ui-kit/IntroVideo/IntroVideo';
 import BackgroundEffects from '@/ui-kit/BackgroundEffects/BackgroundEffects';
 import Navigation from '@/ui-kit/Navigation/Navigation';
@@ -81,57 +80,6 @@ function App() {
 
   return (
     <>
-      <Helmet>
-        {/* Global meta tags that apply to all pages */}
-        <meta
-          name="keywords"
-          content="Scott Sun, Frontier AI Chaser, Builder, Tech Innovation, AI Development, Tech-centric Solutions, Techno Optimist"
-        />
-        <meta name="author" content="Scott Sun" />
-
-        <meta
-          property="og:title"
-          content="Scott Sun | Frontier AI Chaser & Techno Optimist"
-        />
-        <meta
-          property="og:description"
-          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://scottsun.io" />
-        <meta property="og:image" content="/static_assets/logo.jpg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="Scott Sun" />
-        <meta property="og:locale" content="en_US" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@scottstts" />
-        <meta name="twitter:creator" content="@scottstts" />
-        <meta
-          name="twitter:title"
-          content="Scott Sun | Frontier AI Chaser & Techno Optimist"
-        />
-        <meta
-          name="twitter:description"
-          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist."
-        />
-        <meta name="twitter:image" content="/static_assets/logo.jpg" />
-        <meta name="twitter:image:alt" content="Scott Sun's Website logo" />
-
-        <meta name="robots" content="index, follow" />
-        <meta name="googlebot" content="index, follow" />
-
-        {/* Instagram preconnect optimizations */}
-        <link rel="dns-prefetch" href="https://www.instagram.com" />
-        <link rel="preconnect" href="https://www.instagram.com" />
-        <link
-          rel="preconnect"
-          href="https://scontent.cdninstagram.com"
-          crossOrigin="anonymous"
-        />
-      </Helmet>
-
       {/* Intro Video */}
       {!introComplete && <IntroVideo onVideoFinished={handleVideoFinished} />}
 
