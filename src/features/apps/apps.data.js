@@ -78,14 +78,16 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
     id: 'jobguru',
     projectId: 13,
     title: 'Job Guru',
+    status: {
+      type: 'no-longer-deployed',
+      label: 'No Longer Deployed',
+    },
     tagline: 'Ingenious job landing craft.',
     description: `Job Guru is your go-to tool for creating outstanding CVs, resumes, and cover letters that make an impact. Simply input details like company information, job descriptions, specific requests, and your personal profile, and the app will customize each document to suit your needs and the role you're aiming for.<br><br>
 
 What makes Job Guru truly unique is its innovative keyword match analysis. This feature meticulously compares your written document to the original job description, breaking it down sentence by sentence. It provides clear insights to ensure your application emphasizes the skills, experiences, and terms that employers care about most.<br><br>
 
-With Job Guru, you're not just writing—you're crafting a tailored, strategic application that boosts your chances of landing the job.<br><br>
-
-[This app is no longer deployed. See GitHub repo directly.]`,
+With Job Guru, you're not just writing—you're crafting a tailored, strategic application that boosts your chances of landing the job.<br><br>`,
     images: ['jobguru1.jpeg', 'jobguru2.jpeg', 'jobguru3.jpeg'],
     link: 'https://github.com/scottstts/jobguru-production',
   },

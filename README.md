@@ -168,6 +168,27 @@ To add new content (like a new project or app) to an existing tab:
 2.  **Append a new object**: Add a new object to the exported array with the required content.
 3.  The tab component will automatically render the new entry in its own `GlassCard`—no changes to the JSX are needed.
 
+### Marking Apps as “No Longer Deployed”
+
+Apps can surface a reusable status stamp beside their title without touching the component markup:
+
+1. Open `src/features/apps/apps.data.js` and locate the app entry you want to flag.
+2. Add a `status` field with a `type` and `label`. For example:
+
+```js
+{
+  id: 'jobguru',
+  title: 'Job Guru',
+  status: {
+    type: 'no-longer-deployed',
+    label: 'No Longer Deployed',
+  },
+  // ...rest of the app metadata
+}
+```
+
+The `AppsTab` component automatically renders the `StatusStamp` to the right of the title when `status` exists. You can reuse `type: 'no-longer-deployed'` for other entries or extend the styling in `src/features/apps/AppsTab.jsx` by adding new keys to the `statusStyles` map.
+
 -----
 
 ## 📝 General Guidelines for Extension
