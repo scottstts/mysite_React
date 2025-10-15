@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 
 const Navigation = ({ activeTab }) => {
   const tabs = [
-    { id: 'about', label: 'Me & My Beliefs', path: '/about' },
-    { id: 'projects', label: 'My Learning & Projects', path: '/projects' },
-    { id: 'apps', label: 'My Apps', path: '/apps' },
-    { id: 'inspirations', label: 'My Inspirations', path: '/inspirations' },
+    { id: 'about', label: 'Me & Beliefs', path: '/about' },
+    { id: 'projects', label: 'Learning Journey', path: '/projects' },
+    { id: 'apps', label: 'Apps', path: '/apps' },
+    { id: 'inspirations', label: 'Inspirations', path: '/inspirations' },
     { id: 'art-in-life', label: 'Art in Life', path: '/art-in-life' },
   ];
 
