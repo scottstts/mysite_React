@@ -748,6 +748,16 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
     .starfield-effect, .nebula-effect, body::before, body::after {
         animation: none !important;
     }
+
+    .cybr-glitch-img,
+    .cybr-glitch-img__slice {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .cybr-glitch-img__slice {
+        opacity: 0 !important;
+    }
 }
 
 /* Enhanced footer with more sophisticated styling */

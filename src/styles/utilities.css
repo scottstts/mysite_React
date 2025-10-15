@@ -162,4 +162,77 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer)::after {
 
 a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
     transform: scaleX(1);
-} 
+}
+
+/* Cyberpunk glitch image effect based on Cyberpunk 2077 button guide */
+.cybr-glitch-img {
+    --primary: transparent;
+    --border: 6;
+    --shimmy-distance: 3;
+    --glitch-duration: 2.5s;
+    --clip-base: polygon(0 0, 100% 0, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 70%);
+    --clip-one: polygon(0 2%, 100% 2%, 100% 95%, 95% 95%, 95% 90%, 85% 90%, 85% 95%, 8% 95%, 0 70%);
+    --clip-two: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+    --clip-three: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
+    --clip-four: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+    --clip-five: var(--clip-four);
+    --clip-six: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+    --clip-seven: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
+    position: relative;
+    display: inline-block;
+    border-radius: 1rem;
+    isolation: isolate;
+    will-change: transform;
+    animation: cybr-glitch-frame var(--glitch-duration) linear infinite;
+}
+
+.cybr-glitch-img::before,
+.cybr-glitch-img::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: var(--clip-base);
+    border-radius: inherit;
+    z-index: -2;
+}
+
+.cybr-glitch-img::before,
+.cybr-glitch-img::after {
+    display: none;
+}
+
+.cybr-glitch-img__base {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    clip-path: var(--clip-base);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.cybr-glitch-img__slice {
+    position: absolute;
+    top: calc(var(--border) * -1px);
+    left: calc(var(--border) * -1px);
+    right: calc(var(--border) * -1px);
+    bottom: calc(var(--border) * -1px);
+    object-fit: contain;
+    clip-path: var(--clip-base);
+    pointer-events: none;
+    mix-blend-mode: lighten;
+    opacity: 0;
+    animation: cybr-glitch-anim var(--glitch-duration) linear infinite;
+    z-index: 0;
+}
+
+.cybr-glitch-img__slice--cyan {
+    filter: hue-rotate(160deg) saturate(1.6);
+    animation-delay: calc(var(--glitch-duration) * -0.12);
+}
+
+.cybr-glitch-img__slice--magenta {
+    filter: hue-rotate(-40deg) saturate(1.4);
+    mix-blend-mode: lighten;
+    animation-delay: calc(var(--glitch-duration) * -0.04);
+}

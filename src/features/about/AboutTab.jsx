@@ -48,10 +48,6 @@ const AboutTab = () => {
 
   const imageStyle = {
     ...(imageHeight === 'auto' ? {} : { height: `${imageHeight}px` }),
-    WebkitMaskImage:
-      'radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 68%, rgba(0, 0, 0, 0) 98%)',
-    maskImage:
-      'radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 68%, rgba(0, 0, 0, 0) 98%)',
   };
 
   return (
@@ -206,14 +202,30 @@ const AboutTab = () => {
               </div>
 
               <div className="flex justify-center md:justify-end items-start flex-shrink-0 md:pl-6">
-                <img
-                  src={IM_ON_ILLUSTRATION}
-                  alt="Logo"
-                  className="w-48 sm:w-56 md:w-auto max-w-full h-auto object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)] rounded-2xl"
-                  style={imageStyle}
-                  loading="lazy"
-                  onLoad={updateImageHeight}
-                />
+                <div className="cybr-glitch-img">
+                  <img
+                    src={IM_ON_ILLUSTRATION}
+                    alt="Logo"
+                    className="w-48 sm:w-56 md:w-auto max-w-full h-auto object-contain rounded-2xl cybr-glitch-img__base"
+                    style={imageStyle}
+                    loading="lazy"
+                    onLoad={updateImageHeight}
+                  />
+                  <img
+                    src={IM_ON_ILLUSTRATION}
+                    alt=""
+                    aria-hidden="true"
+                    className="cybr-glitch-img__slice cybr-glitch-img__slice--cyan"
+                    loading="lazy"
+                  />
+                  <img
+                    src={IM_ON_ILLUSTRATION}
+                    alt=""
+                    aria-hidden="true"
+                    className="cybr-glitch-img__slice cybr-glitch-img__slice--magenta"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             </div>
           </GlassCard>
