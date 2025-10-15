@@ -182,8 +182,6 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
     display: inline-block;
     border-radius: 1rem;
     isolation: isolate;
-    will-change: transform;
-    animation: cybr-glitch-frame var(--glitch-duration) linear infinite;
 }
 
 .cybr-glitch-img::before,
