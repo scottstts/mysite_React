@@ -1,13 +1,73 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { safeHtml } from '@/lib/safeHtml';
 
 const IM_ON_ILLUSTRATION = '/static_assets/logo.png';
+const SCANLINE_SLICE_COUNT = 200;
+const SCANLINE_DURATION = 4; // seconds
 
 const AboutTab = () => {
   const linksRef = useRef(null);
+  const glitchContainerRef = useRef(null);
   const [imageHeight, setImageHeight] = useState('auto');
+  const [glitchSize, setGlitchSize] = useState({ width: 0, height: 0 });
+
+  const updateGlitchSize = useCallback(() => {
+    const container = glitchContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const { offsetWidth, offsetHeight } = container;
+    const nextWidth = offsetWidth;
+    const nextHeight = offsetHeight;
+
+    setGlitchSize((previous) => {
+      if (previous.width === nextWidth && previous.height === nextHeight) {
+        return previous;
+      }
+
+      return {
+        width: nextWidth,
+        height: nextHeight,
+      };
+    });
+  }, []);
+
+  const scanlineSlices = useMemo(() => {
+    if (!glitchSize.width || !glitchSize.height) {
+      return [];
+    }
+
+    const sliceHeightPx = glitchSize.height / SCANLINE_SLICE_COUNT;
+    const backgroundSize = `${glitchSize.width}px ${glitchSize.height}px`;
+
+    return Array.from({ length: SCANLINE_SLICE_COUNT }, (_, index) => {
+      const delay = (-SCANLINE_DURATION / SCANLINE_SLICE_COUNT) * index;
+      const topPx = sliceHeightPx * index;
+      const backgroundOffsetPx = -topPx;
+
+      return (
+        <span
+          key={index}
+          className="cybr-glitch-img__scanline"
+          aria-hidden="true"
+          style={{
+            top: `${topPx}px`,
+            height: `${sliceHeightPx}px`,
+            backgroundImage: `url(${IM_ON_ILLUSTRATION})`,
+            backgroundSize,
+            backgroundPosition: `0px ${backgroundOffsetPx}px`,
+            '--glitch-offset-y': `${backgroundOffsetPx}px`,
+            animationDelay: `${delay}s`,
+            animationDuration: `${SCANLINE_DURATION}s`,
+          }}
+        />
+      );
+    });
+  }, [glitchSize.height, glitchSize.width]);
 
   const updateImageHeight = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -45,6 +105,34 @@ const AboutTab = () => {
       }
     };
   }, [updateImageHeight]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    updateGlitchSize();
+
+    window.addEventListener('resize', updateGlitchSize);
+
+    let observer;
+    if ('ResizeObserver' in window && glitchContainerRef.current) {
+      observer = new ResizeObserver(() => updateGlitchSize());
+      observer.observe(glitchContainerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateGlitchSize);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [updateGlitchSize]);
+
+  const handleImageLoad = useCallback(() => {
+    updateImageHeight();
+    updateGlitchSize();
+  }, [updateGlitchSize, updateImageHeight]);
 
   const imageStyle = {
     ...(imageHeight === 'auto' ? {} : { height: `${imageHeight}px` }),
@@ -202,14 +290,14 @@ const AboutTab = () => {
               </div>
 
               <div className="flex justify-center md:justify-end items-start flex-shrink-0 md:pl-6">
-                <div className="cybr-glitch-img">
+                <div className="cybr-glitch-img" ref={glitchContainerRef}>
                   <img
                     src={IM_ON_ILLUSTRATION}
                     alt="Logo"
                     className="w-48 sm:w-56 md:w-auto max-w-full h-auto object-contain rounded-2xl cybr-glitch-img__base"
                     style={imageStyle}
                     loading="lazy"
-                    onLoad={updateImageHeight}
+                    onLoad={handleImageLoad}
                   />
                   <img
                     src={IM_ON_ILLUSTRATION}
@@ -225,6 +313,16 @@ const AboutTab = () => {
                     className="cybr-glitch-img__slice cybr-glitch-img__slice--magenta"
                     loading="lazy"
                   />
+                  <div
+                    className="cybr-glitch-img__scanlines"
+                    aria-hidden="true"
+                    style={{
+                      '--glitch-line-count': `${SCANLINE_SLICE_COUNT}`,
+                      '--glitch-scanline-duration': `${SCANLINE_DURATION}s`,
+                    }}
+                  >
+                    {scanlineSlices}
+                  </div>
                 </div>
               </div>
             </div>
