@@ -184,57 +184,6 @@ const AboutTab = () => {
         </GlassCard>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <GlassCard className="rounded-xl p-6">
-            <h3 className="text-xl font-bold mb-4 text-gray-200 text-left">
-              My Mission
-            </h3>
-            <p className="text-white leading-relaxed text-left">
-              Intelligence is the scaffold upon which we build the future of
-              business and society. When intelligence can be artificially
-              created and arbitrarily duplicated, this scaffold gains the
-              capacity to extend beyond imagination.{' '}
-              <span className="font-bold text-yellow-200">
-                My role is to be a builder on this scaffold – crafting useful
-                tools that fundamentally reconstruct how we think about tech
-                business logic, product-market fit, operational excellence, and
-                resource allocation.
-              </span>{' '}
-              I want to reimagine these foundational elements in light of our
-              new technological capabilities. I want to be a part of this
-              profound intelligence revolution in how we create and capture
-              value.{' '}
-              <span className="font-bold text-yellow-200">
-                The techno-capital engine is leading the charge, and I am an
-                agent of change.
-              </span>{' '}
-              The impact will not be immediate, but it will be impossible to
-              ignore.
-            </p>
-          </GlassCard>
-
-          <GlassCard className="rounded-xl p-6">
-            <h3 className="text-xl font-bold mb-4 text-gray-200 text-left">
-              Source of Strength
-            </h3>
-            <p className="text-white leading-relaxed text-left">
-              At the moment the pace of AI innovation demands constant evolution
-              of understanding.{' '}
-              <span className="font-bold text-yellow-200">
-                The source of my strength is continuous and constant learning
-                and researching in cyclic feedback, from the latest AI research
-                papers on arXiv to the extraordinary projects and tools on
-                GitHub, from the immediate first-hand discussions and demos on 𝕏
-                to the deep dives in podcasts, blog posts, and books.
-              </span>{' '}
-              I live at the intersection of AI research, product development,
-              tech industry strategy, and VC/startups – fields that are mutually
-              reinforcing. Yesterday's cutting-edge is today's baseline. The
-              value of following these developments and understanding them
-              deeply compounds over time, creating unmatched insights for
-              decision-making and innovation.
-            </p>
-          </GlassCard>
-
           <GlassCard className="rounded-xl p-6 md:col-span-2">
             <h3 className="text-xl font-bold mb-4 text-gray-200 text-left">
               I'm on
