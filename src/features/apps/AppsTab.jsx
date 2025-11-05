@@ -87,16 +87,18 @@ const AppsTab = () => {
               )}
 
               {/* Button */}
-              <div className="mt-6 text-left">
-                <a
-                  href={app.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="view-button inline-flex items-center px-6 py-3 text-base md:text-lg font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 transition-all duration-200"
-                >
-                  Check out {app.title}
-                </a>
-              </div>
+              {app.showLink && app.link && (
+                <div className="mt-6 text-left">
+                  <a
+                    href={app.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="view-button inline-flex items-center px-6 py-3 text-base md:text-lg font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 transition-all duration-200"
+                  >
+                    Check out {app.title}
+                  </a>
+                </div>
+              )}
             </div>
           </GlassCard>
         ))}

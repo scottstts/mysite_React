@@ -17,6 +17,7 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
       'ingrelab_ingredients.jpeg',
     ],
     link: 'https://ingrelab.scottsun.io',
+    showLink: true,
   },
   {
     id: 'eventhorizon',
@@ -26,6 +27,7 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
     description: `Wandering on a lonesome and desolate planet orbiting a black hole. Face the event horizon.`,
     images: ['eventhorizon1.jpeg', 'eventhorizon2.jpeg'],
     link: 'https://eventhorizon.scottsun.io',
+    showLink: true,
   },
   {
     id: 'mycraft',
@@ -49,6 +51,7 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
       },
     ],
     link: 'https://mycraft.scottsun.io',
+    showLink: true,
   },
   {
     id: 'learntube',
@@ -69,6 +72,7 @@ Tailored for YouTube—especially long-form interviews and podcasts—LearnTube 
       'learntube6.jpeg',
     ],
     link: 'https://learntube.scottsun.io',
+    showLink: true,
   },
   {
     id: 'imgsherlock',
@@ -82,6 +86,7 @@ You see, SoTA AI image generation has become so advanced that depending solely o
 ImgSherlock is a web app that allows you to upload an image, identify if it's likely AI-generated, and get a detailed analysis.<br><br>`,
     images: ['imgsherlock1.jpeg', 'imgsherlock2.jpeg', 'imgsherlock3.jpeg'],
     link: 'https://imgsherlock.scottsun.io',
+    showLink: true,
   },
   {
     id: 'jobguru',
@@ -99,5 +104,6 @@ What makes Job Guru truly unique is its innovative keyword match analysis. This 
 With Job Guru, you're not just writing—you're crafting a tailored, strategic application that boosts your chances of landing the job.<br><br>`,
     images: ['jobguru1.jpeg', 'jobguru2.jpeg', 'jobguru3.jpeg'],
     link: 'https://github.com/scottstts/jobguru-production',
+    showLink: false,
   },
 ];
