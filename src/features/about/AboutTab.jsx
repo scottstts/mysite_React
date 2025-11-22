@@ -195,13 +195,24 @@ const AboutTab = () => {
                   href="https://x.com/scottstts"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-purple-900/30 hover:border-purple-300"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-orange-900/30 hover:border-[#d06749]"
                 >
-                  <i
-                    className="fa-brands fa-square-x-twitter text-2xl md:text-3xl text-purple-300 group-hover:text-purple-200"
-                    aria-hidden="true"
-                  ></i>
-                  <span className="text-xl text-purple-300 group-hover:text-purple-200">
+                  <span
+                    className="inline-flex items-center justify-center rounded-md group-hover:opacity-80 text-2xl md:text-3xl leading-none"
+                    style={{
+                      backgroundImage: 'url(/static_assets/mars_texture.jpeg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      width: '0.9em',
+                      height: '0.9em',
+                    }}
+                  >
+                    <i
+                      className="fa-brands fa-x-twitter text-white leading-none text-inherit transform scale-70"
+                      aria-hidden="true"
+                    ></i>
+                  </span>
+                  <span className="text-xl text-[#d06749] group-hover:text-[#e07859]">
                     @scottstts
                   </span>
                 </a>
