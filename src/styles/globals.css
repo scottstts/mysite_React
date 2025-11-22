@@ -172,7 +172,7 @@ nav::after {
 
 /* More sophisticated button styling */
 .view-button {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: var(--card-bg);
     color: white;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
@@ -180,15 +180,15 @@ nav::after {
     border-radius: 0.5rem;
     font-weight: 500;
     letter-spacing: 0.01em;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid white;
 }
 
 .view-button:hover {
     transform: translateY(-3px);
     box-shadow:
-        0 4px 20px rgba(99, 102, 241, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.1),
-        0 0 30px rgba(99, 102, 241, 0.2);
+        0 4px 20px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 /* More dramatic button hover effect */
