@@ -122,7 +122,7 @@ nav::after {
     left: 50%;
     width: 50%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--electric-blue), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
     transform: translateX(-50%);
     opacity: 0.5;
 }

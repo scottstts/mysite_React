@@ -179,7 +179,7 @@ const AboutTab = () => {
 
             Technology has also been historically proven to be the only robust, consistent, and effective means to combat various social disparities, both directly and indirectly.<br /><br />
 
-            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span> <i class="fa-solid fa-ghost" aria-hidden="true"></i>.`)}
+            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span>.`)}
           />
         </GlassCard>
 
