@@ -45,8 +45,8 @@ const IntroVideo = ({ onVideoFinished }) => {
     // Start loading video immediately
     video.load();
 
-    // When video can play through, play it
-    const handleCanPlayThrough = () => {
+    // When the first frame is ready, start playback (avoid waiting for full buffer)
+    const handleCanPlay = () => {
       video.play().catch((error) => {
         console.error('Video play failed:', error);
         handleVideoFinished(); // Treat inability to play as an error/skip
@@ -74,14 +74,14 @@ const IntroVideo = ({ onVideoFinished }) => {
     }, 5000); // 5 seconds
 
     // Add event listeners
-    video.addEventListener('canplaythrough', handleCanPlayThrough);
+    video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('error', handleError);
 
     // Cleanup
     return () => {
       clearTimeout(videoLoadTimeout);
-      video.removeEventListener('canplaythrough', handleCanPlayThrough);
+      video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('error', handleError);
     };

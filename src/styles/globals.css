@@ -23,7 +23,7 @@ body {
 
 :root {
     /* Tune intro video framing on mobile (x y). Example: '12% center' nudges focus left */
-    --intro-video-pos-mobile: 29% center;
+    --intro-video-pos-mobile: 28% center;
 }
 
 /* Looped video background sitting behind overlays/content */
