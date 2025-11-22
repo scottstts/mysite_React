@@ -54,7 +54,7 @@
 /* Specific fixes for iOS Safari */
 @supports (-webkit-touch-callout: none) {
     .scroll-top-button {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.1);
         -webkit-tap-highlight-color: transparent;
         /* Remove default tap highlight */
     }

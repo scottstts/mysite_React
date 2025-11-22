@@ -16,6 +16,13 @@ We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
       'ingrelab_product.jpeg',
       'ingrelab_ingredients.jpeg',
     ],
+    videos: [
+      {
+        id: 'youtube-player-4',
+        videoId: 'lyOfGwCf9XA',
+        title: 'IngreLab',
+      },
+    ],
     link: 'https://ingrelab.scottsun.io',
     showLink: true,
   },
