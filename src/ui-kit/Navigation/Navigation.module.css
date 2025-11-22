@@ -47,16 +47,16 @@
 
 @media (max-width: 1024px) {
     .navigation {
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      gap: 1rem;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
     }
-    
+
     .tab-button {
-      width: 100%;
-      text-align: center;
-      padding: 0.75rem;
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem;
     }
 }
 
@@ -68,19 +68,19 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, var(--electric-blue), var(--neon-purple));
+    background: white;
     transform: scaleX(0);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 10px var(--accent-glow);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .tab-button.active {
     color: var(--text-primary);
-    text-shadow: 0 0 10px var(--accent-glow);
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid white;
 }
 
 .tab-button.active::after {
     transform: scaleX(1);
-} 
+}
