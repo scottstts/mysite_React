@@ -124,6 +124,7 @@ nav {
     margin-bottom: 3rem;
     padding: 1.5rem 1rem 0;
     position: relative;
+    backdrop-filter: blur(2px);
 }
 
 /* Add a subtle glow line under the navigation */
@@ -242,8 +243,8 @@ nav::after {
 .tab-button {
     position: relative;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    background: transparent;
-    color: var(--text-secondary);
+    background: rgba(8, 12, 24, 0.55);
+    color: var(--text-primary);
     white-space: nowrap;
     width: auto;
     flex: 0 0 auto;
@@ -251,13 +252,21 @@ nav::after {
     border-radius: 0.5rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .tab-button:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow:
+        0 14px 40px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 @media (max-width: 1024px) {
@@ -290,10 +299,14 @@ nav::after {
 }
 
 .tab-button.active {
-    color: var(--text-primary);
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid white;
+    color: white;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 16px 45px rgba(0, 0, 0, 0.45),
+        0 0 0 2px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .tab-button.active::after {
