@@ -35,6 +35,8 @@ body::before {
     background-repeat: no-repeat !important;
     z-index: -2;
     opacity: 1 !important;
+    filter: blur(5px);
+    /* Subtle blur for static background */
 }
 
 /* Dark overlay to blend with the image */
@@ -47,59 +49,6 @@ body::after {
     height: 100%;
     background: linear-gradient(to right, rgba(3, 7, 17, 0.85), rgba(0, 0, 30, 0.82));
     z-index: -1;
-}
-
-/* Enhanced starfield effect with more depth and variation */
-.starfield-effect {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 400%;
-    background-image:
-        radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
-        radial-gradient(1.5px 1.5px at 40px 70px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
-        radial-gradient(2px 2px at 90px 40px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
-        radial-gradient(2.5px 2.5px at 160px 120px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
-        radial-gradient(3px 3px at 200px 200px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
-        radial-gradient(3px 3px at 300px 250px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
-        radial-gradient(3.5px 3.5px at 350px 350px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0));
-    background-repeat: repeat;
-    background-size: 400px 400px;
-    animation: starfield 120s linear infinite;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.85;
-    transform: translateY(0) rotate(calc(var(--mouse-x) * 0.05)) translateX(calc(var(--mouse-y) * 0.05));
-}
-
-/* More dynamic nebula effect with cosmic colors */
-.nebula-effect {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background:
-        radial-gradient(circle at 30% 50%,
-            rgba(59, 130, 246, 0.15) 0%,
-            rgba(15, 23, 42, 0) 70%),
-        radial-gradient(circle at 85% 30%,
-            rgba(124, 58, 237, 0.12) 0%,
-            rgba(15, 23, 42, 0) 65%),
-        radial-gradient(circle at 70% 80%,
-            rgba(0, 229, 255, 0.1) 0%,
-            rgba(15, 23, 42, 0) 60%),
-        radial-gradient(circle at 15% 90%,
-            rgba(139, 92, 246, 0.08) 0%,
-            rgba(15, 23, 42, 0) 70%);
-    filter: blur(90px);
-    mix-blend-mode: screen;
-    animation: nebula 40s ease infinite alternate;
-    pointer-events: none;
-    z-index: 2;
 }
 
 /* Enhanced grid overlay with subtle digital grid pattern */
@@ -119,37 +68,7 @@ body::after {
 }
 
 /* Enhanced starfield animation with more realistic space movement */
-@keyframes starfield {
-    0% {
-        transform: translateY(0) rotate(0.5deg);
-    }
 
-    50% {
-        transform: translateY(-50%) rotate(0deg);
-    }
-
-    100% {
-        transform: translateY(-75%) rotate(-0.5deg);
-    }
-}
-
-/* Enhanced nebula animation for cosmic depth */
-@keyframes nebula {
-    0% {
-        opacity: 0.7;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.9;
-        transform: scale(1.15) rotate(1deg);
-    }
-
-    100% {
-        opacity: 0.8;
-        transform: scale(1.1) rotate(-1deg);
-    }
-}
 
 /* More subtle grid pulse for tech feel */
 @keyframes gridPulse {

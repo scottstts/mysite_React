@@ -8,7 +8,7 @@ export const apps = [
 
 IngreLab peels away the fancy packaging and drills down to the ingredients. You just scan the barcode, and it analyzes these health risk factors and builds a risk profile on the ingredients.<br><br>
 
-We all should know what we eat. IngreLab fuels your “Food Intelligence”.`,
+We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     images: [
       'ingrelab_login.jpeg',
       'ingrelab_home.jpeg',

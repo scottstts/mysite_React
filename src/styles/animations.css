@@ -1,42 +1,15 @@
-/* Enhanced starfield animation with more realistic space movement */
-@keyframes starfield {
-    0% {
-        transform: translateY(0) rotate(0.5deg);
-    }
-    50% {
-        transform: translateY(-50%) rotate(0deg);
-    }
-    100% {
-        transform: translateY(-75%) rotate(-0.5deg);
-    }
-}
-
-/* Enhanced nebula animation for cosmic depth */
-@keyframes nebula {
-    0% {
-        opacity: 0.7;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.9;
-        transform: scale(1.15) rotate(1deg);
-    }
-    100% {
-        opacity: 0.8;
-        transform: scale(1.1) rotate(-1deg);
-    }
-}
-
 /* More subtle grid pulse for tech feel */
 @keyframes gridPulse {
     0% {
         opacity: 0.3;
         background-size: 30px 30px;
     }
+
     50% {
         opacity: 0.4;
         background-size: 32px 32px;
     }
+
     100% {
         opacity: 0.3;
         background-size: 31px 31px;
@@ -48,6 +21,7 @@
         box-shadow: 0 0 8px var(--accent-glow);
         opacity: 0.8;
     }
+
     100% {
         box-shadow: 0 0 15px var(--accent-glow);
         opacity: 1;
@@ -56,31 +30,43 @@
 
 /* Enhanced fade-in animation */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes text-flicker {
-    0%, 100% {
-        text-shadow: 
+
+    0%,
+    100% {
+        text-shadow:
             0 0 1px rgba(255, 215, 0, 0.3),
             0 0 2px rgba(255, 215, 0, 0.2),
             0 0 3px rgba(255, 215, 0, 0.1);
     }
+
     25% {
-        text-shadow: 
+        text-shadow:
             0 0 2px rgba(255, 215, 0, 0.5),
             0 0 4px rgba(255, 215, 0, 0.3),
             0 0 6px rgba(255, 215, 0, 0.2);
     }
+
     50% {
-        text-shadow: 
+        text-shadow:
             0 0 1px rgba(255, 215, 0, 0.3),
             0 0 2px rgba(255, 215, 0, 0.2),
             0 0 3px rgba(255, 215, 0, 0.1);
     }
+
     75% {
-        text-shadow: 
+        text-shadow:
             0 0 3px rgba(255, 215, 0, 0.6),
             0 0 5px rgba(255, 215, 0, 0.4),
             0 0 7px rgba(255, 215, 0, 0.2);
@@ -93,11 +79,13 @@
         transform: scaleX(0.8);
         box-shadow: 0 0 5px #ffd700;
     }
+
     50% {
         opacity: 0.9;
         transform: scaleX(1.05);
         box-shadow: 0 0 15px #ffd700, 0 0 20px rgba(255, 215, 0, 0.3);
     }
+
     100% {
         opacity: 0.5;
         transform: scaleX(1);
@@ -109,27 +97,39 @@
     0% {
         opacity: 0;
     }
+
     50% {
         opacity: 0.7;
     }
+
     100% {
         opacity: 0;
     }
 }
-  
+
 @keyframes shine {
-    0% { background-position: 0% center; }
-    50% { background-position: 100% center; }
-    100% { background-position: 0% center; }
+    0% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 100% center;
+    }
+
+    100% {
+        background-position: 0% center;
+    }
 }
 
 @keyframes buttonFloat {
     0% {
         transform: translateY(0);
     }
+
     50% {
         transform: translateY(-8px);
     }
+
     100% {
         transform: translateY(0);
     }
@@ -137,8 +137,13 @@
 
 /* Fix for fadeIn/fadeOut animations */
 @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }
 
 .tns-fadeIn {
@@ -150,8 +155,13 @@
 }
 
 @keyframes scanlines {
-    0% { background-position: 0 -100vh; }
-    100% { background-position: 0 100vh; }
+    0% {
+        background-position: 0 -100vh;
+    }
+
+    100% {
+        background-position: 0 100vh;
+    }
 }
 
 @keyframes lineGlow {
@@ -159,6 +169,7 @@
         opacity: 0.2;
         transform: scaleX(0.8);
     }
+
     100% {
         opacity: 0.5;
         transform: scaleX(1);
@@ -167,8 +178,15 @@
 
 /* Enhanced loading state */
 @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
-    50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.7); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
+    }
 }
 
 @keyframes cybr-glitch-anim {
@@ -177,62 +195,81 @@
         clip-path: var(--clip-one);
         transform: translate3d(0, 0, 0);
     }
+
     1% {
         opacity: 1;
     }
-    2%, 8% {
+
+    2%,
+    8% {
         clip-path: var(--clip-two);
         transform: translate3d(calc(var(--shimmy-distance) * -1%), 0, 0);
     }
+
     6% {
         clip-path: var(--clip-two);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     9% {
         clip-path: var(--clip-two);
         transform: translate3d(0, 0, 0);
     }
+
     10% {
         clip-path: var(--clip-three);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     13% {
         clip-path: var(--clip-three);
         transform: translate3d(0, 0, 0);
     }
-    14%, 21% {
+
+    14%,
+    21% {
         clip-path: var(--clip-four);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     25% {
         clip-path: var(--clip-five);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     30% {
         clip-path: var(--clip-five);
         transform: translate3d(calc(var(--shimmy-distance) * -1%), 0, 0);
     }
-    35%, 45% {
+
+    35%,
+    45% {
         clip-path: var(--clip-six);
         transform: translate3d(calc(var(--shimmy-distance) * -1%), 0, 0);
     }
+
     40% {
         clip-path: var(--clip-six);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     50% {
         clip-path: var(--clip-six);
         transform: translate3d(0, 0, 0);
     }
+
     55% {
         clip-path: var(--clip-seven);
         transform: translate3d(calc(var(--shimmy-distance) * 1%), 0, 0);
     }
+
     60% {
         clip-path: var(--clip-seven);
         transform: translate3d(0, 0, 0);
     }
-    61%, 100% {
+
+    61%,
+    100% {
         clip-path: var(--clip-four);
         opacity: 0;
         transform: translate3d(0, 0, 0);
@@ -240,24 +277,36 @@
 }
 
 @keyframes cybr-glitch-frame {
-    0%, 4%, 48%, 52%, 96%, 100% {
+
+    0%,
+    4%,
+    48%,
+    52%,
+    96%,
+    100% {
         transform: translate3d(0, 0, 0);
     }
+
     1% {
         transform: translate3d(0.8px, 0.6px, 0);
     }
+
     2% {
         transform: translate3d(-0.8px, -0.6px, 0);
     }
+
     3% {
         transform: translate3d(0.4px, -0.5px, 0);
     }
+
     49% {
         transform: translate3d(-0.6px, 0.4px, 0);
     }
+
     50% {
         transform: translate3d(0.6px, -0.4px, 0);
     }
+
     51% {
         transform: translate3d(-0.3px, 0.3px, 0);
     }
