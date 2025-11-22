@@ -4,6 +4,7 @@
 .fade-in {
     @apply animate-fade-in;
 }
+
 .fade-out {
     @apply animate-fade-out;
 }
@@ -56,7 +57,7 @@ body::after {
     left: 0;
     width: 100%;
     height: 400%;
-    background-image: 
+    background-image:
         radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
         radial-gradient(1.5px 1.5px at 40px 70px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
         radial-gradient(2px 2px at 90px 40px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
@@ -81,17 +82,17 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
-        radial-gradient(circle at 30% 50%, 
+    background:
+        radial-gradient(circle at 30% 50%,
             rgba(59, 130, 246, 0.15) 0%,
             rgba(15, 23, 42, 0) 70%),
-        radial-gradient(circle at 85% 30%, 
+        radial-gradient(circle at 85% 30%,
             rgba(124, 58, 237, 0.12) 0%,
             rgba(15, 23, 42, 0) 65%),
-        radial-gradient(circle at 70% 80%, 
+        radial-gradient(circle at 70% 80%,
             rgba(0, 229, 255, 0.1) 0%,
             rgba(15, 23, 42, 0) 60%),
-        radial-gradient(circle at 15% 90%, 
+        radial-gradient(circle at 15% 90%,
             rgba(139, 92, 246, 0.08) 0%,
             rgba(15, 23, 42, 0) 70%);
     filter: blur(90px);
@@ -108,7 +109,7 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
+    background-image:
         linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
     background-size: 40px 40px;
@@ -122,9 +123,11 @@ body::after {
     0% {
         transform: translateY(0) rotate(0.5deg);
     }
+
     50% {
         transform: translateY(-50%) rotate(0deg);
     }
+
     100% {
         transform: translateY(-75%) rotate(-0.5deg);
     }
@@ -136,10 +139,12 @@ body::after {
         opacity: 0.7;
         transform: scale(1);
     }
+
     50% {
         opacity: 0.9;
         transform: scale(1.15) rotate(1deg);
     }
+
     100% {
         opacity: 0.8;
         transform: scale(1.1) rotate(-1deg);
@@ -152,10 +157,12 @@ body::after {
         opacity: 0.3;
         background-size: 30px 30px;
     }
+
     50% {
         opacity: 0.4;
         background-size: 32px 32px;
     }
+
     100% {
         opacity: 0.3;
         background-size: 31px 31px;
@@ -203,15 +210,18 @@ nav::after {
 
 /* Enhanced page title with more dramatic effect */
 .page-title {
-    background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6); */
+    /* -webkit-background-clip: text; */
+    /* background-clip: text; */
+    /* color: transparent; */
+    color: black;
+    font-family: 'Outfit', sans-serif;
+    -webkit-text-stroke: 2px white;
     position: relative;
     display: inline-block;
     font-weight: 800;
     letter-spacing: -0.025em;
-    text-shadow: 0 0 20px var(--accent-glow);
+    /* text-shadow: 0 0 20px var(--accent-glow); */
 }
 
 /* Animated underline for page title */
@@ -222,7 +232,7 @@ nav::after {
     left: 0;
     width: 60%;
     height: 3px;
-    background: linear-gradient(90deg, var(--electric-blue), var(--neon-purple));
+    background: white;
     border-radius: 4px;
     transform: translateX(33%);
     box-shadow: 0 0 12px var(--accent-glow);
@@ -234,6 +244,7 @@ nav::after {
         box-shadow: 0 0 8px var(--accent-glow);
         opacity: 0.8;
     }
+
     100% {
         box-shadow: 0 0 15px var(--accent-glow);
         opacity: 1;
@@ -255,7 +266,7 @@ nav::after {
 
 .view-button:hover {
     transform: translateY(-3px);
-    box-shadow: 
+    box-shadow:
         0 4px 20px rgba(99, 102, 241, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.1),
         0 0 30px rgba(99, 102, 241, 0.2);
@@ -280,8 +291,15 @@ nav::after {
 
 /* Enhanced fade-in animation */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fade-in {
@@ -313,16 +331,16 @@ nav::after {
 
 @media (max-width: 1024px) {
     nav {
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      gap: 1rem;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
     }
-    
+
     .tab-button {
-      width: 100%;
-      text-align: center;
-      padding: 0.75rem;
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem;
     }
 }
 
@@ -369,7 +387,7 @@ nav::after {
 }
 
 /* Add margin to the last glass card in each tab to prevent overlap with the footer banner */
-.tab-content > .glass-card:last-child {
+.tab-content>.glass-card:last-child {
     margin-bottom: 5rem;
 }
 
@@ -385,7 +403,7 @@ nav::after {
     animation: shine 6s linear infinite, text-flicker 8s ease-in-out infinite;
     position: relative;
     display: inline-block;
-    text-shadow: 
+    text-shadow:
         0 0 1px rgba(255, 215, 0, 0.3),
         0 0 2px rgba(255, 215, 0, 0.2),
         0 0 3px rgba(255, 215, 0, 0.1);
@@ -402,7 +420,7 @@ nav::after {
     height: 2px;
     background: linear-gradient(90deg, transparent, #ffd700, transparent);
     opacity: 0.7;
-    box-shadow: 
+    box-shadow:
         0 0 8px #ffd700,
         0 0 12px rgba(255, 215, 0, 0.5);
     animation: glow-line-pulse 4s ease-in-out infinite alternate;
@@ -423,26 +441,31 @@ nav::after {
 }
 
 @keyframes text-flicker {
-    0%, 100% {
-        text-shadow: 
+
+    0%,
+    100% {
+        text-shadow:
             0 0 1px rgba(255, 215, 0, 0.3),
             0 0 2px rgba(255, 215, 0, 0.2),
             0 0 3px rgba(255, 215, 0, 0.1);
     }
+
     25% {
-        text-shadow: 
+        text-shadow:
             0 0 2px rgba(255, 215, 0, 0.5),
             0 0 4px rgba(255, 215, 0, 0.3),
             0 0 6px rgba(255, 215, 0, 0.2);
     }
+
     50% {
-        text-shadow: 
+        text-shadow:
             0 0 1px rgba(255, 215, 0, 0.3),
             0 0 2px rgba(255, 215, 0, 0.2),
             0 0 3px rgba(255, 215, 0, 0.1);
     }
+
     75% {
-        text-shadow: 
+        text-shadow:
             0 0 3px rgba(255, 215, 0, 0.6),
             0 0 5px rgba(255, 215, 0, 0.4),
             0 0 7px rgba(255, 215, 0, 0.2);
@@ -455,11 +478,13 @@ nav::after {
         transform: scaleX(0.8);
         box-shadow: 0 0 5px #ffd700;
     }
+
     50% {
         opacity: 0.9;
         transform: scaleX(1.05);
         box-shadow: 0 0 15px #ffd700, 0 0 20px rgba(255, 215, 0, 0.3);
     }
+
     100% {
         opacity: 0.5;
         transform: scaleX(1);
@@ -471,18 +496,28 @@ nav::after {
     0% {
         opacity: 0;
     }
+
     50% {
         opacity: 0.7;
     }
+
     100% {
         opacity: 0;
     }
 }
-  
+
 @keyframes shine {
-    0% { background-position: 0% center; }
-    50% { background-position: 100% center; }
-    100% { background-position: 0% center; }
+    0% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 100% center;
+    }
+
+    100% {
+        background-position: 0% center;
+    }
 }
 
 .eater-regular {
@@ -501,14 +536,14 @@ nav::after {
     height: 100%;
     aspect-ratio: 16/9;
     border-radius: 1rem;
-    box-shadow: 
+    box-shadow:
         0 10px 30px rgba(0, 0, 0, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.1);
     /* Removed transform and transition to prevent video shifting */
 }
 
 /* Remove video container hover effects */
-  
+
 .video-container iframe {
     position: absolute;
     top: 0;
@@ -571,7 +606,12 @@ nav::after {
 }
 
 /* Enhanced typography with more sophisticated styling */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     letter-spacing: -0.025em;
     line-height: 1.2;
     margin-bottom: 0.7em;
@@ -618,7 +658,8 @@ p {
 }
 
 /* Improved focus states for accessibility */
-a:focus, button:focus {
+a:focus,
+button:focus {
     outline: 2px solid var(--button-bg);
     outline-offset: 3px;
     text-shadow: 0 0 10px var(--button-bg);
@@ -667,13 +708,15 @@ html {
     from {
         opacity: 0.5;
     }
+
     to {
         opacity: 1;
     }
 }
 
 body.intro-video-playing {
-    overflow-y: hidden; /* Hide scrollbar */
+    overflow-y: hidden;
+    /* Hide scrollbar */
 }
 
 ::-webkit-scrollbar {
@@ -696,8 +739,13 @@ body.intro-video-playing {
 
 /* Add a cyberpunk-inspired scan line effect to glass cards */
 @keyframes scanlines {
-    0% { background-position: 0 -100vh; }
-    100% { background-position: 0 100vh; }
+    0% {
+        background-position: 0 -100vh;
+    }
+
+    100% {
+        background-position: 0 100vh;
+    }
 }
 
 /* Add subtle hover effects to links */
@@ -728,8 +776,15 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
 
 /* Enhanced loading state */
 @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
-    50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.7); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
+    }
 }
 
 /* Improved accessibility */
@@ -740,12 +795,15 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
-    
+
     .glass-card:hover {
         transform: none !important;
     }
-    
-    .starfield-effect, .nebula-effect, body::before, body::after {
+
+    .starfield-effect,
+    .nebula-effect,
+    body::before,
+    body::after {
         animation: none !important;
     }
 
@@ -813,12 +871,12 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
 }
 
 /* Add margin to the last glass card in each tab to prevent overlap with the footer banner */
-.tab-content > .glass-card:last-child,
-.react-tab-content > div:last-child .glass-card:last-child,
-.about-tab > .glass-card:last-child,
-.projects-tab > .glass-card:last-child,
-.apps-tab > .glass-card:last-child,
-.inspirations-tab > div > .glass-card:last-child {
+.tab-content>.glass-card:last-child,
+.react-tab-content>div:last-child .glass-card:last-child,
+.about-tab>.glass-card:last-child,
+.projects-tab>.glass-card:last-child,
+.apps-tab>.glass-card:last-child,
+.inspirations-tab>div>.glass-card:last-child {
     margin-bottom: 5rem;
 }
 
@@ -874,7 +932,7 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
     color: var(--text-primary);
     font-size: 18px;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 
+    box-shadow:
         0 4px 12px var(--card-shadow),
         0 0 0 1px rgba(255, 255, 255, 0.05);
     opacity: 0.8;
@@ -889,7 +947,7 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
     color: white;
     opacity: 1;
     transform: scale(1.1);
-    box-shadow: 
+    box-shadow:
         0 6px 16px var(--card-shadow),
         0 0 0 1px rgba(255, 255, 255, 0.1),
         0 0 16px rgba(99, 102, 241, 0.3);
@@ -918,4 +976,4 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
         height: 40px;
         font-size: 16px;
     }
-} 
+}

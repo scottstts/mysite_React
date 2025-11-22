@@ -1,14 +1,17 @@
 /* Enhanced page title with more dramatic effect */
 .page-title {
-    background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6); */
+    /* -webkit-background-clip: text; */
+    /* background-clip: text; */
+    /* color: transparent; */
+    color: black;
+    font-family: 'Outfit', sans-serif;
+    -webkit-text-stroke: 2px white;
     position: relative;
     display: inline-block;
     font-weight: 800;
     letter-spacing: -0.025em;
-    text-shadow: 0 0 20px var(--accent-glow);
+    /* text-shadow: 0 0 20px var(--accent-glow); */
 }
 
 /* Animated underline for page title */
@@ -19,7 +22,7 @@
     left: 0;
     width: 60%;
     height: 3px;
-    background: linear-gradient(90deg, var(--electric-blue), var(--neon-purple));
+    background: white;
     border-radius: 4px;
     transform: translateX(33%);
     box-shadow: 0 0 12px var(--accent-glow);
@@ -36,7 +39,7 @@
     animation: shine 6s linear infinite, text-flicker 8s ease-in-out infinite;
     position: relative;
     display: inline-block;
-    text-shadow: 
+    text-shadow:
         0 0 1px rgba(255, 215, 0, 0.3),
         0 0 2px rgba(255, 215, 0, 0.2),
         0 0 3px rgba(255, 215, 0, 0.1);
@@ -53,7 +56,7 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, #ffd700, transparent);
     opacity: 0.7;
-    box-shadow: 
+    box-shadow:
         0 0 8px #ffd700,
         0 0 12px rgba(255, 215, 0, 0.5);
     animation: glow-line-pulse 4s ease-in-out infinite alternate;
@@ -96,7 +99,7 @@
 
 .view-button:hover {
     transform: translateY(-3px);
-    box-shadow: 
+    box-shadow:
         0 4px 20px rgba(99, 102, 241, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.1),
         0 0 30px rgba(99, 102, 241, 0.2);
