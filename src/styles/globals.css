@@ -857,17 +857,18 @@ a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
 
 .fa-code {
     font-size: 1.125rem;
-    background: linear-gradient(135deg, var(--electric-blue), var(--neon-purple));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* background: linear-gradient(135deg, var(--electric-blue), var(--neon-purple)); */
+    /* -webkit-background-clip: text; */
+    /* background-clip: text; */
+    /* color: transparent; */
+    color: white;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    filter: drop-shadow(0 0 8px var(--accent-glow));
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
 }
 
 .fixed-footer:hover .fa-code {
     transform: rotate(15deg) scale(1.3);
-    filter: drop-shadow(0 0 12px var(--accent-glow));
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
 }
 
 /* Add margin to the last glass card in each tab to prevent overlap with the footer banner */

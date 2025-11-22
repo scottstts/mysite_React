@@ -123,7 +123,7 @@ function App() {
           className="fixed-footer"
         >
           <div className="footer-content">
-            <span className="font-bold text-blue-300">View Source Repo</span>
+            <span className="font-bold text-white">View Source Repo</span>
             <i className="fa-solid fa-code" aria-hidden="true"></i>
           </div>
         </a>
