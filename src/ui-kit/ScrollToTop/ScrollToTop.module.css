@@ -94,7 +94,7 @@
 /* Mobile optimization */
 @media (max-width: 640px) {
     .scroll-top-button {
-        bottom: 3.5rem !important;
+        bottom: 1.5rem !important;
         right: 1.5rem !important;
         padding: 0.75rem;
     }

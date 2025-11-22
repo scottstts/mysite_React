@@ -115,18 +115,19 @@ function App() {
       {contentVisible && <ScrollToTop />}
 
       {/* Fixed Footer */}
+      {/* Static Footer Link */}
       {contentVisible && (
-        <a
-          href="https://github.com/scottstts/mysite_React"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed-footer"
-        >
-          <div className="footer-content">
-            <span className="font-bold text-white">View Source Repo</span>
-            <i className="fa-solid fa-code" aria-hidden="true"></i>
-          </div>
-        </a>
+        <footer className="w-full py-8 text-center">
+          <a
+            href="https://github.com/scottstts/mysite_React"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="static-footer-link inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-300"
+          >
+            <span className="text-sm font-medium">View Source Repo</span>
+            <i className="fa-solid fa-code text-xs" aria-hidden="true"></i>
+          </a>
+        </footer>
       )}
     </>
   );
