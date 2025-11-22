@@ -5,6 +5,23 @@ const IntroVideo = ({ onVideoFinished }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [videoPlaybackFinished, setVideoPlaybackFinished] = useState(false);
 
+  // Keep a CSS variable in sync with the true viewport height to avoid iOS toolbar shrinkage
+  useEffect(() => {
+    const setViewportHeightVar = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setViewportHeightVar();
+    window.addEventListener('resize', setViewportHeightVar);
+    window.addEventListener('orientationchange', setViewportHeightVar);
+
+    return () => {
+      window.removeEventListener('resize', setViewportHeightVar);
+      window.removeEventListener('orientationchange', setViewportHeightVar);
+    };
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
