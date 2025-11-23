@@ -56,6 +56,13 @@ This approach provides unique URLs for each section, improving deep linking and 
 
 The `App.jsx` component uses a `useEffect` hook that listens for changes in the route's location. It dynamically updates the `document.title` based on the active tab, ensuring the browser tab always reflects the current content. This works alongside `react-helmet-async` for managing other SEO meta tags.
 
+#### Performance Optimization
+
+To ensure the fastest possible initial load, the project employs two key strategies:
+
+  * **Critical Path Video**: The intro video logic is moved out of the React bundle and directly into `index.html`. This allows the video to start playing immediately while the rest of the app loads in the background.
+  * **Code Splitting**: The main feature tabs (`AboutTab`, `ProjectsTab`, etc.) are lazy-loaded using `React.lazy` and `Suspense`. This significantly reduces the initial JavaScript bundle size.
+
 #### Styling Architecture
 
 The project uses a hybrid styling strategy for consistency and maintainability:
@@ -138,7 +145,7 @@ export default BooksTab;
 
 In `src/app/App.jsx`:
 
-1.  Import new `BooksTab` component.
+1.  Import the new `BooksTab` component using lazy loading: `const BooksTab = React.lazy(() => import('@/features/books/BooksTab'));`
 2.  Inside the `AnimatePresence` block, add a new line to render component when its route is active: `{activeTab === 'books' && <BooksTab />}`.
 3.  Update the `getActiveTabFromPath` function to recognize the new path: `case '/books': return 'books';`.
 4.  Update the `titles` object in the `useEffect` hook to include the title for the new tab: `books: 'Books - Scott Sun'`.
