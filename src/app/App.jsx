@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import IntroVideo from '@/ui-kit/IntroVideo/IntroVideo';
 import BackgroundEffects from '@/ui-kit/BackgroundEffects/BackgroundEffects';
 import Navigation from '@/ui-kit/Navigation/Navigation';
-import AboutTab from '@/features/about/AboutTab';
-import ProjectsTab from '@/features/projects/ProjectsTab';
-import AppsTab from '@/features/apps/AppsTab';
-import InspirationsTab from '@/features/inspirations/InspirationsTab';
-import ArtInLifeTab from '@/features/art-in-life/ArtInLifeTab';
 import ScrollToTop from '@/ui-kit/ScrollToTop/ScrollToTop';
 import useMouseParallax from '@/ui-kit/hooks/useMouseParallax';
 import '@/styles/variables.css';
@@ -18,10 +12,22 @@ import '@/styles/animations.css';
 import '@/styles/glassCardEffect.css';
 import './App.css';
 
+// Lazy load tabs for better initial load performance
+const AboutTab = React.lazy(() => import('@/features/about/AboutTab'));
+const ProjectsTab = React.lazy(() => import('@/features/projects/ProjectsTab'));
+const AppsTab = React.lazy(() => import('@/features/apps/AppsTab'));
+const InspirationsTab = React.lazy(() => import('@/features/inspirations/InspirationsTab'));
+const ArtInLifeTab = React.lazy(() => import('@/features/art-in-life/ArtInLifeTab'));
+
 function App() {
   const location = useLocation();
-  const [introComplete, setIntroComplete] = useState(false);
-  const [contentVisible, setContentVisible] = useState(false);
+  // Check if video already finished (if React loaded late)
+  const [introComplete, setIntroComplete] = useState(() => 
+    document.body.classList.contains('intro-complete')
+  );
+  const [contentVisible, setContentVisible] = useState(() => 
+    document.body.classList.contains('intro-complete')
+  );
 
   // Determine active tab from route
   const getActiveTabFromPath = (pathname) => {
@@ -57,32 +63,49 @@ function App() {
     document.title = titles[activeTab] || 'Scott Sun';
   }, [activeTab]);
 
-  // Handle intro video completion
-  const handleVideoFinished = () => {
-    setIntroComplete(true);
-    document.body.classList.remove('intro-video-playing');
-    setTimeout(() => {
-      setContentVisible(true);
-    }, 100);
-  };
+  // Listen for video completion event from index.html
+  useEffect(() => {
+    if (introComplete) return;
+
+    const handleVideoFinished = () => {
+      setIntroComplete(true);
+      document.body.classList.remove('intro-video-playing');
+      setTimeout(() => {
+        setContentVisible(true);
+      }, 100);
+    };
+
+    window.addEventListener('intro-video-complete', handleVideoFinished);
+
+    // Check again in case it fired before listener was attached
+    if (document.body.classList.contains('intro-complete')) {
+        handleVideoFinished();
+    }
+
+    return () => {
+      window.removeEventListener('intro-video-complete', handleVideoFinished);
+    };
+  }, [introComplete]);
 
   // Add mouse movement tracking for background effects
   useMouseParallax();
 
-  // Apply proper body classes and ensure content becomes visible
+  // Apply proper body classes
   useEffect(() => {
     // Remove any default classes that might interfere with custom CSS
+    // But preserve intro-complete if it exists
+    const wasComplete = document.body.classList.contains('intro-complete');
     document.body.className = '';
-    if (!introComplete) {
+    
+    if (!introComplete && !wasComplete) {
       document.body.classList.add('intro-video-playing');
+    } else if (wasComplete) {
+        document.body.classList.add('intro-complete');
     }
   }, [introComplete]);
 
   return (
     <>
-      {/* Intro Video */}
-      {!introComplete && <IntroVideo onVideoFinished={handleVideoFinished} />}
-
       {/* Background Effects */}
       <BackgroundEffects />
 
@@ -102,11 +125,13 @@ function App() {
             transition={{ duration: 0.25 }}
             className="react-tab-content space-y-8"
           >
-            {activeTab === 'about' && <AboutTab />}
-            {activeTab === 'projects' && <ProjectsTab />}
-            {activeTab === 'apps' && <AppsTab />}
-            {activeTab === 'inspirations' && <InspirationsTab />}
-            {activeTab === 'art-in-life' && <ArtInLifeTab />}
+            <Suspense fallback={<div className="h-96 flex items-center justify-center text-white/50">Loading...</div>}>
+              {activeTab === 'about' && <AboutTab />}
+              {activeTab === 'projects' && <ProjectsTab />}
+              {activeTab === 'apps' && <AppsTab />}
+              {activeTab === 'inspirations' && <InspirationsTab />}
+              {activeTab === 'art-in-life' && <ArtInLifeTab />}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

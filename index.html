@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -39,29 +40,135 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Eater&family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Eater&family=Outfit:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
     <!-- Instagram preconnect optimizations -->
     <link rel="preconnect" href="https://static.cdninstagram.com" crossorigin>
-    
+
+    <!-- Critical Path Intro Video Styles -->
+    <style>
+        #intro-video-container {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background-color: black;
+            transition: opacity 0.7s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Default variable for mobile positioning */
+            --intro-video-pos-mobile: 28% center;
+        }
+
+        #intro-video-container.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #intro-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Mobile portrait: keep video full-screen and bias framing to the left */
+        @media (max-width: 900px) and (orientation: portrait) {
+            #intro-video-container {
+                bottom: -120px;
+                height: calc(100vh + 120px);
+            }
+
+            #intro-video {
+                width: 100%;
+                height: 100%;
+                object-position: var(--intro-video-pos-mobile);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="intro-video-container" role="banner" aria-label="Introduction video">
+        <video id="intro-video" playsinline muted preload="auto">
+            <source src="/static_assets/intro.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <script>
+        (function () {
+            // Viewport height fix for mobile
+            const setViewportHeightVar = () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            };
+            setViewportHeightVar();
+            window.addEventListener('resize', setViewportHeightVar);
+            window.addEventListener('orientationchange', setViewportHeightVar);
+
+            const container = document.getElementById('intro-video-container');
+            const video = document.getElementById('intro-video');
+            let videoFinished = false;
+
+            // Function to signal completion to the React app
+            const finishVideo = () => {
+                if (videoFinished) return;
+                videoFinished = true;
+
+                // Add fade-out class
+                container.classList.add('fade-out');
+
+                // Dispatch custom event for React to listen to
+                window.dispatchEvent(new CustomEvent('intro-video-complete'));
+
+                // Add class to body for React to check initial state if it loads late
+                document.body.classList.add('intro-complete');
+
+                // Remove from DOM after transition
+                setTimeout(() => {
+                    if (container.parentNode) {
+                        container.parentNode.removeChild(container);
+                    }
+                    window.scrollTo(0, 0);
+                }, 700);
+            };
+
+            // Video Event Listeners
+            video.addEventListener('ended', finishVideo);
+            video.addEventListener('error', (e) => {
+                console.error('Video error:', e);
+                finishVideo();
+            });
+
+            // Attempt to play immediately
+            video.play().catch(e => {
+                console.log('Autoplay failed or blocked, finishing intro:', e);
+                finishVideo();
+            });
+
+            // Fallback timeout (5s)
+            setTimeout(() => {
+                if (!videoFinished && video.readyState < 3) {
+                    console.warn('Video fallback timeout.');
+                    finishVideo();
+                }
+            }, 5000);
+        })();
+    </script>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
     <!-- Instagram embed SDK -->
     <script async defer src="https://www.instagram.com/embed.js" crossorigin></script>
 
     <!-- YouTube iframe API -->
     <script src="https://www.youtube.com/iframe_api" async></script>
-
-    <!-- ensure auto scroll to top -->
-    <script>
-        if ('scrollRestoration' in history) {
-          history.scrollRestoration = 'manual';
-        }
-        window.scrollTo(0, 0);
-    </script>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
 </body>
+
 </html>
