@@ -219,6 +219,9 @@ const ImageSlider = ({
 
   const sliderId = `project${projectId}-slider`;
 
+  // Match macOS window corner radius (~12px)
+  const slideRadius = '12px';
+
   return (
     <div className={sliderId}>
       {/* Slider Container */}
@@ -228,18 +231,25 @@ const ImageSlider = ({
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {slides.map((slide, _index) => (
-            <div key={slide.id} className="w-full flex-shrink-0">
+            <div
+              key={slide.id}
+              className="w-full flex-shrink-0 flex justify-center"
+              style={{ borderRadius: slideRadius, overflow: 'hidden' }}
+            >
               {slide.type === 'image' ? (
                 <img
                   src={slide.src}
                   alt={slide.alt}
-                  className="rounded-xl w-full object-contain"
-                  style={{ aspectRatio: '16/9' }}
+                  className="block w-full h-auto"
+                  style={{
+                    borderRadius: slideRadius,
+                    clipPath: `inset(0 round ${slideRadius})`,
+                  }}
                 />
               ) : (
                 <div
                   className="video-container"
-                  style={{ aspectRatio: '16/9' }}
+                  style={{ aspectRatio: '16/9', borderRadius: slideRadius, overflow: 'hidden' }}
                 >
                   <iframe
                     id={slide.id}
@@ -251,7 +261,7 @@ const ImageSlider = ({
                     loading="lazy"
                     width="100%"
                     height="100%"
-                    style={{ borderRadius: '0.75rem' }}
+                    style={{ borderRadius: slideRadius }}
                   />
                 </div>
               )}
