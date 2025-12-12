@@ -60,8 +60,6 @@ I also started to learn some game dev with Unity. I made a few simple but intere
         title: 'Blender Renders',
       },
     ],
-    googleDriveLink:
-      'https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing',
   },
   {
     id: 'autodrive',
@@ -115,7 +113,7 @@ Gradually, I have also gotten into the habit of reading frontier AI research pap
     id: 'ai_profession_days',
     projectId: 8,
     title: 'Can You Even Imagine Life Without AI?',
-    date: 'Feb. 2025 onward',
+    date: 'Feb. 2025',
     description: `It's only been a couple of years, but it's hard to remember the time before AI.<br><br>
 
 It's remarkable if you think about it. A little seed of progress that turned out to be literally world-changing. AI has become my work, and my work has become AI.<br><br>
@@ -128,6 +126,22 @@ But it's more than that. For those who are constantly curious, and those who alw
       'msft_guest.jpeg',
       'google_guest.jpeg',
     ],
+    videos: [],
+  },
+  {
+    id: 'back_to_basics',
+    projectId: 9,
+    title: 'Back to Basics',
+    date: 'Dec. 2025 onward',
+    description: `Constantly building the next shiny thing will make you forget the fundamentals.<br><br>
+
+I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.<br><br>
+
+I'm dialing back a bit. Back to reading more papers, and especially back to practical learning. The Effort to train a diffusion language model the "Karpathy style" marks a start.<br><br>
+
+This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI if you know how to use them well. Pretty cool paper and project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
+`,
+    images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg'],
     videos: [],
   },
 ];

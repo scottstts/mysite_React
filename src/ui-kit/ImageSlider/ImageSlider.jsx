@@ -4,9 +4,12 @@ const ImageSlider = ({
   images = [],
   videos = [],
   projectId,
+  appId,
   autoplay = true,
   autoplayDelay = 5000,
 }) => {
+  // Use projectId or appId for unique identification
+  const uniqueId = projectId ?? appId;
   // Combine images and videos into slides first to determine initial index
   const originalSlides = [
     ...images.map((image, index) => ({
@@ -18,7 +21,7 @@ const ImageSlider = ({
     ...videos.map((video, index) => ({
       type: 'video',
       ...video,
-      id: `video-${index}-${projectId}`, // Make ID unique across components
+      id: `video-${index}-${uniqueId}`, // Make ID unique across components
     })),
   ];
 
@@ -95,7 +98,7 @@ const ImageSlider = ({
 
     const initializePlayers = () => {
       videos.forEach((video, index) => {
-        const playerId = `video-${index}-${projectId}`;
+        const playerId = `video-${index}-${uniqueId}`;
 
         if (
           document.getElementById(playerId) &&
@@ -148,7 +151,7 @@ const ImageSlider = ({
     // Wait a bit for iframes to be rendered
     const timer = setTimeout(initializePlayers, 500);
     return () => clearTimeout(timer);
-  }, [youtubePlayersReady, videos, projectId, handleYouTubeStateChange]);
+  }, [youtubePlayersReady, videos, uniqueId, handleYouTubeStateChange]);
 
   // Auto-advance slides
   useEffect(() => {
@@ -217,7 +220,7 @@ const ImageSlider = ({
     return null;
   }
 
-  const sliderId = `project${projectId}-slider`;
+  const sliderId = `slider-${uniqueId}`;
 
   // Match macOS window corner radius (~12px)
   const slideRadius = '12px';
