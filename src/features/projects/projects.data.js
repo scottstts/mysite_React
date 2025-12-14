@@ -139,7 +139,9 @@ I still remember fondly how I got started on this path, drilling down on Karpath
 
 I'm dialing back a bit. Back to reading more papers, and especially back to practical learning. The Effort to train a diffusion language model the "Karpathy style" marks a start.<br><br>
 
-This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI if you know how to use them well. Pretty cool paper and project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
+This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI.<br><br>
+
+With a proof of concept, I then scaled up the model to 164M params trained on 766M tokens with a custom Rust tokenizer and various efficiency-related design choices. Pretty cool project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
 `,
     images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg'],
     videos: [],
