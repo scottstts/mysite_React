@@ -105,7 +105,7 @@ Tailored for YouTube—especially long-form interviews and podcasts—LearnTube 
 You see, SoTA AI image generation has become so advanced that depending solely on visual analysis is not adequate enough anymore, one must also analyze the plausibility of the image, including the internal consistency of the information, elements, and subjects in the image. This can be done with Multimodal reasoning LLMs.<br><br>
 
 ImgSherlock is a web app that allows you to upload an image, identify if it's likely AI-generated, and get a detailed analysis.<br><br>`,
-    images: ['imgsherlock1.jpeg', 'imgsherlock2.jpeg', 'imgsherlock3.jpeg'],
+    images: ['imgsherlock1.jpeg', 'imgsherlock2.jpeg'],
     link: 'https://imgsherlock.scottsun.io',
     showLink: true,
   },
