@@ -129,21 +129,28 @@ But it's more than that. For those who are constantly curious, and those who alw
     videos: [],
   },
   {
-    id: 'back_to_basics',
+    id: 'good-o-learning-n-fun',
     projectId: 9,
-    title: 'Back to Basics',
+    title: 'Good Old Learning and Fun',
     date: 'Dec. 2025 onward',
-    description: `Constantly building the next shiny thing will make you forget the fundamentals.<br><br>
+    description: `I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.<br><br>
 
-I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.<br><br>
+I'm back to that good old learning and fun projects. Training a diffusion language model the "Karpathy style" marks a start. This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI. With a proof of concept, I then scaled up the model to 164M params trained on 766M tokens with a custom Rust tokenizer and various efficiency-related design choices. Pretty cool project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.<br><br>
 
-I'm dialing back a bit. Back to reading more papers, and especially back to practical learning. The Effort to train a diffusion language model the "Karpathy style" marks a start.<br><br>
-
-This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI.<br><br>
-
-With a proof of concept, I then scaled up the model to 164M params trained on 766M tokens with a custom Rust tokenizer and various efficiency-related design choices. Pretty cool project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
+Here's another project where I put two LLMs in a pvp shooting game to compete as opposing teams. Open model vs. proprietary model, who will win? <a href='https://github.com/scottstts/LMCS/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
 `,
-    images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg'],
-    videos: [],
+    images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg', 'lmcs.jpeg'],
+    videos: [
+      {
+        id: 'youtube-player-3',
+        videoId: 'XNq3v_CsfOE',
+        title: 'I Trained A Small Diffusion Language Model',
+      },
+      {
+        id: 'youtube-player-4',
+        videoId: 'wXipHa1hvM8',
+        title: 'LMCS | LLMs Playing PVP Game',
+      },
+    ],
   },
 ];
