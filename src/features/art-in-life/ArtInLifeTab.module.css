@@ -117,9 +117,11 @@
 @media (max-width: 760px) {
     .masonryGrid {
         column-count: 1;
-        /* minimize side padding so the card gets maximum horizontal room */
-        padding-left: clamp(0.25rem, 2vw, 0.5rem);
-        padding-right: clamp(0.25rem, 2vw, 0.5rem);
+        /* Increase side padding to accommodate rotated card corners.
+           Positive rotation swings bottom-left out, negative swings bottom-right out. */
+        padding-left: clamp(0.5rem, 3vw, 1rem);
+        padding-right: clamp(0.5rem, 3vw, 1rem);
+        padding-top: 0.5rem;
     }
 }
 

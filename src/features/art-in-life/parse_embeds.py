@@ -28,6 +28,24 @@ def parse_embed_md(input_file, output_file):
             if match:
                 urls.append(match.group(1))
 
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_urls = []
+        duplicates = []
+        for url in urls:
+            if url not in seen:
+                seen.add(url)
+                unique_urls.append(url)
+            else:
+                duplicates.append(url)
+
+        if duplicates:
+            print(f"Removed {len(duplicates)} duplicate URL(s):")
+            for dup in duplicates:
+                print(f"  - {dup}")
+
+        urls = unique_urls
+
         # Create a template from the first embed tag, replacing the URL with a placeholder.
         template_tag = embed_tags[0]
         first_url = urls[0]
