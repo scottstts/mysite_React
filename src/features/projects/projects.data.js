@@ -137,7 +137,9 @@ But it's more than that. For those who are constantly curious, and those who alw
 
 I'm back to that good old learning and fun projects. Training a diffusion language model the "Karpathy style" marks a start. This is a 35M params diffusion language model I trained from scratch. It is based on the MDLM paper (great paper btw). I tried to simulate the entire “Let's build GPT” learning experience. Must say, the learning process is super charged with the help of AI. With a proof of concept, I then scaled up the model to 164M params trained on 766M tokens with a custom Rust tokenizer and various efficiency-related design choices. Pretty cool project: <a href='https://github.com/scottstts/Learning-Diffusion-LM/' target="_blank" class="text-blue-200 underline">Repo Here</a>.<br><br>
 
-Here's another project where I put two LLMs in a pvp shooting game to compete as opposing teams. Open model vs. proprietary model, who will win? <a href='https://github.com/scottstts/LMCS/' target="_blank" class="text-blue-200 underline">Repo Here</a>.
+Here's another project where I put two LLMs in a pvp shooting game to compete as opposing teams. Open model vs. proprietary model, who will win? <a href='https://github.com/scottstts/LMCS/' target="_blank" class="text-blue-200 underline">Repo Here</a>.<br><br>
+
+Of course not all projects pan out, at least not as fully expected. I had the idea of scanning my surrounding environments and turning them into an integral 3D Gaussian Splats scene that I can fully navigate and explore. I first tried the approach of training splats from scratch using depth initialization and depth supervised training. This turned out to be extremely slow and produced low quality splats. I then turn to a new approach: the Sharp-ML model to do image -> splats inference directly and find a mathematical way to merge them together. This improved the speed and quality a lot, but still not ideal. Without more learning and in-depth expertise, I decided not to go any further for now. Maybe I'll pick it up another day. <a href='https://github.com/scottstts/Dream-Brush' target="_blank" class="text-blue-200 underline">Repo Here</a>.
 `,
     images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg', 'lmcs.jpeg'],
     videos: [
@@ -150,6 +152,11 @@ Here's another project where I put two LLMs in a pvp shooting game to compete as
         id: 'youtube-player-4',
         videoId: 'wXipHa1hvM8',
         title: 'LMCS | LLMs Playing PVP Game',
+      },
+      {
+        id: 'youtube-player-5',
+        videoId: 'Kqwx3ub4Lh0',
+        title: 'I Turned Surrounding Environment into 3D Gaussian Splats',
       },
     ],
   },
