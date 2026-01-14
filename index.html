@@ -32,7 +32,7 @@
 
     <link rel="icon" type="image/jpg" href="/static_assets/logo.png">
     <link rel="apple-touch-icon" href="/static_assets/logo.png">
-    <link rel="preload" as="video" href="/static_assets/intro.mp4" type="video/mp4">
+    <!-- Video preload is set dynamically by intro script -->
 
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
@@ -59,8 +59,9 @@
             z-index: 50;
             background-color: black;
             transition: opacity 0.7s ease-out;
-            /* Default variable for mobile positioning (horizontal% bottom) */
-            --intro-video-pos-mobile: 28.5% bottom;
+            /* CSS variables set dynamically by intro script */
+            --intro-video-pos-desktop: center center;
+            --intro-video-pos-mobile: center center;
         }
 
         #intro-video-container.fade-out {
@@ -73,7 +74,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: bottom right;
+            object-position: var(--intro-video-pos-desktop);
         }
 
         /* Mobile portrait: extend container to cover bottom, bias framing horizontally while anchoring to bottom */
@@ -94,12 +95,42 @@
 <body>
     <div id="intro-video-container" role="banner" aria-label="Introduction video">
         <video id="intro-video" playsinline muted preload="auto">
-            <source src="/static_assets/intro.mp4" type="video/mp4" />
+            <!-- Source is set dynamically by intro script -->
         </video>
     </div>
 
     <script>
         (function () {
+            // ============================================
+            // INTRO VIDEO POOL CONFIGURATION
+            // Add new videos here with their cropping strategies
+            // ============================================
+            const introVideos = [
+                {
+                    src: '/static_assets/intro1.mp4',
+                    // Desktop: object-position value
+                    desktopPosition: 'bottom right',
+                    // Mobile: horizontal% vertical (used in object-position)
+                    mobilePosition: '28.5% bottom'
+                },
+                {
+                    src: '/static_assets/intro2.mp4',
+                    desktopPosition: 'top right',
+                    mobilePosition: '49% center'
+                },
+            ];
+
+            // Randomly select a video from the pool
+            const selectedVideo = introVideos[Math.floor(Math.random() * introVideos.length)];
+
+            // Dynamically create preload link for selected video
+            const preloadLink = document.createElement('link');
+            preloadLink.rel = 'preload';
+            preloadLink.as = 'video';
+            preloadLink.href = selectedVideo.src;
+            preloadLink.type = 'video/mp4';
+            document.head.appendChild(preloadLink);
+
             // Viewport height fix for mobile
             const setViewportHeightVar = () => {
                 const vh = window.innerHeight * 0.01;
@@ -112,6 +143,14 @@
             const container = document.getElementById('intro-video-container');
             const video = document.getElementById('intro-video');
             let videoFinished = false;
+
+            // Set the video source and apply cropping strategies
+            const source = document.createElement('source');
+            source.src = selectedVideo.src;
+            source.type = 'video/mp4';
+            video.appendChild(source);
+            container.style.setProperty('--intro-video-pos-desktop', selectedVideo.desktopPosition);
+            container.style.setProperty('--intro-video-pos-mobile', selectedVideo.mobilePosition);
 
             // Function to signal completion to the React app
             const finishVideo = () => {
