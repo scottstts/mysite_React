@@ -32,7 +32,6 @@
 
     <link rel="icon" type="image/jpg" href="/static_assets/logo.png">
     <link rel="apple-touch-icon" href="/static_assets/logo.png">
-    <!-- Video preload is set dynamically by intro script -->
 
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
@@ -137,14 +136,6 @@
 
             // Randomly select a video from the pool
             const selectedVideo = introVideos[Math.floor(Math.random() * introVideos.length)];
-
-            // Dynamically create preload link for selected video
-            const preloadLink = document.createElement('link');
-            preloadLink.rel = 'preload';
-            preloadLink.as = 'video';
-            preloadLink.href = selectedVideo.src;
-            preloadLink.type = 'video/mp4';
-            document.head.appendChild(preloadLink);
 
             // Viewport height fix for mobile
             const setViewportHeightVar = () => {
