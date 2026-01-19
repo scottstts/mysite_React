@@ -55,7 +55,7 @@ I also started to learn some game dev with Unity. I made a few simple but intere
     images: ['blender.jpeg', 'SkyPool.jpeg', 'Turbo_Drift.jpeg'],
     videos: [
       {
-        id: 'youtube-player-1',
+        id: 'project-youtube-player-1',
         videoId: '3NA4uyCcUD4',
         title: 'Blender Renders',
       },
@@ -72,7 +72,7 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
     images: ['autodrive_code.jpeg'],
     videos: [
       {
-        id: 'youtube-player-2',
+        id: 'project-youtube-player-2',
         videoId: 'Ur7uA-IiZck',
         title: 'AutoDrive',
       },
@@ -144,17 +144,17 @@ Of course not all projects pan out, at least not as fully expected. I had the id
     images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg', 'lmcs.jpeg'],
     videos: [
       {
-        id: 'youtube-player-3',
+        id: 'project-youtube-player-3',
         videoId: 'XNq3v_CsfOE',
         title: 'I Trained A Small Diffusion Language Model',
       },
       {
-        id: 'youtube-player-4',
+        id: 'project-youtube-player-4',
         videoId: 'wXipHa1hvM8',
         title: 'LMCS | LLMs Playing PVP Game',
       },
       {
-        id: 'youtube-player-5',
+        id: 'project-youtube-player-5',
         videoId: 'Kqwx3ub4Lh0',
         title: 'I Turned Surrounding Environment into 3D Gaussian Splats',
       },

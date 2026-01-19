@@ -18,7 +18,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     ],
     videos: [
       {
-        id: 'youtube-player-4',
+        id: 'app-youtube-player-1',
         videoId: 'lyOfGwCf9XA',
         title: 'IngreLab',
       },
@@ -48,22 +48,8 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     showLink: true,
   },
   {
-    id: 'voxelit',
-    appId: 3,
-    title: 'Voxelit',
-    tagline: 'Voxel scene to code.',
-    description: `Voxelit is a Blender-like tiny voxel 3D editor.<br><br>
-    
-    You can build complex Minecraft-style scenes here, apply procedural and texture shaders, add and adjust lighting, and finally export your scene as is in HTML or TSX.<br><br>
-    
-    Have fun building it, and enjoy the convenience using it.`,
-    images: ['voxelit1.jpeg', 'voxelit2.jpeg'],
-    link: 'https://vx.scottsun.io',
-    showLink: true,
-  },
-  {
     id: 'mycraft',
-    appId: 4,
+    appId: 3,
     title: 'MyCraft',
     tagline: `It's cozy in the browser.`,
     description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
@@ -77,7 +63,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     ],
     videos: [
       {
-        id: 'youtube-player-3',
+        id: 'app-youtube-player-2',
         videoId: 'Jxn7g5fzAto',
         title: 'MyCraft',
       },
@@ -87,7 +73,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
   },
   {
     id: 'learntube',
-    appId: 5,
+    appId: 4,
     title: 'LearnTube',
     tagline: 'Video to insights in seconds.',
     description: `Unlock the full potential of YouTube videos with LearnTube. Provide a YouTube video link, and LearnTube delivers a tailored report on the video's content, customized to your preferred length and depth. Whether you want a concise overview or a detailed breakdown, LearnTube adapts to your needs.<br><br>
@@ -104,6 +90,20 @@ Tailored for YouTube—especially long-form interviews and podcasts—LearnTube 
       'learntube6.jpeg',
     ],
     link: 'https://learntube.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'voxelit',
+    appId: 5,
+    title: 'Voxelit',
+    tagline: 'Voxel scene to code.',
+    description: `Voxelit is a Blender-like tiny voxel 3D editor.<br><br>
+    
+    You can build complex Minecraft-style scenes here, apply procedural and texture shaders, add and adjust lighting, and finally export your scene as is in HTML or TSX.<br><br>
+    
+    Have fun building it, and enjoy the convenience using it.`,
+    images: ['voxelit1.jpeg', 'voxelit2.jpeg'],
+    link: 'https://vx.scottsun.io',
     showLink: true,
   },
   {
