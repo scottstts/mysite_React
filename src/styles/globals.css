@@ -34,6 +34,18 @@ body {
     pointer-events: none;
 }
 
+/* Stars canvas overlay on top of video background */
+.stars-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100lvh;
+    z-index: -2;
+    pointer-events: none;
+    background: transparent;
+}
+
 /* Background image layer - fixed at the bottom */
 body::before {
     content: '';

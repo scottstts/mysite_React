@@ -11,4 +11,15 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Isolate Three.js ecosystem into separate chunks (desktop-only, lazy-loaded)
+          three: ['three'],
+          'three-fiber': ['@react-three/fiber'],
+        },
+      },
+    },
+  },
 });
