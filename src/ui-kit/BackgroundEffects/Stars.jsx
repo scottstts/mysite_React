@@ -1,6 +1,6 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 
-// Lazy load the entire StarsCanvas component (includes Three.js)
+// Lazy load the StarsCanvas component (pure WebGL, small bundle)
 const StarsCanvas = lazy(() => import('./StarsCanvas'));
 
 const Stars = () => {
@@ -21,10 +21,10 @@ const Stars = () => {
     };
   }, []);
 
-  // Callback when benchmark completes
-  const handleBenchmarkComplete = (passed) => {
+  // Callback when benchmark completes - memoized to prevent re-renders
+  const handleBenchmarkComplete = useCallback((passed) => {
     setPassedBenchmark(passed);
-  };
+  }, []);
 
   // Don't render before intro completes
   if (!introComplete) return null;

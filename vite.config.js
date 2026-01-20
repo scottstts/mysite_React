@@ -14,11 +14,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Isolate Three.js ecosystem into separate chunks (desktop-only, lazy-loaded)
-          three: ['three'],
-          'three-fiber': ['@react-three/fiber'],
-        },
+        // Let Rollup handle chunking naturally for better tree-shaking
+        // Three.js will still be in a separate chunk due to dynamic import in Stars.jsx
       },
     },
   },
