@@ -252,7 +252,11 @@ const ImageSlider = ({
               ) : (
                 <div
                   className="video-container"
-                  style={{ aspectRatio: '16/9', borderRadius: slideRadius, overflow: 'hidden' }}
+                  style={{
+                    aspectRatio: '16/9',
+                    borderRadius: slideRadius,
+                    overflow: 'hidden',
+                  }}
                 >
                   <iframe
                     id={slide.id}

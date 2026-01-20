@@ -1,110 +1,110 @@
 /* Enhanced scroll to top button with floating effect */
 .scroll-top-button {
-    position: fixed !important;
-    bottom: 3.5rem !important;
-    right: 2rem !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid white;
-    border-radius: 1.25rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 999;
-    font-size: 0.875rem;
-    box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.1),
-        0 0 20px rgba(255, 255, 255, 0.2);
-    transform: translateZ(0);
-    will-change: transform;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    animation: buttonFloat 3s ease-in-out infinite;
-    /* Outline removed - keyboard focus will use custom box-shadow */
+  position: fixed !important;
+  bottom: 3.5rem !important;
+  right: 2rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid white;
+  border-radius: 1.25rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 999;
+  font-size: 0.875rem;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(255, 255, 255, 0.2);
+  transform: translateZ(0);
+  will-change: transform;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: buttonFloat 3s ease-in-out infinite;
+  /* Outline removed - keyboard focus will use custom box-shadow */
 }
 
 @keyframes buttonFloat {
-    0% {
-        transform: translateY(0);
-    }
+  0% {
+    transform: translateY(0);
+  }
 
-    50% {
-        transform: translateY(-8px);
-    }
+  50% {
+    transform: translateY(-8px);
+  }
 
-    100% {
-        transform: translateY(0);
-    }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* Add focus styles that work consistently across browsers */
 .scroll-top-button:focus {
-    /* Use custom box-shadow instead of outline: none */
-    box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.15),
-        0 0 0 3px rgba(255, 255, 255, 0.3),
-        0 0 20px rgba(255, 255, 255, 0.4);
+  /* Use custom box-shadow instead of outline: none */
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 3px rgba(255, 255, 255, 0.3),
+    0 0 20px rgba(255, 255, 255, 0.4);
 }
 
 /* Specific fixes for iOS Safari */
 @supports (-webkit-touch-callout: none) {
-    .scroll-top-button {
-        background: rgba(255, 255, 255, 0.1);
-        -webkit-tap-highlight-color: transparent;
-        /* Remove default tap highlight */
-    }
+  .scroll-top-button {
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-tap-highlight-color: transparent;
+    /* Remove default tap highlight */
+  }
 
-    /* Ensure Safari shows the focus ring */
-    .scroll-top-button:active {
-        box-shadow:
-            0 8px 20px rgba(0, 0, 0, 0.15),
-            0 0 0 3px rgba(255, 255, 255, 0.3),
-            0 0 20px rgba(255, 255, 255, 0.4);
-    }
+  /* Ensure Safari shows the focus ring */
+  .scroll-top-button:active {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.15),
+      0 0 0 3px rgba(255, 255, 255, 0.3),
+      0 0 20px rgba(255, 255, 255, 0.4);
+  }
 }
 
 .scroll-top-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-4px) scale(1.1);
-    box-shadow:
-        0 12px 25px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.3),
-        0 0 25px rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px) scale(1.1);
+  box-shadow:
+    0 12px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 25px rgba(255, 255, 255, 0.4);
 }
 
 /* Ensure the focus ring remains visible when hovering after clicking */
 .scroll-top-button:focus:hover {
-    box-shadow:
-        0 12px 25px rgba(0, 0, 0, 0.15),
-        0 0 0 3px rgba(255, 255, 255, 0.3),
-        0 0 25px rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 12px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 3px rgba(255, 255, 255, 0.3),
+    0 0 25px rgba(255, 255, 255, 0.4);
 }
 
 .scroll-top-button.hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(2rem);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2rem);
 }
 
 /* Mobile optimization */
 @media (max-width: 640px) {
-    .scroll-top-button {
-        bottom: 1.5rem !important;
-        right: 1.5rem !important;
-        padding: 0.75rem;
-    }
+  .scroll-top-button {
+    bottom: 1.5rem !important;
+    right: 1.5rem !important;
+    padding: 0.75rem;
+  }
 
-    .scroll-top-button svg {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
+  .scroll-top-button svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
 
-    .scroll-top-button span {
-        font-size: 0.75rem;
-    }
+  .scroll-top-button span {
+    font-size: 0.75rem;
+  }
 }

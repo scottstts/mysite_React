@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is my website *modular React project*.
+This is my website _modular React project_.
 
 **Visit at *https://scottsun.io***
 
@@ -16,14 +16,14 @@ This project is organized for easy navigation, high modularity, and straightforw
 
 ### Directory Overview
 
-  * **`public/static_assets/`**: All static media (images, video covers, UI references). These are directly accessible in the code without needing to be imported or processed by the build system.
-  * **`src/`**: All application logic and UI code.
-      * **`app/`**: Contains `App.jsx` and its CSS. `App.jsx` is the main stateful component that handles routing, global effects (like the intro video and parallax background), and renders the primary layout.
-      * **`features/`**: Contains self-contained folders for each main tab of the website (e.g., `about`, `projects`, `apps`, `inspirations`, `art-in-life`). This is the core of the website's content.
-      * **`ui-kit/`**: Contains reusable UI components and hooks that are shared across different features. This includes the `Navigation`, `Footer` , `GlassCard`, `ImageSlider`, and the `useMouseParallax` hook.
-      * **`styles/`**: Holds global CSS files, including design tokens (variables), animations, and base styles.
-      * **`lib/`**: Contains utility functions, such as the `safeHtml.js` sanitizer.
-      * **`main.jsx`**: The application's entry point. It sets up the React root, routing with `HashRouter`, and the `HelmetProvider` for SEO management.
+- **`public/static_assets/`**: All static media (images, video covers, UI references). These are directly accessible in the code without needing to be imported or processed by the build system.
+- **`src/`**: All application logic and UI code.
+  - **`app/`**: Contains `App.jsx` and its CSS. `App.jsx` is the main stateful component that handles routing, global effects (like the intro video and parallax background), and renders the primary layout.
+  - **`features/`**: Contains self-contained folders for each main tab of the website (e.g., `about`, `projects`, `apps`, `inspirations`, `art-in-life`). This is the core of the website's content.
+  - **`ui-kit/`**: Contains reusable UI components and hooks that are shared across different features. This includes the `Navigation`, `Footer` , `GlassCard`, `ImageSlider`, and the `useMouseParallax` hook.
+  - **`styles/`**: Holds global CSS files, including design tokens (variables), animations, and base styles.
+  - **`lib/`**: Contains utility functions, such as the `safeHtml.js` sanitizer.
+  - **`main.jsx`**: The application's entry point. It sets up the React root, routing with `HashRouter`, and the `HelmetProvider` for SEO management.
 
 ### Key Architecture Decisions
 
@@ -44,11 +44,11 @@ This separation ensures that content updates only require editing a `.js` data f
 
 The application uses `react-router-dom` to manage navigation. Instead of using component state to show/hide tabs, `App.jsx` defines a series of routes:
 
-  * `/about` (or `/`) maps to the `AboutTab`
-  * `/projects` maps to the `ProjectsTab`
-  * `/apps` maps to the `AppsTab`
-  * `/inspirations` maps to the `InspirationsTab`
-  * `/art-in-life` maps to the `ArtInLifeTab`
+- `/about` (or `/`) maps to the `AboutTab`
+- `/projects` maps to the `ProjectsTab`
+- `/apps` maps to the `AppsTab`
+- `/inspirations` maps to the `InspirationsTab`
+- `/art-in-life` maps to the `ArtInLifeTab`
 
 This approach provides unique URLs for each section, improving deep linking and browser history management.
 
@@ -60,24 +60,24 @@ The `App.jsx` component uses a `useEffect` hook that listens for changes in the 
 
 To ensure the fastest possible initial load, the project employs two key strategies:
 
-  * **Critical Path Video**: The intro video logic is moved out of the React bundle and directly into `index.html`. This allows the video to start playing immediately while the rest of the app loads in the background.
-  * **Code Splitting**: The main feature tabs (`AboutTab`, `ProjectsTab`, etc.) are lazy-loaded using `React.lazy` and `Suspense`. This significantly reduces the initial JavaScript bundle size.
+- **Critical Path Video**: The intro video logic is moved out of the React bundle and directly into `index.html`. This allows the video to start playing immediately while the rest of the app loads in the background.
+- **Code Splitting**: The main feature tabs (`AboutTab`, `ProjectsTab`, etc.) are lazy-loaded using `React.lazy` and `Suspense`. This significantly reduces the initial JavaScript bundle size.
 
 #### Styling Architecture
 
 The project uses a hybrid styling strategy for consistency and maintainability:
 
-  * **Global Styles**: Core design tokens (`variables.css`), keyframe animations (`animations.css`), and global resets (`globals.css`) are defined in `src/styles` and loaded once in `App.jsx`.
-  * **Shared Component Styles**: Reusable UI components like `GlassCard` have their styles defined in a central file (`src/styles/glassCardEffect.css`) to ensure a consistent look and feel everywhere.
-  * **Scoped Styles**: Each feature tab and UI component uses its own `.module.css` file (e.g., `AppsTab.module.css`). This scopes class names and prevents style conflicts between different parts of the application.
-  * **Utility Classes**: Tailwind CSS is integrated into the build process, allowing for the use of utility classes directly in the JSX for fine-grained layout and styling adjustments.
+- **Global Styles**: Core design tokens (`variables.css`), keyframe animations (`animations.css`), and global resets (`globals.css`) are defined in `src/styles` and loaded once in `App.jsx`.
+- **Shared Component Styles**: Reusable UI components like `GlassCard` have their styles defined in a central file (`src/styles/glassCardEffect.css`) to ensure a consistent look and feel everywhere.
+- **Scoped Styles**: Each feature tab and UI component uses its own `.module.css` file (e.g., `AppsTab.module.css`). This scopes class names and prevents style conflicts between different parts of the application.
+- **Utility Classes**: Tailwind CSS is integrated into the build process, allowing for the use of utility classes directly in the JSX for fine-grained layout and styling adjustments.
 
 #### Security & Best Practices
 
-  * **HTML Sanitization**: A custom `safeHtml` utility in `src/lib/safeHtml.js` uses `DOMPurify` to sanitize any rich text content from data files before it is rendered with `dangerouslySetInnerHTML`, preventing XSS attacks.
-  * **Absolute Imports**: The project is configured with a Vite alias, allowing for clean, absolute imports starting with `@/` (e.g., `import GlassCard from '@/ui-kit/GlassCard/GlassCard'`) instead of fragile relative paths.
+- **HTML Sanitization**: A custom `safeHtml` utility in `src/lib/safeHtml.js` uses `DOMPurify` to sanitize any rich text content from data files before it is rendered with `dangerouslySetInnerHTML`, preventing XSS attacks.
+- **Absolute Imports**: The project is configured with a Vite alias, allowing for clean, absolute imports starting with `@/` (e.g., `import GlassCard from '@/ui-kit/GlassCard/GlassCard'`) instead of fragile relative paths.
 
------
+---
 
 ## 🚀 How to Add Tabs, Cards, or New Content
 
@@ -89,9 +89,9 @@ The project is designed for easy expansion. Follow these patterns to add new con
 
 Create a new folder under `src/features` (e.g., `src/features/books`) with three files:
 
-  * `BooksTab.jsx`
-  * `BooksTab.module.css`
-  * `books.data.js`
+- `BooksTab.jsx`
+- `BooksTab.module.css`
+- `books.data.js`
 
 #### 2\. Build Data File
 
@@ -112,25 +112,31 @@ const BooksTab = () => (
   <>
     <Helmet>
       <title>Books – Scott Sun</title>
-      <meta name="description" content="A list of my favorite books and what I've learned." />
+      <meta
+        name="description"
+        content="A list of my favorite books and what I've learned."
+      />
     </Helmet>
-    
+
     <div className="books-tab space-y-8">
       <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
         My Bookshelf
       </h1>
-      
+
       {books.map((book, i) => (
-        <GlassCard 
+        <GlassCard
           key={book.id}
           className="rounded-2xl overflow-hidden fade-in"
-          style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
+          style={{ animationDelay: `${0.2 + i * 0.1}s` }}
+        >
           <div className="p-5 md:p-8">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200">
               {book.title}
             </h2>
-            <p className="text-white text-base md:text-lg leading-relaxed"
-               dangerouslySetInnerHTML={safeHtml(book.description)} />
+            <p
+              className="text-white text-base md:text-lg leading-relaxed"
+              dangerouslySetInnerHTML={safeHtml(book.description)}
+            />
           </div>
         </GlassCard>
       ))}
@@ -196,19 +202,19 @@ Apps can surface a reusable status stamp beside their title without touching the
 
 The `AppsTab` component automatically renders the `StatusStamp` to the right of the title when `status` exists. You can reuse `type: 'no-longer-deployed'` for other entries or extend the styling in `src/features/apps/AppsTab.jsx` by adding new keys to the `statusStyles` map.
 
------
+---
 
 ## 📝 General Guidelines for Extension
 
 ### Quick Reference
 
-| Task | Files to Update |
-| :--- | :--- |
-| Add a card to an existing tab | Just the `*.data.js` file for that feature. |
-| Add a new "Art in Life" post | `src/features/art-in-life/embed.md`, then run `parse_embeds.py`. |
-| Add a new tab | Create a feature folder (3 files), then update `App.jsx` (routing logic & title) and `Navigation.jsx`. |
-| Add custom styling | The feature's `*.module.css` file for scoped styles, or `tailwind.config.js` for global theme changes. |
-| Add media assets | Drop files into `public/static_assets/` and reference them by their path (e.g., `/static_assets/my-image.jpeg`). |
+| Task                          | Files to Update                                                                                                  |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Add a card to an existing tab | Just the `*.data.js` file for that feature.                                                                      |
+| Add a new "Art in Life" post  | `src/features/art-in-life/embed.md`, then run `parse_embeds.py`.                                                 |
+| Add a new tab                 | Create a feature folder (3 files), then update `App.jsx` (routing logic & title) and `Navigation.jsx`.           |
+| Add custom styling            | The feature's `*.module.css` file for scoped styles, or `tailwind.config.js` for global theme changes.           |
+| Add media assets              | Drop files into `public/static_assets/` and reference them by their path (e.g., `/static_assets/my-image.jpeg`). |
 
 ### Best Practices
 

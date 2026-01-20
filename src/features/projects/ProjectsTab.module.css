@@ -4,7 +4,9 @@
 }
 
 .projectCard {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Removed conflicting hover rule that was overriding glass-card effect */
@@ -41,4 +43,4 @@
   .projectCard {
     padding: 1rem;
   }
-} 
+}

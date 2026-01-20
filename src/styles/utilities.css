@@ -1,361 +1,450 @@
 /* Enhanced page title with more dramatic effect */
 .page-title {
-    /* background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6); */
-    /* -webkit-background-clip: text; */
-    /* background-clip: text; */
-    /* color: transparent; */
-    color: black;
-    font-family: 'Outfit', sans-serif;
-    -webkit-text-stroke: 2px white;
-    position: relative;
-    display: inline-block;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    /* text-shadow: 0 0 20px var(--accent-glow); */
+  /* background: linear-gradient(135deg, #fff, #6366f1, #8b5cf6); */
+  /* -webkit-background-clip: text; */
+  /* background-clip: text; */
+  /* color: transparent; */
+  color: black;
+  font-family: 'Outfit', sans-serif;
+  -webkit-text-stroke: 2px white;
+  position: relative;
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  /* text-shadow: 0 0 20px var(--accent-glow); */
 }
 
 /* Animated underline for page title */
 .page-title::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 60%;
-    height: 3px;
-    background: white;
-    border-radius: 4px;
-    transform: translateX(33%);
-    box-shadow: 0 0 12px var(--accent-glow);
-    animation: underlinePulse 4s infinite alternate;
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: white;
+  border-radius: 4px;
+  transform: translateX(33%);
+  box-shadow: 0 0 12px var(--accent-glow);
+  animation: underlinePulse 4s infinite alternate;
 }
 
 /* Enhanced text highlight effect with more dynamic animation */
 .highlight-glow {
-    background: linear-gradient(120deg, #ffd700, #ffb700, #ffd700, #ffe066, #ffd700);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 6s linear infinite, text-flicker 8s ease-in-out infinite;
-    position: relative;
-    display: inline-block;
-    text-shadow:
-        0 0 1px rgba(255, 215, 0, 0.3),
-        0 0 2px rgba(255, 215, 0, 0.2),
-        0 0 3px rgba(255, 215, 0, 0.1);
-    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.2));
-    letter-spacing: 0.02em;
+  background: linear-gradient(
+    120deg,
+    #ffd700,
+    #ffb700,
+    #ffd700,
+    #ffe066,
+    #ffd700
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:
+    shine 6s linear infinite,
+    text-flicker 8s ease-in-out infinite;
+  position: relative;
+  display: inline-block;
+  text-shadow:
+    0 0 1px rgba(255, 215, 0, 0.3),
+    0 0 2px rgba(255, 215, 0, 0.2),
+    0 0 3px rgba(255, 215, 0, 0.1);
+  filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.2));
+  letter-spacing: 0.02em;
 }
 
 .highlight-glow::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #ffd700, transparent);
-    opacity: 0.7;
-    box-shadow:
-        0 0 8px #ffd700,
-        0 0 12px rgba(255, 215, 0, 0.5);
-    animation: glow-line-pulse 4s ease-in-out infinite alternate;
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  opacity: 0.7;
+  box-shadow:
+    0 0 8px #ffd700,
+    0 0 12px rgba(255, 215, 0, 0.5);
+  animation: glow-line-pulse 4s ease-in-out infinite alternate;
 }
 
 .highlight-glow::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, rgba(255, 215, 0, 0.15), transparent 70%);
-    opacity: 0;
-    filter: blur(5px);
-    z-index: -1;
-    animation: glow-pulse 3s ease-in-out infinite;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 215, 0, 0.15),
+    transparent 70%
+  );
+  opacity: 0;
+  filter: blur(5px);
+  z-index: -1;
+  animation: glow-pulse 3s ease-in-out infinite;
 }
 
 .eater-regular {
-    font-family: "Eater", serif;
-    font-weight: 400;
-    font-style: normal;
-    letter-spacing: 0.03em;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+  font-family: 'Eater', serif;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
 }
 
 /* More sophisticated button styling */
 .view-button {
-    background: var(--card-bg);
-    color: white;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    border: 1px solid white;
+  background: var(--card-bg);
+  color: white;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid white;
 }
 
 .view-button:hover {
-    transform: translateY(-3px);
-    box-shadow:
-        0 4px 20px rgba(255, 255, 255, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.3),
-        0 0 30px rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+  box-shadow:
+    0 4px 20px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 /* More dramatic button hover effect */
 .view-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
-    transform: translateY(-100%);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+  transform: translateY(-100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .view-button:hover::after {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 /* Add subtle text animation to important content */
 .text-yellow-100,
 .text-yellow-200 {
-    position: relative;
-    display: inline;
+  position: relative;
+  display: inline;
 }
 
 .text-yellow-200::before {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #ffd700, transparent);
-    opacity: 0.3;
-    animation: lineGlow 4s infinite alternate;
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  opacity: 0.3;
+  animation: lineGlow 4s infinite alternate;
 }
 
 /* Add subtle hover effects to links */
 a {
-    position: relative;
-    transition: all 0.3s ease;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
 a:not(.view-button):not(.tab-button):not(.fixed-footer):hover {
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
 }
 
 a:not(.view-button):not(.tab-button):not(.fixed-footer)::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    bottom: -2px;
-    left: 0;
-    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.6), transparent);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 229, 255, 0.6),
+    transparent
+  );
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 a:not(.view-button):not(.tab-button):not(.fixed-footer):hover::after {
-    transform: scaleX(1);
+  transform: scaleX(1);
 }
 
 /* Cyberpunk glitch image effect based on Cyberpunk 2077 button guide */
 .cybr-glitch-img {
-    --primary: transparent;
-    --border: 6;
-    --shimmy-distance: 3;
-    --glitch-duration: 2.5s;
-    --clip-base: polygon(0 0, 100% 0, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 70%);
-    --clip-one: polygon(0 2%, 100% 2%, 100% 95%, 95% 95%, 95% 90%, 85% 90%, 85% 95%, 8% 95%, 0 70%);
-    --clip-two: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
-    --clip-three: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
-    --clip-four: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
-    --clip-five: var(--clip-four);
-    --clip-six: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
-    --clip-seven: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
-    position: relative;
-    display: inline-block;
-    border-radius: 1rem;
-    isolation: isolate;
+  --primary: transparent;
+  --border: 6;
+  --shimmy-distance: 3;
+  --glitch-duration: 2.5s;
+  --clip-base: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    95% 100%,
+    95% 90%,
+    85% 90%,
+    85% 100%,
+    8% 100%,
+    0 70%
+  );
+  --clip-one: polygon(
+    0 2%,
+    100% 2%,
+    100% 95%,
+    95% 95%,
+    95% 90%,
+    85% 90%,
+    85% 95%,
+    8% 95%,
+    0 70%
+  );
+  --clip-two: polygon(
+    0 78%,
+    100% 78%,
+    100% 100%,
+    95% 100%,
+    95% 90%,
+    85% 90%,
+    85% 100%,
+    8% 100%,
+    0 78%
+  );
+  --clip-three: polygon(
+    0 44%,
+    100% 44%,
+    100% 54%,
+    95% 54%,
+    95% 54%,
+    85% 54%,
+    85% 54%,
+    8% 54%,
+    0 54%
+  );
+  --clip-four: polygon(
+    0 0,
+    100% 0,
+    100% 0,
+    95% 0,
+    95% 0,
+    85% 0,
+    85% 0,
+    8% 0,
+    0 0
+  );
+  --clip-five: var(--clip-four);
+  --clip-six: polygon(
+    0 40%,
+    100% 40%,
+    100% 85%,
+    95% 85%,
+    95% 85%,
+    85% 85%,
+    85% 85%,
+    8% 85%,
+    0 70%
+  );
+  --clip-seven: polygon(
+    0 63%,
+    100% 63%,
+    100% 80%,
+    95% 80%,
+    95% 80%,
+    85% 80%,
+    85% 80%,
+    8% 80%,
+    0 70%
+  );
+  position: relative;
+  display: inline-block;
+  border-radius: 1rem;
+  isolation: isolate;
 }
 
 .cybr-glitch-img::before,
 .cybr-glitch-img::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    clip-path: var(--clip-base);
-    border-radius: inherit;
-    z-index: -2;
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: var(--clip-base);
+  border-radius: inherit;
+  z-index: -2;
 }
 
 .cybr-glitch-img::before,
 .cybr-glitch-img::after {
-    display: none;
+  display: none;
 }
 
 .cybr-glitch-img__base {
-    position: relative;
-    display: block;
-    width: 100%;
-    height: auto;
-    clip-path: var(--clip-base);
-    border-radius: inherit;
-    z-index: 1;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  clip-path: var(--clip-base);
+  border-radius: inherit;
+  z-index: 1;
 }
 
 .cybr-glitch-img__slice {
-    position: absolute;
-    top: calc(var(--border) * -1px);
-    left: calc(var(--border) * -1px);
-    right: calc(var(--border) * -1px);
-    bottom: calc(var(--border) * -1px);
-    object-fit: contain;
-    clip-path: var(--clip-base);
-    pointer-events: none;
-    mix-blend-mode: lighten;
-    opacity: 0;
-    animation: cybr-glitch-anim var(--glitch-duration) linear infinite;
-    z-index: 0;
+  position: absolute;
+  top: calc(var(--border) * -1px);
+  left: calc(var(--border) * -1px);
+  right: calc(var(--border) * -1px);
+  bottom: calc(var(--border) * -1px);
+  object-fit: contain;
+  clip-path: var(--clip-base);
+  pointer-events: none;
+  mix-blend-mode: lighten;
+  opacity: 0;
+  animation: cybr-glitch-anim var(--glitch-duration) linear infinite;
+  z-index: 0;
 }
 
 .cybr-glitch-img__slice--cyan {
-    filter: hue-rotate(160deg) saturate(1.6);
-    animation-delay: calc(var(--glitch-duration) * -0.12);
+  filter: hue-rotate(160deg) saturate(1.6);
+  animation-delay: calc(var(--glitch-duration) * -0.12);
 }
 
 .cybr-glitch-img__slice--magenta {
-    filter: hue-rotate(-40deg) saturate(1.4);
-    mix-blend-mode: lighten;
-    animation-delay: calc(var(--glitch-duration) * -0.04);
+  filter: hue-rotate(-40deg) saturate(1.4);
+  mix-blend-mode: lighten;
+  animation-delay: calc(var(--glitch-duration) * -0.04);
 }
 
 .cybr-glitch-img__scanlines {
-    position: absolute;
-    top: calc(var(--border) * -1px);
-    right: calc(var(--border) * -1px);
-    bottom: calc(var(--border) * -1px);
-    left: calc(var(--border) * -1px);
-    border-radius: inherit;
-    clip-path: var(--clip-base);
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 2;
-    mix-blend-mode: normal;
-    opacity: 0.9;
+  position: absolute;
+  top: calc(var(--border) * -1px);
+  right: calc(var(--border) * -1px);
+  bottom: calc(var(--border) * -1px);
+  left: calc(var(--border) * -1px);
+  border-radius: inherit;
+  clip-path: var(--clip-base);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: normal;
+  opacity: 0.9;
 }
 
 .cybr-glitch-img__scanline {
-    position: absolute;
-    display: block;
-    left: 0;
-    right: 0;
-    background-repeat: no-repeat;
-    background-position: 0 0;
-    background-size: 100% 100%;
-    filter: saturate(1.25) contrast(1.2);
-    opacity: 1;
-    mix-blend-mode: normal;
-    animation: cybr-scanline-glitch var(--glitch-scanline-duration, 4s) linear infinite;
-    will-change: transform, opacity, background-position;
+  position: absolute;
+  display: block;
+  left: 0;
+  right: 0;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
+  filter: saturate(1.25) contrast(1.2);
+  opacity: 1;
+  mix-blend-mode: normal;
+  animation: cybr-scanline-glitch var(--glitch-scanline-duration, 4s) linear
+    infinite;
+  will-change: transform, opacity, background-position;
 }
 
 @keyframes cybr-scanline-glitch {
-    0% {
-        transform: translate3d(0, 0, 0);
-        opacity: 0.35;
-        background-position: 0 var(--glitch-offset-y, 0px);
-    }
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+    background-position: 0 var(--glitch-offset-y, 0px);
+  }
 
-    2.5% {
-        transform: translate3d(30px, 0, 0);
-        opacity: 0.6;
-        background-position: 30px var(--glitch-offset-y, 0px);
-    }
+  2.5% {
+    transform: translate3d(30px, 0, 0);
+    opacity: 0.6;
+    background-position: 30px var(--glitch-offset-y, 0px);
+  }
 
-    2.75% {
-        transform: translate3d(-10px, 0, 0);
-        opacity: 0.4;
-        background-position: -10px var(--glitch-offset-y, 0px);
-    }
+  2.75% {
+    transform: translate3d(-10px, 0, 0);
+    opacity: 0.4;
+    background-position: -10px var(--glitch-offset-y, 0px);
+  }
 
-    3.6% {
-        transform: translate3d(15px, 0, 0);
-        opacity: 0.55;
-        background-position: 15px var(--glitch-offset-y, 0px);
-    }
+  3.6% {
+    transform: translate3d(15px, 0, 0);
+    opacity: 0.55;
+    background-position: 15px var(--glitch-offset-y, 0px);
+  }
 
-    4.7% {
-        transform: translate3d(-17px, 0, 0);
-        opacity: 0.5;
-        background-position: -17px var(--glitch-offset-y, 0px);
-    }
+  4.7% {
+    transform: translate3d(-17px, 0, 0);
+    opacity: 0.5;
+    background-position: -17px var(--glitch-offset-y, 0px);
+  }
 
-    5% {
-        transform: translate3d(-22px, 0, 0);
-        opacity: 0.65;
-        background-position: -22px var(--glitch-offset-y, 0px);
-    }
+  5% {
+    transform: translate3d(-22px, 0, 0);
+    opacity: 0.65;
+    background-position: -22px var(--glitch-offset-y, 0px);
+  }
 
-    7% {
-        transform: translate3d(150px, 0, 0);
-        opacity: 0.8;
-        background-position: 150px var(--glitch-offset-y, 0px);
-    }
+  7% {
+    transform: translate3d(150px, 0, 0);
+    opacity: 0.8;
+    background-position: 150px var(--glitch-offset-y, 0px);
+  }
 
-    7.2% {
-        transform: translate3d(26px, 0, 0);
-        opacity: 0.55;
-        background-position: 26px var(--glitch-offset-y, 0px);
-    }
+  7.2% {
+    transform: translate3d(26px, 0, 0);
+    opacity: 0.55;
+    background-position: 26px var(--glitch-offset-y, 0px);
+  }
 
-    8.5% {
-        transform: translate3d(28px, 0, 0);
-        opacity: 0.5;
-        background-position: 28px var(--glitch-offset-y, 0px);
-    }
+  8.5% {
+    transform: translate3d(28px, 0, 0);
+    opacity: 0.5;
+    background-position: 28px var(--glitch-offset-y, 0px);
+  }
 
-    8.6% {
-        transform: translate3d(0, 0, 0);
-        opacity: 0.35;
-        background-position: 0 var(--glitch-offset-y, 0px);
-    }
+  8.6% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+    background-position: 0 var(--glitch-offset-y, 0px);
+  }
 
-    8.9% {
-        transform: translate3d(-5px, 0, 0);
-        opacity: 0.4;
-        background-position: -5px var(--glitch-offset-y, 0px);
-    }
+  8.9% {
+    transform: translate3d(-5px, 0, 0);
+    opacity: 0.4;
+    background-position: -5px var(--glitch-offset-y, 0px);
+  }
 
-    9.2% {
-        transform: translate3d(-4px, 0, 0);
-        opacity: 0.4;
-        background-position: -4px var(--glitch-offset-y, 0px);
-    }
+  9.2% {
+    transform: translate3d(-4px, 0, 0);
+    opacity: 0.4;
+    background-position: -4px var(--glitch-offset-y, 0px);
+  }
 
-    10.4% {
-        transform: translate3d(-105px, 0, 0);
-        opacity: 0.7;
-        background-position: -105px var(--glitch-offset-y, 0px);
-    }
+  10.4% {
+    transform: translate3d(-105px, 0, 0);
+    opacity: 0.7;
+    background-position: -105px var(--glitch-offset-y, 0px);
+  }
 
-    12.5% {
-        transform: translate3d(0, 0, 0);
-        opacity: 0.35;
-        background-position: 0 var(--glitch-offset-y, 0px);
-    }
+  12.5% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+    background-position: 0 var(--glitch-offset-y, 0px);
+  }
 
-    100% {
-        transform: translate3d(0, 0, 0);
-        opacity: 0.12;
-        background-position: 0 var(--glitch-offset-y, 0px);
-    }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.12;
+    background-position: 0 var(--glitch-offset-y, 0px);
+  }
 }

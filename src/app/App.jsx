@@ -16,16 +16,20 @@ import './App.css';
 const AboutTab = React.lazy(() => import('@/features/about/AboutTab'));
 const ProjectsTab = React.lazy(() => import('@/features/projects/ProjectsTab'));
 const AppsTab = React.lazy(() => import('@/features/apps/AppsTab'));
-const InspirationsTab = React.lazy(() => import('@/features/inspirations/InspirationsTab'));
-const ArtInLifeTab = React.lazy(() => import('@/features/art-in-life/ArtInLifeTab'));
+const InspirationsTab = React.lazy(
+  () => import('@/features/inspirations/InspirationsTab')
+);
+const ArtInLifeTab = React.lazy(
+  () => import('@/features/art-in-life/ArtInLifeTab')
+);
 
 function App() {
   const location = useLocation();
   // Check if video already finished (if React loaded late)
-  const [introComplete, setIntroComplete] = useState(() => 
+  const [introComplete, setIntroComplete] = useState(() =>
     document.body.classList.contains('intro-complete')
   );
-  const [contentVisible, setContentVisible] = useState(() => 
+  const [contentVisible, setContentVisible] = useState(() =>
     document.body.classList.contains('intro-complete')
   );
 
@@ -79,7 +83,7 @@ function App() {
 
     // Check again in case it fired before listener was attached
     if (document.body.classList.contains('intro-complete')) {
-        handleVideoFinished();
+      handleVideoFinished();
     }
 
     return () => {
@@ -96,11 +100,11 @@ function App() {
     // But preserve intro-complete if it exists
     const wasComplete = document.body.classList.contains('intro-complete');
     document.body.className = '';
-    
+
     if (!introComplete && !wasComplete) {
       document.body.classList.add('intro-video-playing');
     } else if (wasComplete) {
-        document.body.classList.add('intro-complete');
+      document.body.classList.add('intro-complete');
     }
   }, [introComplete]);
 
@@ -125,7 +129,13 @@ function App() {
             transition={{ duration: 0.25 }}
             className="react-tab-content space-y-8"
           >
-            <Suspense fallback={<div className="h-96 flex items-center justify-center text-white/50">Loading...</div>}>
+            <Suspense
+              fallback={
+                <div className="h-96 flex items-center justify-center text-white/50">
+                  Loading...
+                </div>
+              }
+            >
               {activeTab === 'about' && <AboutTab />}
               {activeTab === 'projects' && <ProjectsTab />}
               {activeTab === 'apps' && <AppsTab />}

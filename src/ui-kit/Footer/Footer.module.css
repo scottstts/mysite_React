@@ -27,7 +27,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -49,8 +50,8 @@
   .footerContainer {
     padding: 1.5rem 0;
   }
-  
+
   .madeWith {
     font-size: 0.8rem;
   }
-} 
+}

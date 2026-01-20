@@ -1,217 +1,253 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Scott Sun</title>
     <link rel="icon" type="image/jpg" href="/static_assets/logo.png" />
     <link rel="canonical" href="https://scottsun.io/" />
 
     <!-- SEO tags -->
-    <meta name="description" content="Scott Sun | Frontier AI Chaser. Build Stuff.">
-    <meta name="keywords" content="Scott Sun, Frontier AI Chaser, Builder">
-    <meta name="author" content="Scott Sun">
+    <meta
+      name="description"
+      content="Scott Sun | Frontier AI Chaser. Build Stuff."
+    />
+    <meta name="keywords" content="Scott Sun, Frontier AI Chaser, Builder" />
+    <meta name="author" content="Scott Sun" />
 
-    <meta property="og:title" content="Scott Sun | Frontier AI Chaser. Build Stuff.">
-    <meta property="og:description" content="Scott Sun | Frontier AI Chaser. Build Stuff.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://scottsun.io">
-    <meta property="og:image" content="/static_assets/og_cover.jpeg">
-    <meta property="og:site_name" content="Scott Sun">
-    <meta property="og:locale" content="en_US">
+    <meta
+      property="og:title"
+      content="Scott Sun | Frontier AI Chaser. Build Stuff."
+    />
+    <meta
+      property="og:description"
+      content="Scott Sun | Frontier AI Chaser. Build Stuff."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://scottsun.io" />
+    <meta property="og:image" content="/static_assets/og_cover.jpeg" />
+    <meta property="og:site_name" content="Scott Sun" />
+    <meta property="og:locale" content="en_US" />
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@scottstts">
-    <meta name="twitter:creator" content="@scottstts">
-    <meta name="twitter:title" content="Scott Sun | Frontier AI Chaser. Build Stuff.">
-    <meta name="twitter:description" content="Scott Sun | Frontier AI Chaser. Build Stuff.">
-    <meta name="twitter:image" content="/static_assets/og_cover.jpeg">
-    <meta name="twitter:image:alt" content="Scott Sun">
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@scottstts" />
+    <meta name="twitter:creator" content="@scottstts" />
+    <meta
+      name="twitter:title"
+      content="Scott Sun | Frontier AI Chaser. Build Stuff."
+    />
+    <meta
+      name="twitter:description"
+      content="Scott Sun | Frontier AI Chaser. Build Stuff."
+    />
+    <meta name="twitter:image" content="/static_assets/og_cover.jpeg" />
+    <meta name="twitter:image:alt" content="Scott Sun" />
 
-    <link rel="icon" type="image/jpg" href="/static_assets/logo.png">
-    <link rel="apple-touch-icon" href="/static_assets/logo.png">
+    <link rel="icon" type="image/jpg" href="/static_assets/logo.png" />
+    <link rel="apple-touch-icon" href="/static_assets/logo.png" />
 
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
     <!-- SEO tags -->
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Eater&family=Outfit:wght@400;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Eater&family=Outfit:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
 
     <!-- Instagram preconnect optimizations -->
-    <link rel="preconnect" href="https://static.cdninstagram.com" crossorigin>
+    <link rel="preconnect" href="https://static.cdninstagram.com" crossorigin />
 
     <!-- Critical Path Intro Video Styles -->
     <style>
-        #intro-video-container {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            background-color: black;
-            transition: opacity 0.7s ease-out;
-            /* CSS variables set dynamically by intro script */
-            --intro-video-pos-desktop: center center;
-            --intro-video-pos-mobile: center center;
-        }
+      #intro-video-container {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background-color: black;
+        transition: opacity 0.7s ease-out;
+        /* CSS variables set dynamically by intro script */
+        --intro-video-pos-desktop: center center;
+        --intro-video-pos-mobile: center center;
+      }
 
-        #intro-video-container.fade-out {
-            opacity: 0;
-            pointer-events: none;
+      #intro-video-container.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #intro-video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: var(--intro-video-pos-desktop);
+      }
+
+      /* Mobile portrait: extend container to cover bottom, bias framing horizontally while anchoring to bottom */
+      @media (max-width: 900px) and (orientation: portrait) {
+        #intro-video-container {
+          top: -60px;
+          bottom: 0;
+          height: calc(100vh + 120px);
         }
 
         #intro-video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: var(--intro-video-pos-desktop);
+          object-position: var(--intro-video-pos-mobile);
         }
-
-        /* Mobile portrait: extend container to cover bottom, bias framing horizontally while anchoring to bottom */
-        @media (max-width: 900px) and (orientation: portrait) {
-            #intro-video-container {
-                top: -60px;
-                bottom: 0;
-                height: calc(100vh + 120px);
-            }
-
-            #intro-video {
-                object-position: var(--intro-video-pos-mobile);
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <div id="intro-video-container" role="banner" aria-label="Introduction video">
-        <video id="intro-video" playsinline muted preload="auto">
-            <!-- Source is set dynamically by intro script -->
-        </video>
+  <body>
+    <div
+      id="intro-video-container"
+      role="banner"
+      aria-label="Introduction video"
+    >
+      <video id="intro-video" playsinline muted preload="auto">
+        <!-- Source is set dynamically by intro script -->
+      </video>
     </div>
 
     <script>
-        (function () {
-            // ============================================
-            // INTRO VIDEO POOL CONFIGURATION
-            // Add new videos here with their cropping strategies
-            // ============================================
-            const introVideos = [
-                {
-                    src: '/static_assets/intro1.mp4',
-                    // Desktop: object-position value
-                    desktopPosition: 'bottom right',
-                    // Mobile: horizontal% vertical (used in object-position)
-                    mobilePosition: '28.5% bottom'
-                },
-                {
-                    src: '/static_assets/intro2.mp4',
-                    desktopPosition: 'top right',
-                    mobilePosition: '49% center'
-                },
-                {
-                    src: '/static_assets/intro3.mp4',
-                    desktopPosition: 'bottom right',
-                    mobilePosition: '65% center'
-                },
-                {
-                    src: '/static_assets/intro4.mp4',
-                    desktopPosition: 'top left',
-                    mobilePosition: '60% center'
-                },
-                {
-                    src: '/static_assets/intro5.mp4',
-                    desktopPosition: 'bottom right',
-                    mobilePosition: '55% center'
-                },
-            ];
+      (function () {
+        // ============================================
+        // INTRO VIDEO POOL CONFIGURATION
+        // Add new videos here with their cropping strategies
+        // ============================================
+        const introVideos = [
+          {
+            src: '/static_assets/intro1.mp4',
+            // Desktop: object-position value
+            desktopPosition: 'bottom right',
+            // Mobile: horizontal% vertical (used in object-position)
+            mobilePosition: '28.5% bottom',
+          },
+          {
+            src: '/static_assets/intro2.mp4',
+            desktopPosition: 'top right',
+            mobilePosition: '49% center',
+          },
+          {
+            src: '/static_assets/intro3.mp4',
+            desktopPosition: 'bottom right',
+            mobilePosition: '65% center',
+          },
+          {
+            src: '/static_assets/intro4.mp4',
+            desktopPosition: 'top left',
+            mobilePosition: '60% center',
+          },
+          {
+            src: '/static_assets/intro5.mp4',
+            desktopPosition: 'bottom right',
+            mobilePosition: '55% center',
+          },
+        ];
 
-            // Randomly select a video from the pool
-            const selectedVideo = introVideos[Math.floor(Math.random() * introVideos.length)];
+        // Randomly select a video from the pool
+        const selectedVideo =
+          introVideos[Math.floor(Math.random() * introVideos.length)];
 
-            // Viewport height fix for mobile
-            const setViewportHeightVar = () => {
-                const vh = window.innerHeight * 0.01;
-                document.documentElement.style.setProperty('--vh', `${vh}px`);
-            };
-            setViewportHeightVar();
-            window.addEventListener('resize', setViewportHeightVar);
-            window.addEventListener('orientationchange', setViewportHeightVar);
+        // Viewport height fix for mobile
+        const setViewportHeightVar = () => {
+          const vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        setViewportHeightVar();
+        window.addEventListener('resize', setViewportHeightVar);
+        window.addEventListener('orientationchange', setViewportHeightVar);
 
-            const container = document.getElementById('intro-video-container');
-            const video = document.getElementById('intro-video');
-            let videoFinished = false;
+        const container = document.getElementById('intro-video-container');
+        const video = document.getElementById('intro-video');
+        let videoFinished = false;
 
-            // Set the video source and apply cropping strategies
-            const source = document.createElement('source');
-            source.src = selectedVideo.src;
-            source.type = 'video/mp4';
-            video.appendChild(source);
-            container.style.setProperty('--intro-video-pos-desktop', selectedVideo.desktopPosition);
-            container.style.setProperty('--intro-video-pos-mobile', selectedVideo.mobilePosition);
+        // Set the video source and apply cropping strategies
+        const source = document.createElement('source');
+        source.src = selectedVideo.src;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        container.style.setProperty(
+          '--intro-video-pos-desktop',
+          selectedVideo.desktopPosition
+        );
+        container.style.setProperty(
+          '--intro-video-pos-mobile',
+          selectedVideo.mobilePosition
+        );
 
-            // Function to signal completion to the React app
-            const finishVideo = () => {
-                if (videoFinished) return;
-                videoFinished = true;
+        // Function to signal completion to the React app
+        const finishVideo = () => {
+          if (videoFinished) return;
+          videoFinished = true;
 
-                // Add fade-out class
-                container.classList.add('fade-out');
+          // Add fade-out class
+          container.classList.add('fade-out');
 
-                // Dispatch custom event for React to listen to
-                window.dispatchEvent(new CustomEvent('intro-video-complete'));
+          // Dispatch custom event for React to listen to
+          window.dispatchEvent(new CustomEvent('intro-video-complete'));
 
-                // Add class to body for React to check initial state if it loads late
-                document.body.classList.add('intro-complete');
+          // Add class to body for React to check initial state if it loads late
+          document.body.classList.add('intro-complete');
 
-                // Remove from DOM after transition
-                setTimeout(() => {
-                    if (container.parentNode) {
-                        container.parentNode.removeChild(container);
-                    }
-                    window.scrollTo(0, 0);
-                }, 700);
-            };
+          // Remove from DOM after transition
+          setTimeout(() => {
+            if (container.parentNode) {
+              container.parentNode.removeChild(container);
+            }
+            window.scrollTo(0, 0);
+          }, 700);
+        };
 
-            // Video Event Listeners
-            video.addEventListener('ended', finishVideo);
-            video.addEventListener('error', (e) => {
-                console.error('Video error:', e);
-                finishVideo();
-            });
+        // Video Event Listeners
+        video.addEventListener('ended', finishVideo);
+        video.addEventListener('error', (e) => {
+          console.error('Video error:', e);
+          finishVideo();
+        });
 
-            // Attempt to play immediately
-            video.play().catch(e => {
-                console.log('Autoplay failed or blocked, finishing intro:', e);
-                finishVideo();
-            });
+        // Attempt to play immediately
+        video.play().catch((e) => {
+          console.log('Autoplay failed or blocked, finishing intro:', e);
+          finishVideo();
+        });
 
-            // Fallback timeout (5s)
-            setTimeout(() => {
-                if (!videoFinished && video.readyState < 3) {
-                    console.warn('Video fallback timeout.');
-                    finishVideo();
-                }
-            }, 5000);
-        })();
+        // Fallback timeout (5s)
+        setTimeout(() => {
+          if (!videoFinished && video.readyState < 3) {
+            console.warn('Video fallback timeout.');
+            finishVideo();
+          }
+        }, 5000);
+      })();
     </script>
 
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
     <!-- Instagram embed SDK -->
-    <script async defer src="https://www.instagram.com/embed.js" crossorigin></script>
+    <script
+      async
+      defer
+      src="https://www.instagram.com/embed.js"
+      crossorigin
+    ></script>
 
     <!-- YouTube iframe API -->
     <script src="https://www.youtube.com/iframe_api" async></script>
-</body>
-
+  </body>
 </html>

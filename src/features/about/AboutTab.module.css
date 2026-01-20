@@ -22,7 +22,9 @@
 
 .missionCard,
 .strengthCard {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Removed conflicting hover rule that was overriding glass-card effect */
@@ -79,20 +81,20 @@
   .aboutSection {
     padding: 1.5rem;
   }
-  
+
   .philosophyText {
     font-size: 1rem;
   }
-  
+
   .socialLink {
     padding: 0.5rem;
   }
-  
+
   .socialIcon {
     font-size: 1.25rem;
   }
-  
+
   .socialText {
     font-size: 1.125rem;
   }
-} 
+}

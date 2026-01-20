@@ -20,14 +20,10 @@ const StatusStamp = ({ status }) => {
     typeof status === 'string' ? { type: status, label: status } : status;
 
   const { type, label } = normalizedStatus;
-  const style = statusStyles[type] ||
-    'bg-slate-500/10 text-slate-200 border-slate-500/40';
+  const style =
+    statusStyles[type] || 'bg-slate-500/10 text-slate-200 border-slate-500/40';
 
-  return (
-    <span className={`${baseStampClasses} ${style}`}>
-      {label}
-    </span>
-  );
+  return <span className={`${baseStampClasses} ${style}`}>{label}</span>;
 };
 
 const AppsTab = () => {
