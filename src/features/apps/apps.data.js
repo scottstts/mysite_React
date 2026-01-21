@@ -89,6 +89,13 @@ Tailored for YouTube—especially long-form interviews and podcasts—LearnTube 
       'learntube5.jpeg',
       'learntube6.jpeg',
     ],
+    videos: [
+      {
+        id: 'app-youtube-player-3',
+        videoId: 'vj1on8ByEmg',
+        title: 'Use LearnTube | Video to insights to seconds',
+      },
+    ],
     link: 'https://learntube.scottsun.io',
     showLink: true,
   },
