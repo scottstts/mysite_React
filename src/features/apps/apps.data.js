@@ -76,11 +76,15 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     appId: 4,
     title: 'LearnTube',
     tagline: 'Video to insights in seconds.',
-    description: `Unlock the full potential of YouTube videos with LearnTube. Provide a YouTube video link, and LearnTube delivers a tailored report on the video's content, customized to your preferred length and depth. Whether you want a concise overview or a detailed breakdown, LearnTube adapts to your needs.<br><br>
+    description: `Too many long-form podcasts and interviews and no time to watch? Just copy the video link, and LearnTube lays insights bare in seconds.<br><br>
 
-Interact seamlessly with AI: chat to ask questions about the video or select any sentence from the report for deeper elaboration. Generate Mind Map on the fly for conceptual and structural understanding. Save and share the insights by exporting reports to PDF, and keep your projects organized in the Collection tab for easy access anytime.<br><br>
+• A report on the video exploring content<br><br>
+• Ask any questions about the video<br><br>
+• Select any part of the report for deeper elaboration<br><br>
+• Generate Mind Map on the fly for conceptual and structural understanding<br><br>
+• Share the report with anyone with a URL or save it as a PDF<br><br>
 
-Tailored for YouTube—especially long-form interviews and podcasts—LearnTube is your dedicated companion, saving time with quick TL;DW (Too Long; Didn't Watch) summaries or offering in-depth explorations, all at your fingertips.`,
+TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds.`,
     images: [
       'learntube1.jpeg',
       'learntube2.jpeg',
