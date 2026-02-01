@@ -3,41 +3,133 @@ import { useRef, useEffect } from 'react';
 const MIN_FPS_THRESHOLD = 15;
 const BENCHMARK_DURATION_MS = 1000;
 
-// Vertex shader - replicates Three.js PointsMaterial with sizeAttenuation
+
+// Vertex shader - passes per-petal random seed for shape/color variation
 const vertexShaderSource = `
   attribute vec3 aPosition;
+  attribute float aSeed;
   uniform mat4 uProjectionMatrix;
   uniform mat4 uModelViewMatrix;
   uniform float uPointSize;
   uniform float uPixelRatio;
-  
+  uniform float uTime;
+  varying float vSeed;
+
   void main() {
     vec4 mvPosition = uModelViewMatrix * vec4(aPosition, 1.0);
     gl_Position = uProjectionMatrix * mvPosition;
-    
-    // Size attenuation: size decreases with distance (matches Three.js sizeAttenuation: true)
-    // Three.js uses: size * (scale / -mvPosition.z) where scale is related to canvas height
-    // For a canvas height of ~900px at 75deg FOV, scale ≈ 450
+    vSeed = aSeed;
+
     float scale = 450.0 * uPixelRatio;
-    gl_PointSize = uPointSize * (scale / -mvPosition.z);
+    // Wider size range for organic variety
+    float sizeVariation = 0.6 + 0.8 * fract(aSeed * 7.31);
+    gl_PointSize = uPointSize * sizeVariation * (scale / -mvPosition.z);
   }
 `;
 
-// Fragment shader - circular points with smooth edges
+// Fragment shader - cherry blossom petals with 4 shape variants
 const fragmentShaderSource = `
   precision mediump float;
-  uniform vec3 uColor;
-  
+  uniform float uTime;
+  varying float vSeed;
+
   void main() {
-    // Create circular points (discard corners to make circles)
-    vec2 center = gl_PointCoord - vec2(0.5);
-    float dist = length(center);
-    
-    // Smooth edge for anti-aliasing
-    float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
-    if (alpha < 0.01) discard;
-    
-    gl_FragColor = vec4(uColor, alpha);
+    vec2 uv = gl_PointCoord - vec2(0.5);
+
+    // Per-petal fixed rotation (spread across full 360) + slow drift
+    float baseAngle = fract(vSeed * 47.13) * 6.2831;
+    float drift = uTime * (0.15 + fract(vSeed * 2.71) * 0.25);
+    float angle = baseAngle + drift;
+    float ca = cos(angle);
+    float sa = sin(angle);
+    vec2 ruv = vec2(ca * uv.x - sa * uv.y, sa * uv.x + ca * uv.y);
+
+    // Slight asymmetry per petal
+    float skew = 0.2 * (fract(vSeed * 11.3) - 0.5);
+    ruv.x += skew * ruv.y;
+
+    // Select shape variant (4 types based on seed)
+    float shapeSelect = fract(vSeed * 29.7);
+    float petal = 0.0;
+    float d = 0.0;
+    vec2 p;
+
+    if (shapeSelect < 0.3) {
+      // Shape A: Wide rounded petal (broad, almost circular with taper)
+      p = vec2(ruv.x * 2.2, ruv.y * 2.0 - 0.02);
+      float wm = 1.0 - 0.4 * smoothstep(-0.4, 0.5, p.y);
+      float dx = p.x / wm;
+      d = dx * dx + p.y * p.y;
+      petal = 1.0 - smoothstep(0.18, 0.26, d);
+      // Soft rounded tip notch
+      float notch = smoothstep(0.0, 0.04, abs(p.x)) + smoothstep(0.35, 0.5, p.y);
+      petal *= clamp(notch, 0.0, 1.0);
+
+    } else if (shapeSelect < 0.55) {
+      // Shape B: Narrow elongated petal (slender, pointed)
+      p = vec2(ruv.x * 3.5, ruv.y * 1.6 - 0.03);
+      float wm = 1.0 - 0.7 * smoothstep(-0.5, 0.4, p.y);
+      float dx = p.x / wm;
+      d = dx * dx + p.y * p.y;
+      petal = 1.0 - smoothstep(0.14, 0.20, d);
+
+    } else if (shapeSelect < 0.8) {
+      // Shape C: Heart-tipped petal (classic sakura with visible notch)
+      p = vec2(ruv.x * 2.6, ruv.y * 1.8 - 0.04);
+      float wm = 1.0 - 0.55 * smoothstep(-0.5, 0.45, p.y);
+      float dx = p.x / wm;
+      d = dx * dx + p.y * p.y;
+      petal = 1.0 - smoothstep(0.16, 0.23, d);
+      // Deeper notch at tip
+      float notch = smoothstep(0.0, 0.06, abs(p.x)) + smoothstep(0.25, 0.42, p.y);
+      petal *= clamp(notch, 0.0, 1.0);
+
+    } else {
+      // Shape D: Curled petal (slightly off-center, organic)
+      vec2 curled = ruv;
+      curled.x += 0.04 * sin(ruv.y * 8.0);
+      p = vec2(curled.x * 2.8, curled.y * 1.9 - 0.03);
+      float wm = 1.0 - 0.5 * smoothstep(-0.45, 0.5, p.y);
+      float dx = p.x / wm;
+      d = dx * dx + p.y * p.y;
+      petal = 1.0 - smoothstep(0.15, 0.22, d);
+      float notch = smoothstep(0.0, 0.035, abs(p.x)) + smoothstep(0.32, 0.48, p.y);
+      petal *= clamp(notch, 0.0, 1.0);
+    }
+
+    // Center vein highlight
+    float vein = exp(-abs(p.x) * 25.0) * 0.2 * petal;
+
+    float alpha = petal * 0.85;
+    if (alpha < 0.02) discard;
+
+    // Vibrant saturated pink palette
+    vec3 hotPink = vec3(1.0, 0.25, 0.55);
+    vec3 magenta = vec3(0.95, 0.30, 0.65);
+    vec3 rosePink = vec3(1.0, 0.42, 0.62);
+    vec3 sakuraPink = vec3(1.0, 0.55, 0.72);
+    vec3 brightBlush = vec3(1.0, 0.65, 0.78);
+
+    float colorPick = fract(vSeed * 13.37);
+    vec3 petalColor;
+    if (colorPick < 0.25) {
+      petalColor = mix(hotPink, rosePink, fract(vSeed * 3.7));
+    } else if (colorPick < 0.5) {
+      petalColor = mix(magenta, sakuraPink, fract(vSeed * 5.1));
+    } else if (colorPick < 0.75) {
+      petalColor = mix(rosePink, brightBlush, fract(vSeed * 9.3));
+    } else {
+      petalColor = mix(sakuraPink, rosePink, fract(vSeed * 7.7));
+    }
+
+    // Edge-to-center gradient: edges deeper, center brighter
+    float edgeFade = smoothstep(0.04, 0.2, d);
+    petalColor = mix(petalColor + 0.08, petalColor * 0.88, edgeFade * 0.5);
+
+    // Vein highlight (lighter streak)
+    petalColor += vec3(vein);
+
+    gl_FragColor = vec4(petalColor, alpha);
   }
 `;
 
@@ -70,16 +162,6 @@ const createPerspectiveMatrix = (fovDegrees, aspect, near, far) => {
     0, f, 0, 0,
     0, 0, (near + far) * rangeInv, -1,
     0, 0, near * far * rangeInv * 2, 0,
-  ]);
-};
-
-// Create a 4x4 identity matrix
-const createIdentityMatrix = () => {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
   ]);
 };
 
@@ -182,17 +264,6 @@ const createProgram = (gl, vertexSource, fragmentSource) => {
   return program;
 };
 
-// Parse hex color to RGB (0-1 range)
-const hexToRgb = (hex) => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? [
-      parseInt(result[1], 16) / 255,
-      parseInt(result[2], 16) / 255,
-      parseInt(result[3], 16) / 255,
-    ]
-    : [1, 1, 1];
-};
 
 const StarsCanvas = ({ onBenchmarkComplete }) => {
   const canvasRef = useRef(null);
@@ -201,6 +272,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
   const programRef = useRef(null);
   const timeRef = useRef(0);
   const lastTimeRef = useRef(0);
+
   // Store callback in ref to avoid re-running effect when it changes
   const onBenchmarkCompleteRef = useRef(onBenchmarkComplete);
   onBenchmarkCompleteRef.current = onBenchmarkComplete;
@@ -245,30 +317,38 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
 
     // Get attribute and uniform locations
     const aPosition = gl.getAttribLocation(program, 'aPosition');
+    const aSeed = gl.getAttribLocation(program, 'aSeed');
     const uProjectionMatrix = gl.getUniformLocation(program, 'uProjectionMatrix');
     const uModelViewMatrix = gl.getUniformLocation(program, 'uModelViewMatrix');
     const uPointSize = gl.getUniformLocation(program, 'uPointSize');
     const uPixelRatio = gl.getUniformLocation(program, 'uPixelRatio');
-    const uColor = gl.getUniformLocation(program, 'uColor');
+    const uTime = gl.getUniformLocation(program, 'uTime');
 
     // Generate points
-    const positions = generateSpherePoints(1000, 1.2);
+    const PETAL_COUNT = 800;
+    const positions = generateSpherePoints(PETAL_COUNT, 1.2);
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-    // Setup attribute
+    // Setup position attribute
     gl.enableVertexAttribArray(aPosition);
     gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
 
-    // Set static uniforms
-    const color = hexToRgb('#f272c8');
-    gl.uniform3fv(uColor, color);
+    // Per-petal random seed attribute (for shape/color variation)
+    const seeds = new Float32Array(PETAL_COUNT);
+    for (let i = 0; i < PETAL_COUNT; i++) {
+      seeds[i] = Math.random();
+    }
+    const seedBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, seedBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(aSeed);
+    gl.vertexAttribPointer(aSeed, 1, gl.FLOAT, false, 0, 0);
 
-    // Point size: Three.js uses 0.002 which is in world units
-    // With our scale factor of 450 and camera at z=1, this translates to screen pixels
-    gl.uniform1f(uPointSize, 0.004);
-    gl.uniform1f(uPixelRatio, 1); // Fixed DPR for performance (matches Three.js dpr={1})
+    // Set static uniforms — larger point size for visible petal shapes
+    gl.uniform1f(uPointSize, 0.02);
+    gl.uniform1f(uPixelRatio, 1);
 
     // Enable blending for transparency
     gl.enable(gl.BLEND);
@@ -327,22 +407,22 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
       // Update time
       timeRef.current += delta;
 
-      // Points rotation (matches Three.js: rotation.x and rotation.y on the points object)
+      // Points rotation
       const rotationX = createRotationXMatrix(-timeRef.current / 10);
       const rotationY = createRotationYMatrix(-timeRef.current / 15);
 
       // Combine transformations: view * groupRotation * pointsRotation
-      // Order matters: first rotate points, then apply group rotation, then view
-      let modelViewMatrix = multiplyMatrices(rotationY, rotationX); // Points rotation
-      modelViewMatrix = multiplyMatrices(groupRotationZ, modelViewMatrix); // Group rotation
-      modelViewMatrix = multiplyMatrices(viewMatrix, modelViewMatrix); // View/camera
+      let modelViewMatrix = multiplyMatrices(rotationY, rotationX);
+      modelViewMatrix = multiplyMatrices(groupRotationZ, modelViewMatrix);
+      modelViewMatrix = multiplyMatrices(viewMatrix, modelViewMatrix);
 
       gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+      gl.uniform1f(uTime, timeRef.current);
 
       // Clear and draw
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, 1000);
+      gl.drawArrays(gl.POINTS, 0, PETAL_COUNT);
     };
 
     animationIdRef.current = requestAnimationFrame(animate);
@@ -354,6 +434,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
         cancelAnimationFrame(animationIdRef.current);
       }
       gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(seedBuffer);
       gl.deleteProgram(program);
     };
   }, []); // Empty deps - setup runs once, callback accessed via ref
