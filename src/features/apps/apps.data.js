@@ -1,7 +1,23 @@
 export const apps = [
   {
-    id: 'ingrelab',
+    id: 'stellar',
     appId: 1,
+    title: 'Stellar',
+    tagline: 'Space is musical.',
+    description: `I built this Starship Simulator game in Three.js. Enjoy a journey with the Starship into the space.`,
+    videos: [
+      {
+        id: 'app-youtube-player-1',
+        videoId: 'mVfLXr9BLsI',
+        title: 'Stellar - A Starship Simulator',
+      },
+    ],
+    link: 'https://stellar.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'ingrelab',
+    appId: 2,
     title: 'IngreLab',
     tagline: 'Food Intelligence.',
     description: `These days we rarely know what is in our food. High sugar, high inflammatory, ultra-processed food has taken up a huge portion of our daily food intake.<br><br>
@@ -18,7 +34,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     ],
     videos: [
       {
-        id: 'app-youtube-player-1',
+        id: 'app-youtube-player-2',
         videoId: 'lyOfGwCf9XA',
         title: 'IngreLab',
       },
@@ -27,53 +43,8 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     showLink: true,
   },
   {
-    id: 'tuneitall',
-    appId: 2,
-    title: 'Tune It All',
-    tagline: 'The only guitar pal you need.',
-    description: `Tune It All is an IOS tuner app but with something extra.<br><br>
-    
-    In here, you can tune any guitar, bass, ukulele in any tuning you can think of. You can also compose your own string orchestra backing track with any chord you want. Beautiful playing with beautiful tracks.<br><br>
-    
-    I built this app because I love guitar, but the tuner apps out there usually have inconsistent quality, and special tunings are often gated. I want an all-in-one tuner app that does everything I need, so I built it myself.<br><br>
-    
-    Happy practicing!`,
-    images: [
-      'tuneitall1.jpeg',
-      'tuneitall2.jpeg',
-      'tuneitall3.jpeg',
-      'tuneitall4.jpeg',
-    ],
-    link: 'https://tuneitall.scottsun.io',
-    showLink: true,
-  },
-  {
-    id: 'mycraft',
-    appId: 3,
-    title: 'MyCraft',
-    tagline: `It's cozy in the browser.`,
-    description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
-    
-    Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.`,
-    images: [
-      'mycraft_start.jpeg',
-      'mycraft_world.jpeg',
-      'mycraft_sunset.jpeg',
-      'mycraft_underwater.jpeg',
-    ],
-    videos: [
-      {
-        id: 'app-youtube-player-2',
-        videoId: 'Jxn7g5fzAto',
-        title: 'MyCraft',
-      },
-    ],
-    link: 'https://mycraft.scottsun.io',
-    showLink: true,
-  },
-  {
     id: 'learntube',
-    appId: 4,
+    appId: 3,
     title: 'LearnTube',
     tagline: 'Video to insights in seconds.',
     description: `Too many long-form podcasts and interviews and no time to watch? Just copy the video link, and LearnTube lays insights bare in seconds.<br><br>
@@ -104,8 +75,53 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
     showLink: true,
   },
   {
-    id: 'voxelit',
+    id: 'mycraft',
+    appId: 4,
+    title: 'MyCraft',
+    tagline: `It's cozy in the browser.`,
+    description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
+    
+    Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.`,
+    images: [
+      'mycraft_start.jpeg',
+      'mycraft_world.jpeg',
+      'mycraft_sunset.jpeg',
+      'mycraft_underwater.jpeg',
+    ],
+    videos: [
+      {
+        id: 'app-youtube-player-4',
+        videoId: 'Jxn7g5fzAto',
+        title: 'MyCraft',
+      },
+    ],
+    link: 'https://mycraft.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'tuneitall',
     appId: 5,
+    title: 'Tune It All',
+    tagline: 'The only guitar pal you need.',
+    description: `Tune It All is an IOS tuner app but with something extra.<br><br>
+    
+    In here, you can tune any guitar, bass, ukulele in any tuning you can think of. You can also compose your own string orchestra backing track with any chord you want. Beautiful playing with beautiful tracks.<br><br>
+    
+    I built this app because I love guitar, but the tuner apps out there usually have inconsistent quality, and special tunings are often gated. I want an all-in-one tuner app that does everything I need, so I built it myself.<br><br>
+    
+    Happy practicing!`,
+    images: [
+      'tuneitall1.jpeg',
+      'tuneitall2.jpeg',
+      'tuneitall3.jpeg',
+      'tuneitall4.jpeg',
+    ],
+    link: 'https://tuneitall.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'voxelit',
+    appId: 6,
     title: 'Voxelit',
     tagline: 'Voxel scene to code.',
     description: `Voxelit is a Blender-like tiny voxel 3D editor.<br><br>
@@ -119,7 +135,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
   },
   {
     id: 'eventhorizon',
-    appId: 6,
+    appId: 7,
     title: 'Event Horizon',
     tagline: 'Awe in bending physics.',
     description: `Wandering on a lonesome and desolate planet orbiting a black hole. Face the event horizon.`,
@@ -129,7 +145,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
   },
   {
     id: 'imgsherlock',
-    appId: 7,
+    appId: 8,
     title: 'ImgSherlock',
     tagline: 'MLLM vs. MLLM.',
     description: `After I saw a post about how real-looking an image of a receipt generated by GPT-4o native image gen was, and how all traditional ML AI-image detection had failed at that image, I thought there is a more capable way to do AI image detection.<br><br>
@@ -143,7 +159,7 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
   },
   {
     id: 'jobguru',
-    appId: 8,
+    appId: 9,
     title: 'Job Guru',
     status: {
       type: 'no-longer-deployed',
