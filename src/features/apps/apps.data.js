@@ -1,13 +1,31 @@
 export const apps = [
   {
-    id: 'stellar',
+    id: 'interstellar3',
     appId: 1,
+    title: 'Interstellar.three.js',
+    tagline: 'My favorite film, my rendition.',
+    description: `Interstellar is my favorite film, I've watched it countless times, and each time it haunts me. The scale of human vs. the universe, the yearning for love, hope, and survival, a cosmic classic.<br><br>
+    
+    So I recreated the entire film using three.js scene builds and animations. I didn't try to create a replica, but instead it's my own version of the story, scenes, and memories.`,
+    videos: [
+      {
+        id: 'app-youtube-player-1',
+        videoId: 't4VE2N5psgA',
+        title: 'I recreated Interstellar in three.js | 13 iconic scenes',
+      },
+    ],
+    link: 'https://interstellar3.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'stellar',
+    appId: 2,
     title: 'Stellar',
     tagline: 'Space is musical.',
     description: `I built this Starship Simulator game in Three.js. Enjoy a journey with the Starship into the space.`,
     videos: [
       {
-        id: 'app-youtube-player-1',
+        id: 'app-youtube-player-2',
         videoId: 'mVfLXr9BLsI',
         title: 'Stellar - A Starship Simulator',
       },
@@ -17,7 +35,7 @@ export const apps = [
   },
   {
     id: 'ingrelab',
-    appId: 2,
+    appId: 3,
     title: 'IngreLab',
     tagline: 'Food Intelligence.',
     description: `These days we rarely know what is in our food. High sugar, high inflammatory, ultra-processed food has taken up a huge portion of our daily food intake.<br><br>
@@ -34,7 +52,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
     ],
     videos: [
       {
-        id: 'app-youtube-player-2',
+        id: 'app-youtube-player-3',
         videoId: 'lyOfGwCf9XA',
         title: 'IngreLab',
       },
@@ -44,7 +62,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
   },
   {
     id: 'learntube',
-    appId: 3,
+    appId: 4,
     title: 'LearnTube',
     tagline: 'Video to insights in seconds.',
     description: `Too many long-form podcasts and interviews and no time to watch? Just copy the video link, and LearnTube lays insights bare in seconds.<br><br>
@@ -66,7 +84,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
     ],
     videos: [
       {
-        id: 'app-youtube-player-3',
+        id: 'app-youtube-player-4',
         videoId: 'vj1on8ByEmg',
         title: 'Use LearnTube | Video to insights to seconds',
       },
@@ -76,7 +94,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
   },
   {
     id: 'mycraft',
-    appId: 4,
+    appId: 5,
     title: 'MyCraft',
     tagline: `It's cozy in the browser.`,
     description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
@@ -90,7 +108,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
     ],
     videos: [
       {
-        id: 'app-youtube-player-4',
+        id: 'app-youtube-player-5',
         videoId: 'Jxn7g5fzAto',
         title: 'MyCraft',
       },
@@ -100,7 +118,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
   },
   {
     id: 'tuneitall',
-    appId: 5,
+    appId: 6,
     title: 'Tune It All',
     tagline: 'The only guitar pal you need.',
     description: `Tune It All is an IOS tuner app but with something extra.<br><br>
@@ -121,7 +139,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
   },
   {
     id: 'voxelit',
-    appId: 6,
+    appId: 7,
     title: 'Voxelit',
     tagline: 'Voxel scene to code.',
     description: `Voxelit is a Blender-like tiny voxel 3D editor.<br><br>
@@ -131,16 +149,6 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
     Have fun building it, and enjoy the convenience using it.`,
     images: ['voxelit1.jpeg', 'voxelit2.jpeg'],
     link: 'https://vx.scottsun.io',
-    showLink: true,
-  },
-  {
-    id: 'eventhorizon',
-    appId: 7,
-    title: 'Event Horizon',
-    tagline: 'Awe in bending physics.',
-    description: `Wandering on a lonesome and desolate planet orbiting a black hole. Face the event horizon.`,
-    images: ['eventhorizon1.jpeg', 'eventhorizon2.jpeg'],
-    link: 'https://eventhorizon.scottsun.io',
     showLink: true,
   },
   {
