@@ -89,9 +89,9 @@ const AppsTab = () => {
                     href={app.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="view-button inline-flex items-center px-6 py-3 text-base md:text-lg font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 transition-all duration-200"
+                    className="view-button inline-flex items-center gap-1.5 px-6 py-3 text-base md:text-lg font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 transition-all duration-200"
                   >
-                    Check out {app.title}
+                    Check out <span className="font-semibold text-yellow-200">{app.title}</span>
                   </a>
                 </div>
               )}

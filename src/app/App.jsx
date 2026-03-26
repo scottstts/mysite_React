@@ -159,16 +159,16 @@ function App() {
             rel="noopener noreferrer"
             className="static-footer-link inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-300"
           >
-            <span className="text-sm font-medium">View Source Repo</span>
             <i className="fa-solid fa-code text-xs" aria-hidden="true"></i>
+            <span className="text-sm font-medium">Source Repo</span>
           </a>
           <br />
           <a
             href="/llm.txt"
             className="static-footer-link inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-300 mt-2"
           >
-            <span className="text-sm font-medium">LLM-friendly Markdown</span>
             <i className="fa-solid fa-robot text-xs" aria-hidden="true"></i>
+            <span className="text-sm font-medium">llm.txt</span>
           </a>
         </footer>
       )}

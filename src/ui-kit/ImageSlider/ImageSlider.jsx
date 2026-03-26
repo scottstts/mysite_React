@@ -27,7 +27,7 @@ const ImageSlider = ({
 
   const totalSlides = originalSlides.length;
 
-  const [currentIndex, setCurrentIndex] = useState(totalSlides > 1 ? 1 : 0); // Start at index 1 for infinite loop, 0 for single slide
+  const [currentIndex, setCurrentIndex] = useState(1); // Start at index 1 for infinite loop
   const [isPlaying, setIsPlaying] = useState(autoplay);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [youtubePlayersReady, setYoutubePlayersReady] = useState(false);
@@ -36,17 +36,14 @@ const ImageSlider = ({
   const youtubePlayersRef = useRef({});
 
   // Create infinite loop by duplicating slides: [last, ...original, first]
-  const slides =
-    totalSlides > 1
-      ? [
-          {
-            ...originalSlides[totalSlides - 1],
-            id: `${originalSlides[totalSlides - 1].id}-clone-start`,
-          },
-          ...originalSlides,
-          { ...originalSlides[0], id: `${originalSlides[0].id}-clone-end` },
-        ]
-      : originalSlides;
+  const slides = [
+    {
+      ...originalSlides[totalSlides - 1],
+      id: `${originalSlides[totalSlides - 1].id}-clone-start`,
+    },
+    ...originalSlides,
+    { ...originalSlides[0], id: `${originalSlides[0].id}-clone-end` },
+  ];
 
   // Define YouTube state change handler before it's used
   const handleYouTubeStateChange = useCallback(
@@ -168,7 +165,7 @@ const ImageSlider = ({
 
   // Handle infinite loop transitions
   useEffect(() => {
-    if (totalSlides <= 1) return;
+    if (totalSlides < 1) return;
 
     if (currentIndex === 0) {
       // At the cloned last slide, jump to the real last slide
@@ -189,7 +186,7 @@ const ImageSlider = ({
 
   const goToSlide = (index) => {
     // Convert original slide index to infinite loop index
-    setCurrentIndex(totalSlides > 1 ? index + 1 : index);
+    setCurrentIndex(index + 1);
   };
 
   const goToPrevious = () => {
@@ -300,7 +297,7 @@ const ImageSlider = ({
       </div>
 
       {/* Navigation Dots */}
-      {totalSlides > 1 && (
+      {totalSlides >= 1 && (
         <div className="tns-nav">
           {originalSlides.map((_, index) => {
             // Calculate the active index from the infinite loop index
