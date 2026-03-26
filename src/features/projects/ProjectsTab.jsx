@@ -20,7 +20,7 @@ const ProjectsTab = () => {
           Learning Journey
         </h1>
 
-        {projects.map((project, _index) => (
+        {projects.map((project, index) => (
           <GlassCard
             key={project.id}
             className="rounded-2xl overflow-hidden fade-in"
@@ -45,7 +45,7 @@ const ProjectsTab = () => {
                     <ImageSlider
                       images={project.images}
                       videos={project.videos}
-                      projectId={project.projectId}
+                      projectId={index + 1}
                       autoplay={true}
                       autoplayDelay={5000}
                     />

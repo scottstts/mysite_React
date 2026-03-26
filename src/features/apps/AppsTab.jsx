@@ -74,7 +74,7 @@ const AppsTab = () => {
                     <ImageSlider
                       images={app.images}
                       videos={app.videos || []}
-                      appId={app.appId}
+                      appId={index + 1}
                       autoplay={true}
                       autoplayDelay={4000}
                     />

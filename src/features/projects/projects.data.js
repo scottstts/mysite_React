@@ -1,7 +1,6 @@
 export const projects = [
   {
     id: 'programming-start',
-    projectId: 1,
     title: 'Picked Up Programming Before the ChatGPT Moment',
     date: 'Mar. 2022',
     description: `First stepping into a new field and learning tangible things is exciting and satisfying. This is especially true for programming. The basic realization became—huh, I can just build things.<br><br>
@@ -14,7 +13,6 @@ Programming is only a subdomain of computer science, and a programming language 
   },
   {
     id: 'deep-learning',
-    projectId: 2,
     title: 'Deep Learning Caught My Attention',
     date: 'Aug. 2022',
     description: `You remember that famous TV show Person of Interest? The iconic starting line was <span class="italic">"You are being watched. … A machine that spies on you every hour of every day. … I know, because I built it"</span>. I was fascinated about that show, and it drove me down a rabbit hole of research into artificial intelligence and the state of the art (at the time of course). Interestingly the show depicted the machine as completely hard-coded by Harold while real AI systems are neural net based models. I didn't know this distinction until later <i class="fa-solid fa-face-laugh-wink" aria-hidden="true"></i>.<br><br>
@@ -27,7 +25,6 @@ I knew absolutely nothing about AI, machine learning, and deep learning at the t
   },
   {
     id: 'learn-things',
-    projectId: 3,
     title: 'You Can Just Learn Things',
     date: 'Jan. 2023',
     description: `I was starting to get a rhythm on diving into something entirely new. So again I started with the basics—neural networks. I soon realized it was not as difficult as I had imagined it to be to at least get started on, because I had already had foundations on calculus and statistics, and "that thing" called linear algebra which I had painfully learned as a mandatory class in undergrad without knowing what the heck it was for, suddenly became unbelievably important. I quickly absorbed concepts like backpropagation and gradient descent, and fundamentals on MLP, CNN, RNN, and RL (didn't pay Attention to the Transformer—pun intended—until later sadly).<br><br>
@@ -44,7 +41,6 @@ Later I reviewed everything I learned from the mini-GPT dev and I pre-trained a 
   },
   {
     id: 'blender-unity',
-    projectId: 4,
     title: 'Blender & Unity, A Change of Pace',
     date: 'Apr. 2023',
     description: `Today I don't even remember how it started, but somehow I decided to learn Blender. I tend to think it is because 3D modeling and rendering is another epitome for the phrase "you can just build things". And the exhilaration you get from creating something beautiful out of thin air is beyond words.<br><br>
@@ -55,7 +51,6 @@ I also started to learn some game dev with Unity. I made a few simple but intere
     images: ['blender.jpeg', 'SkyPool.jpeg', 'Turbo_Drift.jpeg'],
     videos: [
       {
-        id: 'project-youtube-player-1',
         videoId: '3NA4uyCcUD4',
         title: 'Blender Renders',
       },
@@ -63,7 +58,6 @@ I also started to learn some game dev with Unity. I made a few simple but intere
   },
   {
     id: 'autodrive',
-    projectId: 5,
     title: 'AutoDrive—3D Modeling and Unity, Meet ML',
     date: 'Jun. 2023',
     description: `As I was having fun making game projects, I came across a library developed by the Unity team called ML-Agents. This framework allows you to develop and train robotic agents with RL in a virtual world inside the Unity game engine, sorta like a simpler version of Nvidia's Isaac Sim. This became a perfect crossover project between Blender, Unity, and ML for me.<br><br>
@@ -72,7 +66,6 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
     images: ['autodrive_code.jpeg'],
     videos: [
       {
-        id: 'project-youtube-player-2',
         videoId: 'Ur7uA-IiZck',
         title: 'AutoDrive',
       },
@@ -80,7 +73,6 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
   },
   {
     id: 'msc-certificates',
-    projectId: 6,
     title: 'Different Country, MSc Business, & Certificate Phase',
     date: 'Sep. 2023',
     description: `Going to a different country for a Masters study is a big change. I was excited to learn about business, and most importantly, to learn life in a different speed and spectrum.<br><br>
@@ -93,7 +85,6 @@ But eventually, I realized that the best way to learn is after all project build
   },
   {
     id: 'app-dev-ai',
-    projectId: 7,
     title: 'Recreational App Dev & Frontier AI Chase',
     date: 'Jan. 2024',
     description: `Making apps that solve small but practical problems is recreational and good for the soul.<br><br>
@@ -111,7 +102,6 @@ Gradually, I have also gotten into the habit of reading frontier AI research pap
   },
   {
     id: 'ai_profession_days',
-    projectId: 8,
     title: 'Can You Even Imagine Life Without AI?',
     date: 'Feb. 2025',
     description: `It's only been a couple of years, but it's hard to remember the time before AI.<br><br>
@@ -130,7 +120,6 @@ But it's more than that. For those who are constantly curious, and those who alw
   },
   {
     id: 'good-o-learning-n-fun',
-    projectId: 9,
     title: 'Good Old Learning and Fun',
     date: 'Dec. 2025 onward',
     description: `I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.<br><br>
@@ -144,17 +133,14 @@ Of course not all projects pan out, at least not as fully expected. I had the id
     images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg', 'lmcs.jpeg'],
     videos: [
       {
-        id: 'project-youtube-player-3',
         videoId: 'XNq3v_CsfOE',
         title: 'I Trained A Small Diffusion Language Model',
       },
       {
-        id: 'project-youtube-player-4',
         videoId: 'wXipHa1hvM8',
         title: 'LMCS | LLMs Playing PVP Game',
       },
       {
-        id: 'project-youtube-player-5',
         videoId: 'Kqwx3ub4Lh0',
         title: 'I Turned Surrounding Environment into 3D Gaussian Splats',
       },
