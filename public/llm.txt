@@ -35,7 +35,19 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 ## Apps
 
-### 1. Interstellar.three.js
+### Jarvis
+
+**Tagline:** Your AI assistant should be classy.
+
+Jarvis is arguably my favorite AI assistant from any sci-fi stories. He's capable, low key, intelligent, and witty. He is my idea of how a personal AI assistant should be like. Watching Iron Man has been a great inspiration.
+
+Now we finally have the technology to build this out, or ... close enough.
+
+There are great personal AI assistants out there I have no doubt, but for me it is more fun to build out my own version of Jarvis, shaping it to be the way I want.
+
+- Link: https://github.com/scottstts/JARVIS.py
+
+### Interstellar.three.js
 
 **Tagline:** My favorite film, my rendition.
 
@@ -45,7 +57,7 @@ So I recreated the entire film using three.js scene builds and animations. I did
 
 - Link: https://interstellar3.scottsun.io
 
-### 2. Stellar
+### Stellar
 
 **Tagline:** Space is musical.
 
@@ -53,7 +65,7 @@ I built this Starship Simulator game in Three.js. Enjoy a journey with the Stars
 
 - Link: https://stellar.scottsun.io
 
-### 3. IngreLab
+### IngreLab
 
 **Tagline:** Food Intelligence.
 
@@ -65,7 +77,7 @@ We all should know what we eat. IngreLab powers your "Food Intelligence".
 
 - Link: https://ingrelab.scottsun.io
 
-### 4. LearnTube
+### LearnTube
 
 **Tagline:** Video to insights in seconds.
 
@@ -81,7 +93,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
 
 - Link: https://learntube.scottsun.io
 
-### 5. MyCraft
+### MyCraft
 
 **Tagline:** It's cozy in the browser.
 
@@ -91,7 +103,7 @@ Enjoy the sunny beams, cozy view, and smooth music. And you might even build som
 
 - Link: https://mycraft.scottsun.io
 
-### 6. Tune It All
+### Tune It All
 
 **Tagline:** The only guitar pal you need.
 
@@ -105,7 +117,7 @@ Happy practicing!
 
 - Link: https://tuneitall.scottsun.io
 
-### 7. Voxelit
+### Voxelit
 
 **Tagline:** Voxel scene to code.
 
@@ -117,7 +129,7 @@ Have fun building it, and enjoy the convenience using it.
 
 - Link: https://vx.scottsun.io
 
-### 8. ImgSherlock
+### ImgSherlock
 
 **Tagline:** MLLM vs. MLLM.
 
@@ -129,7 +141,7 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
 
 - Link: https://imgsherlock.scottsun.io
 
-### 9. Job Guru
+### Job Guru
 
 **Status:** No Longer Deployed
 
@@ -145,7 +157,7 @@ With Job Guru, you're not just writing—you're crafting a tailored, strategic a
 
 ## Projects
 
-### 1. Picked Up Programming Before the ChatGPT Moment (Mar. 2022)
+### Picked Up Programming Before the ChatGPT Moment (Mar. 2022)
 
 First stepping into a new field and learning tangible things is exciting and satisfying. This is especially true for programming. The basic realization became—huh, I can just build things.
 
@@ -153,7 +165,7 @@ I chose the book *Python Crash Course* as a no-brainer and I still remember the 
 
 Programming is only a subdomain of computer science, and a programming language itself can be tedious. So I have learned the basics and intermediate Python, the immediate question that hit me was—what do I use it for?
 
-### 2. Deep Learning Caught My Attention (Aug. 2022)
+### Deep Learning Caught My Attention (Aug. 2022)
 
 You remember that famous TV show Person of Interest? The iconic starting line was "You are being watched. … A machine that spies on you every hour of every day. … I know, because I built it". I was fascinated about that show, and it drove me down a rabbit hole of research into artificial intelligence and the state of the art (at the time of course). Interestingly the show depicted the machine as completely hard-coded by Harold while real AI systems are neural net based models. I didn't know this distinction until later.
 
@@ -161,7 +173,7 @@ It was around the same time that a thing called "GPT" came out of nowhere (GPT-3
 
 I knew absolutely nothing about AI, machine learning, and deep learning at the time. Zero. From an initial toe dipping, I realized learning AI required a tremendous amount of understanding in math and quite sophisticated coding skills. I wasn't sure I was up for it, but I decided to give it a try. That decision has led me such a long way here in retrospect.
 
-### 3. You Can Just Learn Things (Jan. 2023)
+### You Can Just Learn Things (Jan. 2023)
 
 I was starting to get a rhythm on diving into something entirely new. So again I started with the basics—neural networks. I soon realized it was not as difficult as I had imagined it to be to at least get started on, because I had already had foundations on calculus and statistics, and "that thing" called linear algebra which I had painfully learned as a mandatory class in undergrad without knowing what the heck it was for, suddenly became unbelievably important. I quickly absorbed concepts like backpropagation and gradient descent, and fundamentals on MLP, CNN, RNN, and RL (didn't pay Attention to the Transformer—pun intended—until later sadly).
 
@@ -173,7 +185,7 @@ I followed along every step in his building GPT video, doing side research whene
 
 Later I reviewed everything I learned from the mini-GPT dev and I pre-trained a GPT-like (100M Params) LLM from scratch using a portion of the Common Crawl dataset, and further finetuned it with some instruction datasets I could find at the time. The model achieved above 20 on Hellaswag.
 
-### 4. Blender & Unity, A Change of Pace (Apr. 2023)
+### Blender & Unity, A Change of Pace (Apr. 2023)
 
 Today I don't even remember how it started, but somehow I decided to learn Blender. I tend to think it is because 3D modeling and rendering is another epitome for the phrase "you can just build things". And the exhilaration you get from creating something beautiful out of thin air is beyond words.
 
@@ -181,13 +193,13 @@ Building 3D models can be extremely time-consuming, EXTREMELY! But I enjoyed eve
 
 I also started to learn some game dev with Unity. I made a few simple but interesting games (I put two of them—SkyPool & Turbo Drift—on Google Drive with a public link. They are built so you can download it and play directly, although only built for MacOS: [Link Here](https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing)).
 
-### 5. AutoDrive—3D Modeling and Unity, Meet ML (Jun. 2023)
+### AutoDrive—3D Modeling and Unity, Meet ML (Jun. 2023)
 
 As I was having fun making game projects, I came across a library developed by the Unity team called ML-Agents. This framework allows you to develop and train robotic agents with RL in a virtual world inside the Unity game engine, sorta like a simpler version of Nvidia's Isaac Sim. This became a perfect crossover project between Blender, Unity, and ML for me.
 
 I used Blender to develop a 3D car model, exported it to Unity, and built a convoluted tunnel scene with the car being the agent, navigating out of the tunnel via RL-learned self driving. After weeks of painstaking adjustments on reward functions (in C#) and hyperparameters, and countless training failures, finally I successfully trained an agent capable of steering the car out of the tunnel autonomously.
 
-### 6. Different Country, MSc Business, & Certificate Phase (Sep. 2023)
+### Different Country, MSc Business, & Certificate Phase (Sep. 2023)
 
 Going to a different country for a Masters study is a big change. I was excited to learn about business, and most importantly, to learn life in a different speed and spectrum.
 
@@ -195,7 +207,7 @@ In the meantime, I went into a little bit of a tech certificate phase. Did a ful
 
 But eventually, I realized that the best way to learn is after all project building. When you build, you're forced to think about things from first principles, and you're forced to go through every single technical detail instead of just going through them in your mind, which makes you super sharp in every part of the tech stack.
 
-### 7. Recreational App Dev & Frontier AI Chase (Jan. 2024)
+### Recreational App Dev & Frontier AI Chase (Jan. 2024)
 
 Making apps that solve small but practical problems is recreational and good for the soul.
 
@@ -203,7 +215,7 @@ I suppose building things is addictive. Once you get a taste of the process, you
 
 Gradually, I have also gotten into the habit of reading frontier AI research papers. Every week I would check the Hugging Face Daily Papers section for interesting papers, and of course not all of them would make it to HF, and so 𝕏 is my paper hunting safety net. Reading raw AI papers forces me to constantly replenish my knowledge pool. Luckily there are tools like Claude and NotebookLM that make this process easier for me.
 
-### 8. Can You Even Imagine Life Without AI? (Feb. 2025)
+### Can You Even Imagine Life Without AI? (Feb. 2025)
 
 It's only been a couple of years, but it's hard to remember the time before AI.
 
@@ -211,7 +223,7 @@ It's remarkable if you think about it. A little seed of progress that turned out
 
 But it's more than that. For those who are constantly curious, and those who always want to build stuff and push limits, AI is the best thing ever. You'd have several genius level assistants at your beck and call 24/7, augmenting you non stop. Having AI like a suit of armor around your brain is immense freedom, freedom from ignorance, from helplessness, and from limits.
 
-### 9. Good Old Learning and Fun (Dec. 2025 onward)
+### Good Old Learning and Fun (Dec. 2025 onward)
 
 I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.
 

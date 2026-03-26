@@ -1,5 +1,18 @@
 export const apps = [
   {
+    id: 'jarvis',
+    title: 'Jarvis',
+    tagline: 'Your AI assistant should be classy.',
+    description: `Jarvis is arguably my favorite AI assistant from any sci-fi stories. He's capable, low key, intelligent, and witty. He is my idea of how a personal AI assistant should be like. Watching Iron Man has been a great inspiration.<br><br>
+
+Now we finally have the technology to build this out, or ... close enough.<br><br>
+
+There are great personal AI assistants out there I have no doubt, but for me it is more fun to build out my own version of Jarvis, shaping it to be the way I want.`,
+    images: ['jarvis.jpeg'],
+    link: 'https://github.com/scottstts/JARVIS.py',
+    showLink: true,
+  },
+  {
     id: 'interstellar3',
     title: 'Interstellar.three.js',
     tagline: 'My favorite film, my rendition.',
