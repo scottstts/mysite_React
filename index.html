@@ -100,6 +100,58 @@
         object-position: var(--intro-video-pos-desktop);
       }
 
+      #intro-video-badge {
+        position: fixed;
+        right: calc(env(safe-area-inset-right, 0px) + clamp(14px, 2.2vw, 24px));
+        bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(14px, 2.2vw, 24px));
+        z-index: 51;
+        display: inline-flex;
+        align-items: center;
+        gap: clamp(8px, 1.2vw, 12px);
+        padding: clamp(10px, 1.3vw, 14px) clamp(14px, 1.9vw, 20px);
+        border: 2px solid rgba(255, 255, 255, 0.96);
+        border-radius: 999px;
+        background: rgba(36, 36, 36, 0.42);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        font-size: clamp(0.92rem, 1vw, 1.15rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        opacity: 0;
+        visibility: hidden;
+        transform: translate3d(0, 8px, 0);
+        transition:
+          opacity 0.12s ease-out,
+          transform 0.12s ease-out,
+          visibility 0s linear 0.12s;
+        will-change: opacity, transform;
+        contain: layout paint;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      #intro-video-badge.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translate3d(0, 0, 0);
+        transition-delay: 0s;
+      }
+
+      #intro-video-badge-text {
+        white-space: nowrap;
+      }
+
+      #intro-video-badge-logo {
+        display: block;
+        width: clamp(48px, 6vw, 76px);
+        height: auto;
+        flex-shrink: 0;
+      }
+
       /* Mobile portrait: extend container to cover bottom, bias framing horizontally while anchoring to bottom */
       @media (max-width: 900px) and (orientation: portrait) {
         #intro-video-container {
@@ -110,6 +162,18 @@
 
         #intro-video {
           object-position: var(--intro-video-pos-mobile);
+        }
+
+        #intro-video-badge {
+          right: calc(env(safe-area-inset-right, 0px) + 14px);
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+          gap: 8px;
+          padding: 10px 14px;
+          font-size: 0.92rem;
+        }
+
+        #intro-video-badge-logo {
+          width: 46px;
         }
       }
     </style>
@@ -124,6 +188,18 @@
       <video id="intro-video" playsinline muted preload="auto">
         <!-- Source is set dynamically by intro script -->
       </video>
+      <div id="intro-video-badge" aria-hidden="true">
+        <span id="intro-video-badge-text">Made with</span>
+        <img
+          id="intro-video-badge-logo"
+          src="/blender-logo.png"
+          alt=""
+          width="960"
+          height="785"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
     </div>
 
     <script>
@@ -177,7 +253,22 @@
 
         const container = document.getElementById('intro-video-container');
         const video = document.getElementById('intro-video');
+        const badge = document.getElementById('intro-video-badge');
+        const badgeLogo = document.getElementById('intro-video-badge-logo');
         let videoFinished = false;
+        let badgeShown = false;
+
+        const showBadge = () => {
+          if (badgeShown || videoFinished) return;
+          badgeShown = true;
+          badge.classList.add('is-visible');
+        };
+
+        if (badgeLogo && !badgeLogo.complete) {
+          badgeLogo.decode().catch(() => {
+            // Ignore decode failures and let the browser paint the image normally.
+          });
+        }
 
         // Set the video source and apply cropping strategies
         const source = document.createElement('source');
@@ -217,6 +308,7 @@
         };
 
         // Video Event Listeners
+        video.addEventListener('playing', showBadge, { once: true });
         video.addEventListener('ended', finishVideo);
         video.addEventListener('error', (e) => {
           console.error('Video error:', e);
