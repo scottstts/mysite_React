@@ -2,10 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
 import tailwindcss from '@tailwindcss/vite';
+import crawlable from './vite-plugin-crawlable.js';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), crawlable()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

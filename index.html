@@ -180,6 +180,11 @@
   </head>
 
   <body>
+    <!-- Redirect automated crawlers to the plain-text content file -->
+    <script>
+      if (navigator.webdriver) window.location.replace('/llms.txt');
+    </script>
+
     <div
       id="intro-video-container"
       role="banner"
