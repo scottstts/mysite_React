@@ -2,7 +2,6 @@ import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { inspirations } from './inspirations.data';
 import { safeHtml } from '@/lib/safeHtml';
-import './InspirationsTab.module.css';
 
 const InspirationsTab = () => {
   return (
