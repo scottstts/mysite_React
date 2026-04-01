@@ -1,4 +1,6 @@
-export const inspirations = [
+import type { Inspiration } from '@/types/content';
+
+export const inspirations: Inspiration[] = [
   {
     id: 'elon',
     name: 'Elon Musk',

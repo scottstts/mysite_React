@@ -1,4 +1,6 @@
-export const projects = [
+import type { Project } from '@/types/content';
+
+export const projects: Project[] = [
   {
     id: 'programming-start',
     title: 'Picked Up Programming Before the ChatGPT Moment',

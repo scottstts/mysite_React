@@ -1,8 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const MIN_FPS_THRESHOLD = 15;
 const BENCHMARK_DURATION_MS = 1000;
-
 
 // Vertex shader - passes per-petal random seed for shape/color variation
 const vertexShaderSource = `
@@ -133,41 +132,72 @@ const fragmentShaderSource = `
   }
 `;
 
+interface StarsCanvasProps {
+  onBenchmarkComplete: (passed: boolean) => void;
+}
+
+interface BenchmarkState {
+  isRunning: boolean;
+  startTime: number | null;
+  frameCount: number;
+  completed: boolean;
+}
+
 // Generate random points uniformly distributed inside a sphere
-const generateSpherePoints = (count, radius) => {
+const generateSpherePoints = (count: number, radius: number): Float32Array => {
   const positions = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
+
+  for (let index = 0; index < count; index++) {
     const u = Math.random();
     const v = Math.random();
     const theta = 2 * Math.PI * u;
     const phi = Math.acos(2 * v - 1);
     const r = radius * Math.cbrt(Math.random());
 
-    const i3 = i * 3;
-    positions[i3] = r * Math.sin(phi) * Math.cos(theta);
-    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    positions[i3 + 2] = r * Math.cos(phi);
+    const offset = index * 3;
+    positions[offset] = r * Math.sin(phi) * Math.cos(theta);
+    positions[offset + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[offset + 2] = r * Math.cos(phi);
   }
+
   return positions;
 };
 
 // Create a perspective projection matrix (matches Three.js PerspectiveCamera)
-const createPerspectiveMatrix = (fovDegrees, aspect, near, far) => {
+const createPerspectiveMatrix = (
+  fovDegrees: number,
+  aspect: number,
+  near: number,
+  far: number
+): Float32Array => {
   const fovRad = (fovDegrees * Math.PI) / 180;
   const f = 1.0 / Math.tan(fovRad / 2);
   const rangeInv = 1.0 / (near - far);
 
   return new Float32Array([
-    f / aspect, 0, 0, 0,
-    0, f, 0, 0,
-    0, 0, (near + far) * rangeInv, -1,
-    0, 0, near * far * rangeInv * 2, 0,
+    f / aspect,
+    0,
+    0,
+    0,
+    0,
+    f,
+    0,
+    0,
+    0,
+    0,
+    (near + far) * rangeInv,
+    -1,
+    0,
+    0,
+    near * far * rangeInv * 2,
+    0,
   ]);
 };
 
 // Multiply two 4x4 matrices
-const multiplyMatrices = (a, b) => {
+const multiplyMatrices = (a: Float32Array, b: Float32Array): Float32Array => {
   const result = new Float32Array(16);
+
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
       let sum = 0;
@@ -177,58 +207,53 @@ const multiplyMatrices = (a, b) => {
       result[row + col * 4] = sum;
     }
   }
+
   return result;
 };
 
 // Create rotation matrix around X axis
-const createRotationXMatrix = (angle) => {
+const createRotationXMatrix = (angle: number): Float32Array => {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, c, s, 0,
-    0, -s, c, 0,
-    0, 0, 0, 1,
-  ]);
+
+  return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]);
 };
 
 // Create rotation matrix around Y axis
-const createRotationYMatrix = (angle) => {
+const createRotationYMatrix = (angle: number): Float32Array => {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
-  return new Float32Array([
-    c, 0, -s, 0,
-    0, 1, 0, 0,
-    s, 0, c, 0,
-    0, 0, 0, 1,
-  ]);
+
+  return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
 };
 
 // Create rotation matrix around Z axis
-const createRotationZMatrix = (angle) => {
+const createRotationZMatrix = (angle: number): Float32Array => {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
-  return new Float32Array([
-    c, s, 0, 0,
-    -s, c, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ]);
+
+  return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 };
 
 // Create translation matrix
-const createTranslationMatrix = (x, y, z) => {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    x, y, z, 1,
-  ]);
-};
+const createTranslationMatrix = (
+  x: number,
+  y: number,
+  z: number
+): Float32Array => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]);
 
 // Compile a shader
-const compileShader = (gl, source, type) => {
+const compileShader = (
+  gl: WebGLRenderingContext,
+  source: string,
+  type: number
+): WebGLShader | null => {
   const shader = gl.createShader(type);
+
+  if (!shader) {
+    return null;
+  }
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
@@ -237,23 +262,40 @@ const compileShader = (gl, source, type) => {
     gl.deleteShader(shader);
     return null;
   }
+
   return shader;
 };
 
 // Create shader program
-const createProgram = (gl, vertexSource, fragmentSource) => {
+const createProgram = (
+  gl: WebGLRenderingContext,
+  vertexSource: string,
+  fragmentSource: string
+): WebGLProgram | null => {
   const vertexShader = compileShader(gl, vertexSource, gl.VERTEX_SHADER);
   const fragmentShader = compileShader(gl, fragmentSource, gl.FRAGMENT_SHADER);
 
-  if (!vertexShader || !fragmentShader) return null;
+  if (!vertexShader || !fragmentShader) {
+    return null;
+  }
 
   const program = gl.createProgram();
+
+  if (!program) {
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    return null;
+  }
+
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.error('Program link error:', gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
     return null;
   }
 
@@ -264,12 +306,11 @@ const createProgram = (gl, vertexSource, fragmentSource) => {
   return program;
 };
 
-
-const StarsCanvas = ({ onBenchmarkComplete }) => {
-  const canvasRef = useRef(null);
-  const animationIdRef = useRef(null);
-  const glRef = useRef(null);
-  const programRef = useRef(null);
+const StarsCanvas = ({ onBenchmarkComplete }: StarsCanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationIdRef = useRef<number | null>(null);
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
   const timeRef = useRef(0);
   const lastTimeRef = useRef(0);
 
@@ -278,7 +319,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
   onBenchmarkCompleteRef.current = onBenchmarkComplete;
 
   // Benchmark state
-  const benchmarkRef = useRef({
+  const benchmarkRef = useRef<BenchmarkState>({
     isRunning: true,
     startTime: null,
     frameCount: 0,
@@ -287,7 +328,10 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+
+    if (!canvas) {
+      return;
+    }
 
     // Get WebGL context
     const gl = canvas.getContext('webgl', {
@@ -337,8 +381,8 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
 
     // Per-petal random seed attribute (for shape/color variation)
     const seeds = new Float32Array(PETAL_COUNT);
-    for (let i = 0; i < PETAL_COUNT; i++) {
-      seeds[i] = Math.random();
+    for (let index = 0; index < PETAL_COUNT; index++) {
+      seeds[index] = Math.random();
     }
     const seedBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, seedBuffer);
@@ -357,13 +401,19 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
     // Resize handler
     const resize = () => {
       const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const height = canvas.clientHeight || 1;
+
       canvas.width = width;
       canvas.height = height;
       gl.viewport(0, 0, width, height);
 
       // Update projection matrix (75 degree FOV, matching Three.js default)
-      const projectionMatrix = createPerspectiveMatrix(75, width / height, 0.1, 1000);
+      const projectionMatrix = createPerspectiveMatrix(
+        75,
+        width / height,
+        0.1,
+        1000
+      );
       gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
     };
     resize();
@@ -376,7 +426,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
     const groupRotationZ = createRotationZMatrix(Math.PI / 4);
 
     // Animation loop
-    const animate = (currentTime) => {
+    const animate = (currentTime: number) => {
       animationIdRef.current = requestAnimationFrame(animate);
 
       // Calculate delta
@@ -393,7 +443,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
           benchmark.startTime = performance.now();
         }
 
-        benchmark.frameCount++;
+        benchmark.frameCount += 1;
         const elapsed = performance.now() - benchmark.startTime;
 
         if (elapsed >= BENCHMARK_DURATION_MS) {
@@ -430,7 +480,7 @@ const StarsCanvas = ({ onBenchmarkComplete }) => {
     // Cleanup
     return () => {
       window.removeEventListener('resize', resize);
-      if (animationIdRef.current) {
+      if (animationIdRef.current !== null) {
         cancelAnimationFrame(animationIdRef.current);
       }
       gl.deleteBuffer(positionBuffer);

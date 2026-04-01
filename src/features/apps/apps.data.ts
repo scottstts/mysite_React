@@ -1,4 +1,6 @@
-export const apps = [
+import type { App } from '@/types/content';
+
+export const apps: App[] = [
   {
     id: 'jarvis',
     title: 'Jarvis',

@@ -1,22 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { artInLifeData } from './artInLife.data.js';
-import { safeHtml } from '../../lib/safeHtml.js';
+import { artInLifeData } from './artInLife.data';
+import { safeHtml } from '@/lib/safeHtml';
 import styles from './ArtInLifeTab.module.css';
 
 // Helper function to shuffle an array
-const shuffleArray = (array) => {
+const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  for (let index = newArray.length - 1; index > 0; index--) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [newArray[index], newArray[randomIndex]] = [
+      newArray[randomIndex],
+      newArray[index],
+    ];
   }
   return newArray;
 };
 
 // Function to enhance iframe accessibility with lazy loading
-const enhanceIframeAccessibility = (container) => {
-  const iframes = container.querySelectorAll('iframe[src*="instagram.com"]');
+const enhanceIframeAccessibility = (container: HTMLElement) => {
+  const iframes = container.querySelectorAll<HTMLIFrameElement>(
+    'iframe[src*="instagram.com"]'
+  );
   iframes.forEach((iframe, index) => {
     // Add accessibility attributes
     iframe.setAttribute(
@@ -43,9 +48,13 @@ const enhanceIframeAccessibility = (container) => {
   });
 };
 
+interface LazyEmbedProps {
+  htmlContent: string;
+}
+
 // Lazy-loading component for Instagram embeds - processes per card
-const LazyEmbed = ({ htmlContent }) => {
-  const ref = useRef(null);
+const LazyEmbed = ({ htmlContent }: LazyEmbedProps) => {
+  const ref = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -70,6 +79,7 @@ const LazyEmbed = ({ htmlContent }) => {
       if (currentRef) {
         observer.unobserve(currentRef);
       }
+      observer.disconnect();
     };
   }, []);
 
@@ -93,7 +103,7 @@ const LazyEmbed = ({ htmlContent }) => {
 };
 
 const ArtInLifeTab = () => {
-  const [shuffledEmbeds, setShuffledEmbeds] = useState([]);
+  const [shuffledEmbeds, setShuffledEmbeds] = useState<string[]>([]);
 
   useEffect(() => {
     setShuffledEmbeds(shuffleArray(artInLifeData));

@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 
 const useMouseParallax = () => {
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (event: MouseEvent) => {
       if (window.innerWidth < 768) return; // Skip on mobile
 
-      const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
-      const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
+      const moveX = (event.clientX - window.innerWidth / 2) * 0.005;
+      const moveY = (event.clientY - window.innerHeight / 2) * 0.005;
 
       document.body.style.setProperty('--mouse-x', `${moveX}deg`);
       document.body.style.setProperty('--mouse-y', `${moveY}deg`);

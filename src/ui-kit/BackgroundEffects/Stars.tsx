@@ -5,7 +5,7 @@ const StarsCanvas = lazy(() => import('./StarsCanvas'));
 
 const Stars = () => {
   const [introComplete, setIntroComplete] = useState(false);
-  const [passedBenchmark, setPassedBenchmark] = useState(null); // null = pending, true = passed, false = failed
+  const [passedBenchmark, setPassedBenchmark] = useState<boolean | null>(null); // null = pending, true = passed, false = failed
 
   // Handle intro video completion
   useEffect(() => {
@@ -22,7 +22,7 @@ const Stars = () => {
   }, []);
 
   // Callback when benchmark completes - memoized to prevent re-renders
-  const handleBenchmarkComplete = useCallback((passed) => {
+  const handleBenchmarkComplete = useCallback((passed: boolean) => {
     setPassedBenchmark(passed);
   }, []);
 

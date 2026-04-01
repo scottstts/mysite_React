@@ -1,10 +1,11 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import BackgroundEffects from '@/ui-kit/BackgroundEffects/BackgroundEffects';
 import Navigation from '@/ui-kit/Navigation/Navigation';
 import ScrollToTop from '@/ui-kit/ScrollToTop/ScrollToTop';
 import useMouseParallax from '@/ui-kit/hooks/useMouseParallax';
+import type { TabId } from '@/types/content';
 import '@/styles/variables.css';
 import '@/styles/globals.css';
 import '@/styles/utilities.css';
@@ -34,7 +35,7 @@ function App() {
   );
 
   // Determine active tab from route
-  const getActiveTabFromPath = (pathname) => {
+  const getActiveTabFromPath = (pathname: string): TabId => {
     switch (pathname) {
       case '/projects':
         return 'projects';
@@ -55,7 +56,7 @@ function App() {
 
   // Dynamically update the document title when route changes
   useEffect(() => {
-    const titles = {
+    const titles: Record<TabId, string> = {
       about: 'About - Scott Sun',
       projects: 'Projects - Scott Sun',
       apps: 'Apps - Scott Sun',

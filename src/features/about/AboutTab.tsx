@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+} from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import { safeHtml } from '@/lib/safeHtml';
@@ -7,11 +15,19 @@ const IM_ON_ILLUSTRATION = '/static_assets/logo.png';
 const SCANLINE_SLICE_COUNT = 200;
 const SCANLINE_DURATION = 4; // seconds
 
+interface GlitchSize {
+  width: number;
+  height: number;
+}
+
 const AboutTab = () => {
-  const linksRef = useRef(null);
-  const glitchContainerRef = useRef(null);
-  const [imageHeight, setImageHeight] = useState('auto');
-  const [glitchSize, setGlitchSize] = useState({ width: 0, height: 0 });
+  const linksRef = useRef<HTMLDivElement | null>(null);
+  const glitchContainerRef = useRef<HTMLDivElement | null>(null);
+  const [imageHeight, setImageHeight] = useState<number | 'auto'>('auto');
+  const [glitchSize, setGlitchSize] = useState<GlitchSize>({
+    width: 0,
+    height: 0,
+  });
 
   const updateGlitchSize = useCallback(() => {
     const container = glitchContainerRef.current;
@@ -36,7 +52,7 @@ const AboutTab = () => {
     });
   }, []);
 
-  const scanlineSlices = useMemo(() => {
+  const scanlineSlices = useMemo((): ReactElement[] => {
     if (!glitchSize.width || !glitchSize.height) {
       return [];
     }
@@ -48,32 +64,29 @@ const AboutTab = () => {
       const delay = (-SCANLINE_DURATION / SCANLINE_SLICE_COUNT) * index;
       const topPx = sliceHeightPx * index;
       const backgroundOffsetPx = -topPx;
+      const scanlineStyle = {
+        top: `${topPx}px`,
+        height: `${sliceHeightPx}px`,
+        backgroundImage: `url(${IM_ON_ILLUSTRATION})`,
+        backgroundSize,
+        backgroundPosition: `0px ${backgroundOffsetPx}px`,
+        '--glitch-offset-y': `${backgroundOffsetPx}px`,
+        animationDelay: `${delay}s`,
+        animationDuration: `${SCANLINE_DURATION}s`,
+      } as CSSProperties;
 
       return (
         <span
           key={index}
           className="cybr-glitch-img__scanline"
           aria-hidden="true"
-          style={{
-            top: `${topPx}px`,
-            height: `${sliceHeightPx}px`,
-            backgroundImage: `url(${IM_ON_ILLUSTRATION})`,
-            backgroundSize,
-            backgroundPosition: `0px ${backgroundOffsetPx}px`,
-            '--glitch-offset-y': `${backgroundOffsetPx}px`,
-            animationDelay: `${delay}s`,
-            animationDuration: `${SCANLINE_DURATION}s`,
-          }}
+          style={scanlineStyle}
         />
       );
     });
   }, [glitchSize.height, glitchSize.width]);
 
   const updateImageHeight = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
     const isDesktop = window.matchMedia('(min-width: 768px)').matches;
 
     if (isDesktop && linksRef.current) {
@@ -84,15 +97,11 @@ const AboutTab = () => {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
     updateImageHeight();
 
     window.addEventListener('resize', updateImageHeight);
 
-    let observer;
+    let observer: ResizeObserver | undefined;
     if ('ResizeObserver' in window && linksRef.current) {
       observer = new ResizeObserver(() => updateImageHeight());
       observer.observe(linksRef.current);
@@ -100,22 +109,16 @@ const AboutTab = () => {
 
     return () => {
       window.removeEventListener('resize', updateImageHeight);
-      if (observer) {
-        observer.disconnect();
-      }
+      observer?.disconnect();
     };
   }, [updateImageHeight]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
     updateGlitchSize();
 
     window.addEventListener('resize', updateGlitchSize);
 
-    let observer;
+    let observer: ResizeObserver | undefined;
     if ('ResizeObserver' in window && glitchContainerRef.current) {
       observer = new ResizeObserver(() => updateGlitchSize());
       observer.observe(glitchContainerRef.current);
@@ -123,9 +126,7 @@ const AboutTab = () => {
 
     return () => {
       window.removeEventListener('resize', updateGlitchSize);
-      if (observer) {
-        observer.disconnect();
-      }
+      observer?.disconnect();
     };
   }, [updateGlitchSize]);
 
@@ -134,9 +135,13 @@ const AboutTab = () => {
     updateGlitchSize();
   }, [updateGlitchSize, updateImageHeight]);
 
-  const imageStyle = {
-    ...(imageHeight === 'auto' ? {} : { height: `${imageHeight}px` }),
-  };
+  const imageStyle: CSSProperties =
+    imageHeight === 'auto' ? {} : { height: `${imageHeight}px` };
+
+  const scanlineWrapperStyle = {
+    '--glitch-line-count': `${SCANLINE_SLICE_COUNT}`,
+    '--glitch-scanline-duration': `${SCANLINE_DURATION}s`,
+  } as CSSProperties;
 
   return (
     <>
@@ -276,10 +281,7 @@ const AboutTab = () => {
                   <div
                     className="cybr-glitch-img__scanlines"
                     aria-hidden="true"
-                    style={{
-                      '--glitch-line-count': `${SCANLINE_SLICE_COUNT}`,
-                      '--glitch-scanline-duration': `${SCANLINE_DURATION}s`,
-                    }}
+                    style={scanlineWrapperStyle}
                   >
                     {scanlineSlices}
                   </div>

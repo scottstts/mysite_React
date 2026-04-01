@@ -1,4 +1,28 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { VideoSlideData } from '@/types/content';
+
+interface ImageSliderProps {
+  images?: string[];
+  videos?: VideoSlideData[];
+  projectId?: number | string;
+  appId?: number | string;
+  autoplay?: boolean;
+  autoplayDelay?: number;
+}
+
+interface ImageSlide {
+  type: 'image';
+  src: string;
+  alt: string;
+  id: string;
+}
+
+interface VideoSlide extends VideoSlideData {
+  type: 'video';
+  id: string;
+}
+
+type Slide = ImageSlide | VideoSlide;
 
 const ImageSlider = ({
   images = [],
@@ -7,19 +31,20 @@ const ImageSlider = ({
   appId,
   autoplay = true,
   autoplayDelay = 5000,
-}) => {
+}: ImageSliderProps) => {
   // Use projectId or appId for unique identification
   const uniqueId = projectId ?? appId;
+
   // Combine images and videos into slides first to determine initial index
-  const originalSlides = [
+  const originalSlides: Slide[] = [
     ...images.map((image, index) => ({
-      type: 'image',
+      type: 'image' as const,
       src: `/static_assets/${image}`,
       alt: `Screenshot ${index + 1}`,
       id: `image-${index}`,
     })),
     ...videos.map((video, index) => ({
-      type: 'video',
+      type: 'video' as const,
       ...video,
       id: `video-${index}-${uniqueId}`, // Make ID unique across components
     })),
@@ -31,23 +56,32 @@ const ImageSlider = ({
   const [isPlaying, setIsPlaying] = useState(autoplay);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [youtubePlayersReady, setYoutubePlayersReady] = useState(false);
-  const intervalRef = useRef(null);
-  const _sliderRef = useRef(null);
-  const youtubePlayersRef = useRef({});
+  const intervalRef = useRef<number | null>(null);
+  const youtubePlayersRef = useRef<Record<string, YouTubePlayer>>({});
 
   // Create infinite loop by duplicating slides: [last, ...original, first]
-  const slides = [
-    {
-      ...originalSlides[totalSlides - 1],
-      id: `${originalSlides[totalSlides - 1].id}-clone-start`,
-    },
-    ...originalSlides,
-    { ...originalSlides[0], id: `${originalSlides[0].id}-clone-end` },
-  ];
+  const slides: Slide[] =
+    totalSlides > 0
+      ? [
+          {
+            ...originalSlides[totalSlides - 1],
+            id: `${originalSlides[totalSlides - 1].id}-clone-start`,
+          },
+          ...originalSlides,
+          { ...originalSlides[0], id: `${originalSlides[0].id}-clone-end` },
+        ]
+      : [];
+
+  const clearAutoplayInterval = () => {
+    if (intervalRef.current !== null) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
 
   // Define YouTube state change handler before it's used
   const handleYouTubeStateChange = useCallback(
-    (event, _playerId) => {
+    (event: YouTubePlayerEvent) => {
       const playerState = event.data;
 
       // YouTube player states:
@@ -61,7 +95,7 @@ const ImageSlider = ({
         setIsPlaying(autoplay); // Resume slider auto-play if originally enabled
       }
     },
-    [autoplay, setIsPlaying]
+    [autoplay]
   );
 
   // Load YouTube API
@@ -69,7 +103,7 @@ const ImageSlider = ({
     if (videos.length === 0) return;
 
     const loadYouTubeAPI = () => {
-      if (window.YT && window.YT.Player) {
+      if (window.YT?.Player) {
         setYoutubePlayersReady(true);
         return;
       }
@@ -82,7 +116,7 @@ const ImageSlider = ({
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
       }
     };
 
@@ -91,7 +125,9 @@ const ImageSlider = ({
 
   // Initialize YouTube players when API is ready
   useEffect(() => {
-    if (!youtubePlayersReady || videos.length === 0) return;
+    if (!youtubePlayersReady || videos.length === 0 || !window.YT?.Player) {
+      return;
+    }
 
     const initializePlayers = () => {
       videos.forEach((video, index) => {
@@ -102,12 +138,11 @@ const ImageSlider = ({
           !youtubePlayersRef.current[playerId]
         ) {
           try {
-            youtubePlayersRef.current[playerId] = new window.YT.Player(
+            youtubePlayersRef.current[playerId] = new window.YT!.Player(
               playerId,
               {
                 events: {
-                  onStateChange: (event) =>
-                    handleYouTubeStateChange(event, playerId),
+                  onStateChange: handleYouTubeStateChange,
                 },
               }
             );
@@ -117,18 +152,18 @@ const ImageSlider = ({
               playerId
             );
             // Try again after a short delay
-            setTimeout(() => {
+            window.setTimeout(() => {
               if (
                 document.getElementById(playerId) &&
-                !youtubePlayersRef.current[playerId]
+                !youtubePlayersRef.current[playerId] &&
+                window.YT?.Player
               ) {
                 try {
                   youtubePlayersRef.current[playerId] = new window.YT.Player(
                     playerId,
                     {
                       events: {
-                        onStateChange: (event) =>
-                          handleYouTubeStateChange(event, playerId),
+                        onStateChange: handleYouTubeStateChange,
                       },
                     }
                   );
@@ -146,21 +181,21 @@ const ImageSlider = ({
     };
 
     // Wait a bit for iframes to be rendered
-    const timer = setTimeout(initializePlayers, 500);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(initializePlayers, 500);
+    return () => window.clearTimeout(timer);
   }, [youtubePlayersReady, videos, uniqueId, handleYouTubeStateChange]);
 
   // Auto-advance slides
   useEffect(() => {
     if (isPlaying && totalSlides > 1) {
-      intervalRef.current = setInterval(() => {
+      intervalRef.current = window.setInterval(() => {
         setCurrentIndex((prevIndex) => prevIndex + 1);
       }, autoplayDelay);
     } else {
-      clearInterval(intervalRef.current);
+      clearAutoplayInterval();
     }
 
-    return () => clearInterval(intervalRef.current);
+    return () => clearAutoplayInterval();
   }, [isPlaying, totalSlides, autoplayDelay]);
 
   // Handle infinite loop transitions
@@ -169,22 +204,22 @@ const ImageSlider = ({
 
     if (currentIndex === 0) {
       // At the cloned last slide, jump to the real last slide
-      setTimeout(() => {
+      window.setTimeout(() => {
         setIsTransitioning(false);
         setCurrentIndex(totalSlides);
-        setTimeout(() => setIsTransitioning(true), 50);
+        window.setTimeout(() => setIsTransitioning(true), 50);
       }, 600); // Wait for transition to complete
     } else if (currentIndex === totalSlides + 1) {
       // At the cloned first slide, jump to the real first slide
-      setTimeout(() => {
+      window.setTimeout(() => {
         setIsTransitioning(false);
         setCurrentIndex(1);
-        setTimeout(() => setIsTransitioning(true), 50);
+        window.setTimeout(() => setIsTransitioning(true), 50);
       }, 600); // Wait for transition to complete
     }
   }, [currentIndex, totalSlides]);
 
-  const goToSlide = (index) => {
+  const goToSlide = (index: number) => {
     // Convert original slide index to infinite loop index
     setCurrentIndex(index + 1);
   };
@@ -203,7 +238,7 @@ const ImageSlider = ({
     return () => {
       Object.values(playersSnapshot).forEach((player) => {
         try {
-          if (player && typeof player.destroy === 'function') {
+          if (typeof player.destroy === 'function') {
             player.destroy();
           }
         } catch {
@@ -227,10 +262,12 @@ const ImageSlider = ({
       {/* Slider Container */}
       <div className="relative overflow-hidden rounded-xl">
         <div
-          className={`flex ${isTransitioning ? 'transition-transform duration-600 ease-out' : ''}`}
+          className={`flex ${
+            isTransitioning ? 'transition-transform duration-600 ease-out' : ''
+          }`}
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {slides.map((slide, _index) => (
+          {slides.map((slide) => (
             <div
               key={slide.id}
               className="w-full flex-shrink-0 flex justify-center"
@@ -309,7 +346,9 @@ const ImageSlider = ({
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`tns-nav-button ${index === activeIndex ? 'tns-nav-active' : ''}`}
+                className={`tns-nav-button ${
+                  index === activeIndex ? 'tns-nav-active' : ''
+                }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             );

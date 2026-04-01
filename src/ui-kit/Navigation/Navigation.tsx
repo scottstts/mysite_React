@@ -1,15 +1,19 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import type { NavigationTab, TabId } from '@/types/content';
 
-const Navigation = ({ activeTab }) => {
-  const tabs = [
+interface NavigationProps {
+  activeTab: TabId;
+}
+
+const tabs: NavigationTab[] = [
     { id: 'about', label: 'Me & Beliefs', path: '/about' },
     { id: 'projects', label: 'Learning Journey', path: '/projects' },
     { id: 'apps', label: 'Apps', path: '/apps' },
     { id: 'inspirations', label: 'Inspirations', path: '/inspirations' },
     { id: 'art-in-life', label: 'Art in Life', path: '/art-in-life' },
-  ];
+];
 
+const Navigation = ({ activeTab }: NavigationProps) => {
   const handleTabClick = () => {
     // Scroll to top smoothly after the switch
     window.scrollTo({
