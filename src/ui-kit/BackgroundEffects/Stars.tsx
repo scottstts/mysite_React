@@ -3,31 +3,27 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 // Lazy load the StarsCanvas component (pure WebGL, small bundle)
 const StarsCanvas = lazy(() => import('./StarsCanvas'));
 
-const Stars = () => {
-  const [introComplete, setIntroComplete] = useState(false);
+interface StarsProps {
+  shouldMount: boolean;
+  isActive: boolean;
+}
+
+const Stars = ({ shouldMount, isActive }: StarsProps) => {
   const [passedBenchmark, setPassedBenchmark] = useState<boolean | null>(null); // null = pending, true = passed, false = failed
-
-  // Handle intro video completion
-  useEffect(() => {
-    if (document.body.classList.contains('intro-complete')) {
-      setIntroComplete(true);
-    }
-
-    const handleIntroComplete = () => setIntroComplete(true);
-    window.addEventListener('intro-video-complete', handleIntroComplete);
-
-    return () => {
-      window.removeEventListener('intro-video-complete', handleIntroComplete);
-    };
-  }, []);
 
   // Callback when benchmark completes - memoized to prevent re-renders
   const handleBenchmarkComplete = useCallback((passed: boolean) => {
     setPassedBenchmark(passed);
   }, []);
 
-  // Don't render before intro completes
-  if (!introComplete) return null;
+  useEffect(() => {
+    if (!shouldMount) {
+      setPassedBenchmark(null);
+    }
+  }, [shouldMount]);
+
+  // Don't render until the background video is mounted
+  if (!shouldMount) return null;
 
   // If benchmark failed, unmount completely
   if (passedBenchmark === false) return null;
@@ -35,7 +31,10 @@ const Stars = () => {
   return (
     <div className="stars-canvas">
       <Suspense fallback={null}>
-        <StarsCanvas onBenchmarkComplete={handleBenchmarkComplete} />
+        <StarsCanvas
+          isActive={isActive}
+          onBenchmarkComplete={handleBenchmarkComplete}
+        />
       </Suspense>
     </div>
   );

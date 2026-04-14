@@ -70,7 +70,6 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
-
     <!-- Instagram preconnect optimizations -->
     <link rel="preconnect" href="https://static.cdninstagram.com" crossorigin />
 
@@ -263,6 +262,18 @@
         let videoFinished = false;
         let badgeShown = false;
 
+        const preloadBackgroundVideo = () => {
+          if (document.querySelector('link[data-bg-video-preload]')) return;
+
+          const preloadLink = document.createElement('link');
+          preloadLink.rel = 'preload';
+          preloadLink.as = 'video';
+          preloadLink.href = '/static_assets/bg_video.webm';
+          preloadLink.type = 'video/webm';
+          preloadLink.setAttribute('data-bg-video-preload', 'true');
+          document.head.appendChild(preloadLink);
+        };
+
         const showBadge = () => {
           if (badgeShown || videoFinished) return;
           badgeShown = true;
@@ -313,6 +324,9 @@
         };
 
         // Video Event Listeners
+        video.addEventListener('loadeddata', preloadBackgroundVideo, {
+          once: true,
+        });
         video.addEventListener('playing', showBadge, { once: true });
         video.addEventListener('ended', finishVideo);
         video.addEventListener('error', (e) => {

@@ -112,7 +112,7 @@ function App() {
   return (
     <>
       {/* Background Effects */}
-      <BackgroundEffects />
+      <BackgroundEffects introComplete={introComplete} />
 
       {/* Main Content */}
       <main

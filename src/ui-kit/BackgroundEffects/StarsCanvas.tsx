@@ -2,6 +2,11 @@ import { useEffect, useRef } from 'react';
 
 const MIN_FPS_THRESHOLD = 15;
 const BENCHMARK_DURATION_MS = 1000;
+const DESKTOP_PETAL_COUNT = 800;
+const MOBILE_PETAL_COUNT = 420;
+const MOBILE_FRAME_INTERVAL_MS = 1000 / 30;
+const MOBILE_RENDER_SCALE = 0.85;
+const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 
 // Vertex shader - passes per-petal random seed for shape/color variation
 const vertexShaderSource = `
@@ -133,6 +138,7 @@ const fragmentShaderSource = `
 `;
 
 interface StarsCanvasProps {
+  isActive: boolean;
   onBenchmarkComplete: (passed: boolean) => void;
 }
 
@@ -141,6 +147,20 @@ interface BenchmarkState {
   startTime: number | null;
   frameCount: number;
   completed: boolean;
+}
+
+interface SceneResources {
+  gl: WebGLRenderingContext;
+  program: WebGLProgram;
+  canvas: HTMLCanvasElement;
+  positionBuffer: WebGLBuffer;
+  seedBuffer: WebGLBuffer;
+  uProjectionMatrix: WebGLUniformLocation | null;
+  uModelViewMatrix: WebGLUniformLocation | null;
+  uTime: WebGLUniformLocation | null;
+  petalCount: number;
+  viewMatrix: Float32Array;
+  groupRotationZ: Float32Array;
 }
 
 // Generate random points uniformly distributed inside a sphere
@@ -306,17 +326,23 @@ const createProgram = (
   return program;
 };
 
-const StarsCanvas = ({ onBenchmarkComplete }: StarsCanvasProps) => {
+const StarsCanvas = ({ isActive, onBenchmarkComplete }: StarsCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationIdRef = useRef<number | null>(null);
-  const glRef = useRef<WebGLRenderingContext | null>(null);
-  const programRef = useRef<WebGLProgram | null>(null);
+  const sceneRef = useRef<SceneResources | null>(null);
   const timeRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const lastDrawTimeRef = useRef(0);
+  const isActiveRef = useRef(isActive);
+  const isContextLostRef = useRef(false);
+  const isMobileRef = useRef(window.matchMedia(MOBILE_MEDIA_QUERY).matches);
+  const startAnimationRef = useRef<() => void>(() => {});
+  const stopAnimationRef = useRef<() => void>(() => {});
 
   // Store callback in ref to avoid re-running effect when it changes
   const onBenchmarkCompleteRef = useRef(onBenchmarkComplete);
   onBenchmarkCompleteRef.current = onBenchmarkComplete;
+  isActiveRef.current = isActive;
 
   // Benchmark state
   const benchmarkRef = useRef<BenchmarkState>({
@@ -327,116 +353,192 @@ const StarsCanvas = ({ onBenchmarkComplete }: StarsCanvasProps) => {
   });
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const resetBenchmark = () => {
+      if (benchmarkRef.current.completed) {
+        return;
+      }
 
-    if (!canvas) {
-      return;
-    }
+      benchmarkRef.current = {
+        isRunning: true,
+        startTime: null,
+        frameCount: 0,
+        completed: false,
+      };
+    };
 
-    // Get WebGL context
-    const gl = canvas.getContext('webgl', {
-      antialias: false,
-      alpha: true,
-      premultipliedAlpha: false,
-      powerPreference: 'high-performance',
-      stencil: false,
-      depth: false,
-    });
+    const stopAnimation = () => {
+      if (animationIdRef.current !== null) {
+        cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
+      }
+      lastTimeRef.current = 0;
+      lastDrawTimeRef.current = 0;
+    };
 
-    if (!gl) {
-      console.error('WebGL not supported');
-      onBenchmarkCompleteRef.current(false);
-      return;
-    }
-    glRef.current = gl;
+    const destroyScene = () => {
+      const scene = sceneRef.current;
 
-    // Create shader program
-    const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-    if (!program) {
-      onBenchmarkCompleteRef.current(false);
-      return;
-    }
-    programRef.current = program;
-    gl.useProgram(program);
+      if (!scene) {
+        return;
+      }
 
-    // Get attribute and uniform locations
-    const aPosition = gl.getAttribLocation(program, 'aPosition');
-    const aSeed = gl.getAttribLocation(program, 'aSeed');
-    const uProjectionMatrix = gl.getUniformLocation(program, 'uProjectionMatrix');
-    const uModelViewMatrix = gl.getUniformLocation(program, 'uModelViewMatrix');
-    const uPointSize = gl.getUniformLocation(program, 'uPointSize');
-    const uPixelRatio = gl.getUniformLocation(program, 'uPixelRatio');
-    const uTime = gl.getUniformLocation(program, 'uTime');
+      scene.gl.deleteBuffer(scene.positionBuffer);
+      scene.gl.deleteBuffer(scene.seedBuffer);
+      scene.gl.deleteProgram(scene.program);
+      sceneRef.current = null;
+    };
 
-    // Generate points
-    const PETAL_COUNT = 800;
-    const positions = generateSpherePoints(PETAL_COUNT, 1.2);
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    const resizeScene = () => {
+      const scene = sceneRef.current;
 
-    // Setup position attribute
-    gl.enableVertexAttribArray(aPosition);
-    gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+      if (!scene) {
+        return;
+      }
 
-    // Per-petal random seed attribute (for shape/color variation)
-    const seeds = new Float32Array(PETAL_COUNT);
-    for (let index = 0; index < PETAL_COUNT; index++) {
-      seeds[index] = Math.random();
-    }
-    const seedBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, seedBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(aSeed);
-    gl.vertexAttribPointer(aSeed, 1, gl.FLOAT, false, 0, 0);
+      const renderScale = isMobileRef.current ? MOBILE_RENDER_SCALE : 1;
+      const width = Math.max(1, Math.floor(scene.canvas.clientWidth * renderScale));
+      const height = Math.max(
+        1,
+        Math.floor((scene.canvas.clientHeight || 1) * renderScale)
+      );
 
-    // Set static uniforms — larger point size for visible petal shapes
-    gl.uniform1f(uPointSize, 0.02);
-    gl.uniform1f(uPixelRatio, 1);
+      scene.canvas.width = width;
+      scene.canvas.height = height;
+      scene.gl.viewport(0, 0, width, height);
 
-    // Enable blending for transparency
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-    // Resize handler
-    const resize = () => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight || 1;
-
-      canvas.width = width;
-      canvas.height = height;
-      gl.viewport(0, 0, width, height);
-
-      // Update projection matrix (75 degree FOV, matching Three.js default)
       const projectionMatrix = createPerspectiveMatrix(
         75,
         width / height,
         0.1,
         1000
       );
-      gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
+      scene.gl.uniformMatrix4fv(
+        scene.uProjectionMatrix,
+        false,
+        projectionMatrix
+      );
     };
-    resize();
-    window.addEventListener('resize', resize);
 
-    // Camera position: [0, 0, 1] - we need view matrix that translates by -1 on Z
-    const viewMatrix = createTranslationMatrix(0, 0, -1);
+    const initializeScene = () => {
+      const canvas = canvasRef.current;
 
-    // Group rotation: rotate 45 degrees (PI/4) on Z axis
-    const groupRotationZ = createRotationZMatrix(Math.PI / 4);
+      if (!canvas || sceneRef.current) {
+        return Boolean(sceneRef.current);
+      }
 
-    // Animation loop
+      const gl = canvas.getContext('webgl', {
+        antialias: false,
+        alpha: true,
+        premultipliedAlpha: false,
+        powerPreference: isMobileRef.current ? 'low-power' : 'default',
+        stencil: false,
+        depth: false,
+      });
+
+      if (!gl) {
+        console.error('WebGL not supported');
+        onBenchmarkCompleteRef.current(false);
+        return false;
+      }
+
+      const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+      if (!program) {
+        onBenchmarkCompleteRef.current(false);
+        return false;
+      }
+
+      gl.useProgram(program);
+
+      const aPosition = gl.getAttribLocation(program, 'aPosition');
+      const aSeed = gl.getAttribLocation(program, 'aSeed');
+      const uProjectionMatrix = gl.getUniformLocation(
+        program,
+        'uProjectionMatrix'
+      );
+      const uModelViewMatrix = gl.getUniformLocation(program, 'uModelViewMatrix');
+      const uPointSize = gl.getUniformLocation(program, 'uPointSize');
+      const uPixelRatio = gl.getUniformLocation(program, 'uPixelRatio');
+      const uTime = gl.getUniformLocation(program, 'uTime');
+
+      const petalCount = isMobileRef.current
+        ? MOBILE_PETAL_COUNT
+        : DESKTOP_PETAL_COUNT;
+      const positions = generateSpherePoints(petalCount, 1.2);
+      const positionBuffer = gl.createBuffer();
+      const seedBuffer = gl.createBuffer();
+
+      if (!positionBuffer || !seedBuffer) {
+        gl.deleteProgram(program);
+        onBenchmarkCompleteRef.current(false);
+        return false;
+      }
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(aPosition);
+      gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+
+      const seeds = new Float32Array(petalCount);
+      for (let index = 0; index < petalCount; index++) {
+        seeds[index] = Math.random();
+      }
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(aSeed);
+      gl.vertexAttribPointer(aSeed, 1, gl.FLOAT, false, 0, 0);
+
+      gl.uniform1f(uPointSize, isMobileRef.current ? 0.017 : 0.02);
+      gl.uniform1f(uPixelRatio, 1);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      sceneRef.current = {
+        gl,
+        program,
+        canvas,
+        positionBuffer,
+        seedBuffer,
+        uProjectionMatrix,
+        uModelViewMatrix,
+        uTime,
+        petalCount,
+        viewMatrix: createTranslationMatrix(0, 0, -1),
+        groupRotationZ: createRotationZMatrix(Math.PI / 4),
+      };
+
+      resizeScene();
+      return true;
+    };
+
     const animate = (currentTime: number) => {
+      if (!isActiveRef.current || isContextLostRef.current) {
+        animationIdRef.current = null;
+        return;
+      }
+
       animationIdRef.current = requestAnimationFrame(animate);
 
-      // Calculate delta
+      if (
+        isMobileRef.current &&
+        lastDrawTimeRef.current !== 0 &&
+        currentTime - lastDrawTimeRef.current < MOBILE_FRAME_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      const scene = sceneRef.current;
+      if (!scene) {
+        return;
+      }
+
       if (lastTimeRef.current === 0) {
         lastTimeRef.current = currentTime;
       }
       const delta = (currentTime - lastTimeRef.current) / 1000;
       lastTimeRef.current = currentTime;
+      lastDrawTimeRef.current = currentTime;
 
-      // Run benchmark for first second
       const benchmark = benchmarkRef.current;
       if (benchmark.isRunning && !benchmark.completed) {
         if (benchmark.startTime === null) {
@@ -454,40 +556,102 @@ const StarsCanvas = ({ onBenchmarkComplete }: StarsCanvasProps) => {
         }
       }
 
-      // Update time
       timeRef.current += delta;
 
-      // Points rotation
       const rotationX = createRotationXMatrix(-timeRef.current / 10);
       const rotationY = createRotationYMatrix(-timeRef.current / 15);
 
-      // Combine transformations: view * groupRotation * pointsRotation
       let modelViewMatrix = multiplyMatrices(rotationY, rotationX);
-      modelViewMatrix = multiplyMatrices(groupRotationZ, modelViewMatrix);
-      modelViewMatrix = multiplyMatrices(viewMatrix, modelViewMatrix);
+      modelViewMatrix = multiplyMatrices(scene.groupRotationZ, modelViewMatrix);
+      modelViewMatrix = multiplyMatrices(scene.viewMatrix, modelViewMatrix);
 
-      gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
-      gl.uniform1f(uTime, timeRef.current);
-
-      // Clear and draw
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, PETAL_COUNT);
+      scene.gl.uniformMatrix4fv(
+        scene.uModelViewMatrix,
+        false,
+        modelViewMatrix
+      );
+      scene.gl.uniform1f(scene.uTime, timeRef.current);
+      scene.gl.clearColor(0, 0, 0, 0);
+      scene.gl.clear(scene.gl.COLOR_BUFFER_BIT);
+      scene.gl.drawArrays(scene.gl.POINTS, 0, scene.petalCount);
     };
 
-    animationIdRef.current = requestAnimationFrame(animate);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (animationIdRef.current !== null) {
-        cancelAnimationFrame(animationIdRef.current);
+    const startAnimation = () => {
+      if (animationIdRef.current !== null || !isActiveRef.current) {
+        return;
       }
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(seedBuffer);
-      gl.deleteProgram(program);
+
+      if (!initializeScene()) {
+        return;
+      }
+
+      resetBenchmark();
+      lastTimeRef.current = 0;
+      lastDrawTimeRef.current = 0;
+      animationIdRef.current = requestAnimationFrame(animate);
     };
-  }, []); // Empty deps - setup runs once, callback accessed via ref
+
+    startAnimationRef.current = startAnimation;
+    stopAnimationRef.current = stopAnimation;
+
+    const handleResize = () => {
+      resizeScene();
+    };
+
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      isContextLostRef.current = true;
+      stopAnimation();
+      destroyScene();
+    };
+
+    const handleContextRestored = () => {
+      isContextLostRef.current = false;
+      if (initializeScene() && isActiveRef.current) {
+        startAnimation();
+      }
+    };
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    canvas.addEventListener('webglcontextlost', handleContextLost);
+    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    window.addEventListener('resize', handleResize);
+
+    if (isActiveRef.current) {
+      startAnimation();
+    }
+
+    return () => {
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      window.removeEventListener('resize', handleResize);
+      stopAnimation();
+      destroyScene();
+      startAnimationRef.current = () => {};
+      stopAnimationRef.current = () => {};
+    };
+  }, []);
+
+  useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!isActive) {
+      stopAnimationRef.current();
+      return;
+    }
+
+    if (isContextLostRef.current || animationIdRef.current !== null) {
+      return;
+    }
+
+    startAnimationRef.current();
+  }, [isActive]);
 
   return (
     <canvas
