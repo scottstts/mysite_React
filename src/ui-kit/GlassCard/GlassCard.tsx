@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   type HTMLAttributes,
   type MouseEvent as ReactMouseEvent,
@@ -7,30 +8,39 @@ import {
 
 type GlassCardProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
 
-const GlassCard = ({
-  children,
-  className = '',
-  ...props
-}: GlassCardProps) => {
+const GlassCard = ({ children, className = '', ...props }: GlassCardProps) => {
   const rafId = useRef<number | null>(null);
 
-  const setVars = (event: ReactMouseEvent<HTMLDivElement>) => {
+  const setVars = (
+    target: HTMLDivElement,
+    clientX: number,
+    clientY: number
+  ) => {
     if (window.innerWidth < 768) return; // Skip on mobile
+    if (!target.isConnected) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const rect = target.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
-    event.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-    event.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+    target.style.setProperty('--mouse-x', `${x}px`);
+    target.style.setProperty('--mouse-y', `${y}px`);
   };
 
   const handleMove = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (rafId.current) return; // Throttle to 1 per frame
+
+    const target = event.currentTarget;
+    const { clientX, clientY } = event;
+
     rafId.current = requestAnimationFrame(() => {
-      setVars(event);
+      setVars(target, clientX, clientY);
       rafId.current = null;
     });
+  };
+
+  const handleMouseEnter = (event: ReactMouseEvent<HTMLDivElement>) => {
+    setVars(event.currentTarget, event.clientX, event.clientY);
   };
 
   const handleMouseLeave = (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -38,10 +48,17 @@ const GlassCard = ({
     event.currentTarget.style.removeProperty('--mouse-y');
   };
 
+  useEffect(
+    () => () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    },
+    []
+  );
+
   return (
     <div
       className={`glass-card ${className}`}
-      onMouseEnter={setVars}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMove}
       onMouseLeave={handleMouseLeave}
       {...props}

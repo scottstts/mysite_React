@@ -26,6 +26,11 @@ body {
   --mouse-y: 0deg;
 }
 
+body.art-in-life-mode {
+  background: #eee6d9;
+  color: #17120d;
+}
+
 /* Looped video background sitting behind overlays/content */
 .bg-video {
   position: fixed;
@@ -48,6 +53,11 @@ body {
   z-index: -2;
   pointer-events: none;
   background: transparent;
+}
+
+body.art-in-life-mode .bg-video,
+body.art-in-life-mode .stars-canvas {
+  display: none;
 }
 
 /* Background image layer - fixed at the bottom */
@@ -158,6 +168,37 @@ nav::after {
   );
   transform: translateX(-50%);
   opacity: 0.5;
+}
+
+body.art-in-life-mode .site-navigation--gallery {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 58px);
+  left: 50%;
+  z-index: 40;
+  width: min(calc(100vw - 32px), 1320px);
+  margin: 0;
+  padding: 0;
+  gap: clamp(1.4rem, 3.6vw, 3.6rem);
+  flex-wrap: nowrap;
+  justify-content: center;
+  overflow-x: visible;
+  overflow-y: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: translateX(-50%);
+  scrollbar-width: none;
+}
+
+body.art-in-life-mode .site-navigation--gallery::-webkit-scrollbar {
+  display: none;
+}
+
+body.art-in-life-mode .site-navigation--gallery::after {
+  display: none;
 }
 
 /* Enhanced page title with more dramatic effect */
@@ -289,6 +330,35 @@ nav::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+body.art-in-life-mode .site-navigation--gallery .tab-button {
+  width: auto;
+  min-width: max-content;
+  padding: 0.22rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(19, 16, 12, 0.74);
+  box-shadow: none;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.62);
+  paint-order: stroke fill;
+  text-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.85rem, 0.85vw, 1rem);
+  font-weight: 1000;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  outline: 0;
+}
+
+body.art-in-life-mode .site-navigation--gallery .tab-button:hover:not(.active) {
+  border-color: transparent;
+  background: transparent;
+  color: rgba(14, 12, 9, 0.92);
+  box-shadow: none;
+}
+
 @media (max-width: 1024px) {
   nav {
     flex-direction: column;
@@ -301,6 +371,45 @@ nav::after {
     width: 100%;
     text-align: center;
     padding: 0.75rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  body.art-in-life-mode .site-navigation--gallery {
+    flex-direction: row;
+    align-items: center;
+    width: calc(100vw - 40px);
+    gap: clamp(0.82rem, 2.5vw, 1.7rem);
+  }
+
+  body.art-in-life-mode .site-navigation--gallery .tab-button {
+    width: auto;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  body.art-in-life-mode .site-navigation--gallery {
+    top: calc(env(safe-area-inset-top, 0px) + 22px);
+    left: 50%;
+    right: auto;
+    width: min(calc(100vw - 20px), 520px);
+    justify-content: flex-start;
+    gap: 1.05rem;
+    overflow-x: auto;
+    padding: 0.48rem 0.25rem;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform: translateX(-50%);
+  }
+
+  body.art-in-life-mode .site-navigation--gallery .tab-button {
+    padding: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
   }
 }
 
@@ -329,8 +438,27 @@ nav::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
+body.art-in-life-mode .site-navigation--gallery .tab-button.active {
+  border: 0;
+  background: transparent;
+  color: #15110d;
+  box-shadow: none;
+  text-shadow: none;
+  font-weight: 700;
+}
+
+body.art-in-life-mode .site-navigation--gallery .tab-button:focus,
+body.art-in-life-mode .site-navigation--gallery .tab-button:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
 .tab-button.active::after {
   transform: scaleX(1);
+}
+
+body.art-in-life-mode .site-navigation--gallery .tab-button::after {
+  display: none;
 }
 
 .tab-content {
@@ -588,6 +716,12 @@ button:focus {
   outline: 2px solid white;
   outline-offset: 3px;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+body.art-in-life-mode a:focus,
+body.art-in-life-mode button:focus {
+  outline-color: #2f241a;
+  text-shadow: none;
 }
 
 /* Smooth scrolling */

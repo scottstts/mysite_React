@@ -1,228 +1,320 @@
-.masonryGrid {
-  display: block; /* switch from grid to CSS columns for true masonry stacking */
-  /*
-      Responsive columns with a hard cap of 3.
-      - Start with 3 columns when space allows.
-      - Drop to 2 and then 1 only when space is insufficient.
-    */
-  --card-min: 340px; /* minimum width for each column */
-  --gap: clamp(1rem, 2vw, 2rem); /* healthy gap to prevent rotated overlap */
-  column-count: 3;
-  column-gap: var(--gap);
-  padding: clamp(0.75rem, 2vw, 1.5rem);
-  margin: 0 auto;
-  align-items: start;
-  /* Enable container query units for smarter scaling on narrow screens */
-  container-type: inline-size;
-
-  /* Performance optimization: skip off-screen rendering */
-  content-visibility: auto;
-  contain-intrinsic-size: 900px; /* prevents layout shift when unseen */
-}
-
-.masonryItem {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Prevent vertical stretching */
+.galleryPage {
+  position: relative;
   width: 100%;
-  /* Vertical spacing between items within each column */
-  margin-bottom: var(--gap);
-  padding: 0.25rem; /* buffer so rotated items don't touch neighbors */
-  break-inside: avoid; /* Prevent items from breaking across columns */
-  break-inside: avoid-column; /* Safari/WebKit */
-  will-change: transform;
-  transform-origin: 50% 0; /* rotate around top center to reduce horizontal overshoot */
-  overflow: visible; /* never clip scaled/rotated content */
+  min-height: 100svh;
+  background: #eee6d9;
+  color: #17120d;
+  overflow: visible;
 }
 
-/* Add a slight random rotation to each item for the post-it note feel */
-.masonryItem:nth-child(5n + 1) {
-  transform: rotate(1.5deg);
-}
-.masonryItem:nth-child(5n + 2) {
-  transform: rotate(-1deg);
-}
-.masonryItem:nth-child(5n + 3) {
-  transform: rotate(0.5deg);
-}
-.masonryItem:nth-child(5n + 4) {
-  transform: rotate(-1.5deg);
-}
-.masonryItem:nth-child(5n + 5) {
-  transform: rotate(1deg);
-}
-
-.embedContainer {
+.galleryStage {
+  --nav-clearance: 84px;
+  position: relative;
   width: 100%;
-  max-width: 540px; /* Constrain to Instagram's max embed width */
-  display: flex;
-  justify-content: center;
-  padding-bottom: 0.2rem; /* consistent bottom space */
-  border-radius: 12px;
+  min-height: 220svh;
+}
+
+.sceneViewport {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100svh;
+  min-height: 560px;
   overflow: hidden;
-  background: linear-gradient(
-    to right,
-    #4f46e5,
-    #f5e882
-  ); /* placeholder background */
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.19),
-    0 6px 6px rgba(0, 0, 0, 0.23);
-  opacity: 0; /* Initially hidden */
-  transition: opacity 0.5s ease-in-out; /* Smooth transition */
-
-  /* Ensure card never collapses before lazy content loads */
-  min-height: 360px;
-
-  /* Prepare for responsive scaling without layout overflow */
-  transform-origin: top center;
+  background:
+    radial-gradient(
+      ellipse at 50% 18%,
+      rgba(255, 240, 205, 0.42),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      #f0e8dc 0%,
+      #e9dfd1 90.5%,
+      #7c5d44 90.6%,
+      #3f2618 100%
+    );
 }
 
-.embedContainer.loaded {
-  opacity: 1; /* Fade in when loaded */
+.webglLayer,
+.cssLayer {
+  position: absolute;
+  inset: 0;
 }
 
-.embedContainer > div {
-  width: 100%;
+.webglLayer {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cssLayer {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sceneOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: none;
+  pointer-events: none;
+}
+
+.sceneFallback {
   display: flex;
+  min-height: 100svh;
+  align-items: center;
   justify-content: center;
+  gap: 0.7rem;
+  background: #eee6d9;
+  color: rgba(37, 28, 20, 0.72);
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/*
-  Prevent right-side cropping: IG embed sets a min-width inline.
-  Override it so cards can shrink fluidly all the way down to 1 column.
-*/
-.embedContainer > div > blockquote {
-  min-width: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-/* Stronger guardrails: ensure all nested elements never overflow horizontally */
-.embedContainer,
-.embedContainer * {
-  max-width: 100% !important;
-  box-sizing: border-box;
-}
-
-/* Instagram sometimes injects inline min-widths; neutralize them */
-.embedContainer [style*='min-width'] {
-  min-width: 0 !important;
-}
-
-/* Anchor wrapper inside the IG blockquote should not exceed container */
-.embedContainer a {
+.loadingMark {
   display: block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(37, 28, 20, 0.22);
+  border-top-color: rgba(37, 28, 20, 0.76);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.loadingCurtain {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  background: #eee6d9;
+  color: rgba(37, 28, 20, 0.72);
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    opacity 360ms ease,
+    visibility 0s linear 360ms;
+}
+
+.loadingCurtainHidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.embedPlane {
+  position: relative;
+  width: 326px;
+  height: 492px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #f8f5ef;
+  box-shadow: none;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  user-select: none;
+}
+
+.embedPlane::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.embedCrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.embedContent {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.embedPlane :global(.instagram-media) {
+  min-width: 0 !important;
   width: 100% !important;
-}
-
-/*
-  Drop from 3 columns -> 2 when container can't fit 3 columns at --card-min.
-  Approx threshold: 3 * 340px + 2 * gap ≈ ~1100px (incl. padding).
-*/
-@media (max-width: 1120px) {
-  .masonryGrid {
-    column-count: 2;
-  }
-}
-
-/*
-  Drop from 2 columns -> 1 when space is tighter than ~720px.
-*/
-@media (max-width: 760px) {
-  .masonryGrid {
-    column-count: 1;
-    /* Increase side padding to accommodate rotated card corners.
-           Positive rotation swings bottom-left out, negative swings bottom-right out. */
-    padding-left: clamp(0.5rem, 3vw, 1rem);
-    padding-right: clamp(0.5rem, 3vw, 1rem);
-    padding-top: 0.5rem;
-  }
-}
-
-/* Ensure Instagram iframes are responsive at all widths */
-.embedContainer iframe {
   max-width: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.embedPlane :global(iframe) {
   width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
 }
 
-/*
-  On ultra-narrow screens, the Instagram iframe enforces an internal min width (~326px).
-  We cannot override inside the cross-origin iframe, so scale the container visually
-  based on available container width using container query units (cqw).
-*/
-@supports (width: 1cqw) {
-  .embedContainer {
-    /* 326px is the smallest IG embed width; compute a safe scale */
-    --ig-min: 326;
-    --scale: clamp(0.85, calc(100cqw / (var(--ig-min) * 1px)), 1);
-    transform: scale(var(--scale));
+.embedPlane a::after {
+  display: none !important;
+}
+
+.embedSkeleton {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 58px 1fr 126px;
+  background: #f6f2ea;
+}
+
+.skeletonHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.skeletonAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(46, 35, 25, 0.13);
+}
+
+.skeletonLines {
+  display: grid;
+  gap: 7px;
+}
+
+.skeletonLine,
+.skeletonLineShort,
+.skeletonCaptionLine,
+.skeletonCaptionShort {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(46, 35, 25, 0.12);
+}
+
+.skeletonLine {
+  width: 116px;
+}
+
+.skeletonLineShort {
+  width: 68px;
+}
+
+.skeletonImage {
+  margin: 0 14px;
+  border-radius: 2px;
+  background:
+    linear-gradient(135deg, rgba(95, 126, 92, 0.36), rgba(202, 167, 95, 0.2)),
+    radial-gradient(
+      circle at 78% 20%,
+      rgba(255, 255, 255, 0.68),
+      transparent 26%
+    );
+}
+
+.skeletonFooter {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+}
+
+.skeletonActions {
+  display: flex;
+  gap: 10px;
+}
+
+.skeletonDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(46, 35, 25, 0.12);
+}
+
+.skeletonCaptionLine {
+  width: 82%;
+}
+
+.skeletonCaptionShort {
+  width: 46%;
+}
+
+.fallbackGallery {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: repeat(auto-fit, minmax(min(326px, 100%), 326px));
+  justify-content: center;
+  gap: clamp(1.2rem, 3vw, 2.4rem);
+  padding: calc(env(safe-area-inset-top, 0px) + 96px) clamp(1rem, 4vw, 3rem)
+    4rem;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 248, 229, 0.52),
+      transparent 34%
+    ),
+    #eee6d9;
+}
+
+.fallbackFrame {
+  padding: 16px;
+  background: #2b1a12;
+  box-shadow:
+    0 18px 38px rgba(43, 30, 20, 0.28),
+    inset 0 0 0 2px rgba(255, 238, 180, 0.12);
+}
+
+.fallbackEmbed {
+  width: 100%;
+  min-height: 492px;
+  overflow: hidden;
+  background: #f8f5ef;
+}
+
+.fallbackEmbed :global(.instagram-media) {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* Fallback for browsers without container query units: approximate via viewport width */
-@supports not (width: 1cqw) {
-  @media (max-width: 340px) {
-    .embedContainer {
-      transform: scale(calc((100vw - 32px) / 326));
-    }
+@media (max-width: 760px) {
+  .galleryStage {
+    --nav-clearance: 72px;
   }
-}
 
-/*
-  Ultra-narrow safety: progressively reduce rotation amplitude and apply a light scale
-  so the card fits fully inside the viewport without right-edge cropping.
-*/
-@media (max-width: 420px) {
-  .masonryItem:nth-child(5n + 1) {
-    transform: rotate(1deg) scale(0.995);
-  }
-  .masonryItem:nth-child(5n + 2) {
-    transform: rotate(-0.7deg) scale(0.995);
-  }
-  .masonryItem:nth-child(5n + 3) {
-    transform: rotate(0.4deg) scale(0.995);
-  }
-  .masonryItem:nth-child(5n + 4) {
-    transform: rotate(-1deg) scale(0.995);
-  }
-  .masonryItem:nth-child(5n + 5) {
-    transform: rotate(0.7deg) scale(0.995);
-  }
-}
-
-@media (max-width: 360px) {
-  .masonryItem:nth-child(5n + 1) {
-    transform: rotate(0.8deg) scale(0.985);
-  }
-  .masonryItem:nth-child(5n + 2) {
-    transform: rotate(-0.6deg) scale(0.985);
-  }
-  .masonryItem:nth-child(5n + 3) {
-    transform: rotate(0.3deg) scale(0.985);
-  }
-  .masonryItem:nth-child(5n + 4) {
-    transform: rotate(-0.8deg) scale(0.985);
-  }
-  .masonryItem:nth-child(5n + 5) {
-    transform: rotate(0.6deg) scale(0.985);
-  }
-}
-
-@media (max-width: 320px) {
-  .masonryItem:nth-child(5n + 1) {
-    transform: rotate(0.6deg) scale(0.965);
-  }
-  .masonryItem:nth-child(5n + 2) {
-    transform: rotate(-0.5deg) scale(0.965);
-  }
-  .masonryItem:nth-child(5n + 3) {
-    transform: rotate(0.25deg) scale(0.965);
-  }
-  .masonryItem:nth-child(5n + 4) {
-    transform: rotate(-0.6deg) scale(0.965);
-  }
-  .masonryItem:nth-child(5n + 5) {
-    transform: rotate(0.5deg) scale(0.965);
+  .sceneViewport {
+    min-height: 100svh;
   }
 }

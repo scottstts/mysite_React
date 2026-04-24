@@ -1,6 +1,8 @@
 # Run this script once to build the TypeScript data file for this tab.
 # This script is designed to be run every time the embed.md file is updated.
-# It automatically adds data-instgrm-class="loading-lazy" for native lazy loading optimization.
+# It writes a compact URL list plus a minimal official Instagram blockquote
+# builder. The gallery owns its own loading placeholder, so we avoid embedding
+# Instagram's large placeholder template in the app bundle.
 
 import os
 import re
@@ -8,8 +10,8 @@ from pathlib import Path
 
 def parse_embed_md(input_file, output_file):
     """
-    Parses an MD file to extract Instagram embed blockquotes and writes them
-    to a TS data file, separating the template from the unique URLs.
+    Parses an MD file to extract Instagram embed URLs and writes them to a TS
+    data file with a small helper for lazy runtime embed mounting.
     """
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -51,40 +53,22 @@ def parse_embed_md(input_file, output_file):
 
         urls = unique_urls
 
-        # Create a template from the first embed tag, replacing the URL with a placeholder.
-        template_tag = embed_tags[0]
-        first_url = urls[0]
-        placeholder = 'URL_PLACEHOLDER'
-
-        # Replace the URL in both data-instgrm-permalink and the href attributes
-        template_html = template_tag.replace(first_url, placeholder)
-
-        # Add the data-instgrm-class="loading-lazy" attribute for native lazy loading
-        template_html = template_html.replace(
-            'data-instgrm-version="14"',
-            'data-instgrm-version="14" data-instgrm-class="loading-lazy"',
-        )
-
-        template_html = (
-            template_html.replace('`', '\\`')
-            .replace('\\n', ' ')
-            .replace('\n', ' ')
-            .strip()
-        )
-
         # Build the TS output
-        ts_output = "const embedTemplate = `"
-        ts_output += f"{template_html}"
-        ts_output += "`;\n\n"
-
+        ts_output = ""
         ts_output += "const urls = [\n"
         for url in urls:
             ts_output += f"  '{url}',\n"
         ts_output += "];\n\n"
 
-        ts_output += "export const artInLifeData: string[] = urls.map((url) => {\n"
-        ts_output += f"  return embedTemplate.replace(/{placeholder}/g, url);\n"
-        ts_output += "});\n"
+        ts_output += "export const artInLifeUrls = urls;\n\n"
+        ts_output += "export const createInstagramEmbedHtml = (url: string): string => `\n"
+        ts_output += "  <blockquote\n"
+        ts_output += "    class=\"instagram-media\"\n"
+        ts_output += "    data-instgrm-permalink=\"${url}\"\n"
+        ts_output += "    data-instgrm-version=\"14\"\n"
+        ts_output += "    style=\"background:#fff;border:0;margin:0;min-width:0;width:100%;\"\n"
+        ts_output += "  ></blockquote>\n"
+        ts_output += "`;\n"
 
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(ts_output)

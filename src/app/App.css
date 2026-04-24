@@ -4,6 +4,14 @@
   padding: 2rem;
 }
 
+body.art-in-life-mode #root {
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -101,6 +109,20 @@
 /* Main container */
 .max-w-4xl {
   max-width: 72rem;
+}
+
+.site-main--gallery {
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+}
+
+.react-tab-content--gallery {
+  width: 100%;
+  min-height: 100svh;
+  margin: 0 !important;
 }
 
 .mx-auto {

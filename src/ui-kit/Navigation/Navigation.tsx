@@ -6,11 +6,11 @@ interface NavigationProps {
 }
 
 const tabs: NavigationTab[] = [
-    { id: 'about', label: 'Me & Beliefs', path: '/about' },
-    { id: 'projects', label: 'Learning Journey', path: '/projects' },
-    { id: 'apps', label: 'Apps', path: '/apps' },
-    { id: 'inspirations', label: 'Inspirations', path: '/inspirations' },
-    { id: 'art-in-life', label: 'Art in Life', path: '/art-in-life' },
+  { id: 'about', label: 'Me & Beliefs', path: '/about' },
+  { id: 'projects', label: 'Learning Journey', path: '/projects' },
+  { id: 'apps', label: 'Apps', path: '/apps' },
+  { id: 'inspirations', label: 'Inspirations', path: '/inspirations' },
+  { id: 'art-in-life', label: 'Art in Life', path: '/art-in-life' },
 ];
 
 const Navigation = ({ activeTab }: NavigationProps) => {
@@ -23,7 +23,12 @@ const Navigation = ({ activeTab }: NavigationProps) => {
   };
 
   return (
-    <nav>
+    <nav
+      className={`site-navigation ${
+        activeTab === 'art-in-life' ? 'site-navigation--gallery' : ''
+      }`}
+      aria-label="Site sections"
+    >
       {tabs.map((tab) => (
         <Link
           key={tab.id}

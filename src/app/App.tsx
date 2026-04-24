@@ -53,6 +53,7 @@ function App() {
   };
 
   const activeTab = getActiveTabFromPath(location.pathname);
+  const isArtInLifeMode = activeTab === 'art-in-life';
 
   // Dynamically update the document title when route changes
   useEffect(() => {
@@ -97,10 +98,9 @@ function App() {
 
   // Apply proper body classes
   useEffect(() => {
-    // Remove any default classes that might interfere with custom CSS
-    // But preserve intro-complete if it exists
     const wasComplete = document.body.classList.contains('intro-complete');
-    document.body.className = '';
+
+    document.body.classList.remove('intro-video-playing');
 
     if (!introComplete && !wasComplete) {
       document.body.classList.add('intro-video-playing');
@@ -109,14 +109,26 @@ function App() {
     }
   }, [introComplete]);
 
+  useEffect(() => {
+    document.body.classList.toggle('art-in-life-mode', isArtInLifeMode);
+
+    return () => {
+      document.body.classList.remove('art-in-life-mode');
+    };
+  }, [isArtInLifeMode]);
+
   return (
     <>
       {/* Background Effects */}
-      <BackgroundEffects introComplete={introComplete} />
+      {!isArtInLifeMode && <BackgroundEffects introComplete={introComplete} />}
 
       {/* Main Content */}
       <main
-        className={`max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8 ${contentVisible ? 'visible' : ''}`}
+        className={`site-main ${
+          isArtInLifeMode
+            ? 'site-main--gallery'
+            : 'max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8'
+        } ${contentVisible ? 'visible' : ''}`}
       >
         <Navigation activeTab={activeTab} />
 
@@ -128,7 +140,11 @@ function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="react-tab-content space-y-8"
+            className={
+              isArtInLifeMode
+                ? 'react-tab-content react-tab-content--gallery'
+                : 'react-tab-content space-y-8'
+            }
           >
             <Suspense
               fallback={
@@ -148,11 +164,11 @@ function App() {
       </main>
 
       {/* Scroll to Top Button */}
-      {contentVisible && <ScrollToTop />}
+      {contentVisible && !isArtInLifeMode && <ScrollToTop />}
 
       {/* Fixed Footer */}
       {/* Static Footer Link */}
-      {contentVisible && (
+      {contentVisible && !isArtInLifeMode && (
         <footer className="w-full py-8 text-center">
           <a
             href="https://github.com/scottstts/mysite_React"
