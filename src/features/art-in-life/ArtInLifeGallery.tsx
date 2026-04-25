@@ -822,13 +822,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     viewport.append(webglHost, cssHost, cacheHost);
     document.body.appendChild(stagingHost);
 
+    const getRenderSize = () => {
+      const rect = viewport.getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width));
+      let height = Math.max(1, Math.round(rect.height));
+
+      if (isMobile && height % 2 === 1) {
+        height -= 1;
+      }
+
+      return { width, height };
+    };
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeee6d9);
 
     const cssScene = new THREE.Scene();
+    const initialRenderSize = getRenderSize();
     const camera = new THREE.PerspectiveCamera(
       layout.cameraFov,
-      viewport.clientWidth / Math.max(1, viewport.clientHeight),
+      initialRenderSize.width / initialRenderSize.height,
       0.1,
       80
     );
@@ -842,22 +855,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.setPixelRatio(
       Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)
     );
-    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    renderer.setSize(initialRenderSize.width, initialRenderSize.height, true);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = GALLERY_LIGHTING.exposure;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.VSMShadowMap;
     renderer.domElement.style.display = 'block';
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.width = `${initialRenderSize.width}px`;
+    renderer.domElement.style.height = `${initialRenderSize.height}px`;
     renderer.domElement.style.pointerEvents = 'none';
     webglHost.appendChild(renderer.domElement);
 
     const cssRenderer = new CSS3DRenderer();
-    cssRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    cssRenderer.setSize(initialRenderSize.width, initialRenderSize.height);
     cssRenderer.domElement.style.position = 'absolute';
     cssRenderer.domElement.style.inset = '0';
+    cssRenderer.domElement.style.width = `${initialRenderSize.width}px`;
+    cssRenderer.domElement.style.height = `${initialRenderSize.height}px`;
     cssRenderer.domElement.style.pointerEvents = 'none';
     cssHost.appendChild(cssRenderer.domElement);
 
@@ -1212,7 +1227,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       const element = createEmbedElement(index);
       const cssObject = new CSS3DObject(element);
-      const cssScale = layout.postWidth / EMBED_WIDTH_PX;
+      const cssScale = Math.min(
+        layout.postWidth / EMBED_WIDTH_PX,
+        layout.postHeight / EMBED_HEIGHT_PX
+      );
       cssObject.position.set(x, layout.frameY, 0.29);
       cssObject.scale.set(cssScale, cssScale, cssScale);
       cssScene.add(cssObject);
@@ -1351,16 +1369,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const resize = () => {
-      const width = viewport.clientWidth;
-      const height = Math.max(1, viewport.clientHeight);
+      const { width, height } = getRenderSize();
       camera.aspect = width / height;
       camera.fov = layout.cameraFov;
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(
         Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)
       );
-      renderer.setSize(width, height);
+      renderer.setSize(width, height, true);
       cssRenderer.setSize(width, height);
+      renderer.domElement.style.width = `${width}px`;
+      renderer.domElement.style.height = `${height}px`;
+      cssRenderer.domElement.style.width = `${width}px`;
+      cssRenderer.domElement.style.height = `${height}px`;
     };
 
     const previousButton = previousButtonRef.current;
@@ -1438,6 +1459,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     animationFrame = window.requestAnimationFrame(animate);
 
     window.addEventListener('resize', resize, { passive: true });
+    window.addEventListener('orientationchange', resize, { passive: true });
+    window.visualViewport?.addEventListener('resize', resize, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener('scroll', resize, {
+      passive: true,
+    });
     window.addEventListener('pointermove', handlePointerMove, {
       passive: true,
     });
@@ -1449,6 +1477,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       window.cancelAnimationFrame(animationFrame);
       cancelScheduledWork(ceilingAreaSchedule);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('orientationchange', resize);
+      window.visualViewport?.removeEventListener('resize', resize);
+      window.visualViewport?.removeEventListener('scroll', resize);
       window.removeEventListener('pointermove', handlePointerMove);
       previousButton?.removeEventListener('click', goPrevious);
       nextButton?.removeEventListener('click', goNext);
