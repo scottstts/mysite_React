@@ -132,10 +132,19 @@ const urls = [
 
 export const artInLifeUrls = urls;
 
+const getCanonicalInstagramUrl = (url: string): string => {
+  try {
+    const parsedUrl = new URL(url.replaceAll('&amp;', '&'));
+    return `${parsedUrl.origin}${parsedUrl.pathname}`;
+  } catch {
+    return url.replaceAll('&amp;', '&');
+  }
+};
+
 export const createInstagramEmbedHtml = (url: string): string => `
   <blockquote
     class="instagram-media"
-    data-instgrm-permalink="${url}"
+    data-instgrm-permalink="${getCanonicalInstagramUrl(url)}"
     data-instgrm-version="14"
     style="background:#fff;border:0;margin:0;min-width:0;width:100%;"
   ></blockquote>

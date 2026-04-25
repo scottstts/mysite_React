@@ -161,16 +161,23 @@
 }
 
 .embedPlane :global(.instagram-media) {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
   min-width: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
   min-height: 100% !important;
+  height: 100% !important;
   margin: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
 .embedPlane :global(iframe) {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;
@@ -233,6 +240,20 @@
 .galleryControlButton:disabled {
   cursor: default;
   opacity: 0.28;
+}
+
+.galleryControlIcon {
+  display: block;
+  line-height: 0.72;
+  transform: translateY(-2px);
+}
+
+.galleryControlButton:first-child .galleryControlIcon {
+  transform: translate(-1px, -2px);
+}
+
+.galleryControlButton:last-child .galleryControlIcon {
+  transform: translate(1px, -2px);
 }
 
 .embedPlane a::after {

@@ -78,36 +78,44 @@ interface ScheduledWork {
 const EMBED_WIDTH_PX = 326;
 const EMBED_HEIGHT_PX = 492;
 const INSTAGRAM_IFRAME_ALLOW =
-  'clipboard-write; encrypted-media; picture-in-picture; web-share; unload';
+  'clipboard-write; encrypted-media; picture-in-picture; web-share';
 const GALLERY_LIGHTING = {
   exposure: 8.82,
   paintingSpot: {
     color: 0xffc58c,
-    intensity: 4.65,
+    intensity: 5.65,
     distance: 9.4,
-    angle: 0.62,
+    angle: 0.4,
     penumbra: 0.88,
-    decay: 2,
-    heightOffset: 1.34,
+    decay: 1.8,
+    heightOffset: 3.6,
     depth: 1.42,
     targetY: -0.22,
     targetZ: -0.06,
   },
   ceilingSpot: {
     color: 0xfff8e7,
-    intensity: 3.1,
+    intensity: 2.5,
     distance: 19,
     angle: 1.4,
     penumbra: 0.72,
-    decay: 2,
+    decay: 1.8,
   },
   ceilingArea: {
     color: 0xffffff,
-    intensity: 0.08,
+    intensity: 0.1,
     width: 8.4,
     height: 5.8,
     y: 4.35,
-    z: 2.85,
+    z: 4.85,
+  },
+  plaqueGlint: {
+    color: 0xffd391,
+    intensity: 0.16,
+    distance: 0.92,
+    decay: 2,
+    yOffset: 0.2,
+    z: 0.32,
   },
 };
 const MOBILE_QUERY = '(max-width: 767px)';
@@ -115,6 +123,7 @@ const TABLET_QUERY = '(max-width: 1180px)';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 let instagramScriptPromise: Promise<void> | null = null;
+let instagramProcessPromise: Promise<void> | null = null;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
@@ -240,6 +249,65 @@ const loadInstagramEmbedScript = (): Promise<void> => {
   return instagramScriptPromise;
 };
 
+const requestInstagramEmbedProcess = (): Promise<void> => {
+  if (instagramProcessPromise) {
+    return instagramProcessPromise;
+  }
+
+  instagramProcessPromise = new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      try {
+        window.instgrm?.Embeds.process();
+      } catch {
+        // Instagram's embed script throws minified invariants for duplicate or
+        // transiently measured embeds. Keep the gallery surface stable.
+      } finally {
+        window.setTimeout(() => {
+          instagramProcessPromise = null;
+          resolve();
+        }, 0);
+      }
+    });
+  });
+
+  return instagramProcessPromise;
+};
+
+const waitForInstagramIframe = (
+  container: HTMLElement,
+  timeout = 2600
+): Promise<boolean> => {
+  if (container.querySelector('iframe[src*="instagram.com"]')) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (hasIframe: boolean) => {
+      if (settled) return;
+
+      settled = true;
+      window.clearTimeout(timeoutId);
+      observer.disconnect();
+      resolve(hasIframe);
+    };
+
+    const observer = new MutationObserver(() => {
+      if (container.querySelector('iframe[src*="instagram.com"]')) {
+        finish(true);
+      }
+    });
+    const timeoutId = window.setTimeout(
+      () =>
+        finish(Boolean(container.querySelector('iframe[src*="instagram.com"]'))),
+      timeout
+    );
+
+    observer.observe(container, { childList: true, subtree: true });
+  });
+};
+
 const enhanceInstagramIframes = (container: HTMLElement, index: number) => {
   const iframes = container.querySelectorAll<HTMLIFrameElement>(
     'iframe[src*="instagram.com"]'
@@ -345,6 +413,43 @@ const configureTexture = (
   texture.anisotropy = anisotropy;
 };
 
+const configureSingleSurfaceTexture = (
+  texture: THREE.Texture,
+  anisotropy: number
+) => {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.repeat.set(1, 1);
+  texture.anisotropy = anisotropy;
+};
+
+const createPlaqueTextTexture = (): THREE.CanvasTexture => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'rgba(55, 31, 8, 0.78)';
+    context.font = '600 70px Georgia, Times New Roman, serif';
+    context.letterSpacing = '2px';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.shadowColor = 'rgba(255, 238, 188, 0.42)';
+    context.shadowBlur = 1.2;
+    context.shadowOffsetY = 1;
+    context.fillText('Scott Sun', canvas.width / 2, canvas.height / 2 + 1);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+};
+
 const roughenPlane = (geometry: THREE.BufferGeometry, amplitude: number) => {
   const position = geometry.getAttribute('position') as THREE.BufferAttribute;
 
@@ -390,7 +495,7 @@ const createFrameRingGeometry = (
   hole.lineTo(-innerHalfWidth, -innerHalfHeight);
   shape.holes.push(hole);
 
-  return new THREE.ExtrudeGeometry(shape, {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: true,
     bevelSegments: 5,
@@ -398,6 +503,38 @@ const createFrameRingGeometry = (
     bevelThickness: bevelSize * 0.9,
     curveSegments: 1,
   });
+  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+
+  if (uv) {
+    let minU = Infinity;
+    let maxU = -Infinity;
+    let minV = Infinity;
+    let maxV = -Infinity;
+
+    for (let index = 0; index < uv.count; index++) {
+      const u = uv.getX(index);
+      const v = uv.getY(index);
+      minU = Math.min(minU, u);
+      maxU = Math.max(maxU, u);
+      minV = Math.min(minV, v);
+      maxV = Math.max(maxV, v);
+    }
+
+    const rangeU = maxU - minU || 1;
+    const rangeV = maxV - minV || 1;
+
+    for (let index = 0; index < uv.count; index++) {
+      uv.setXY(
+        index,
+        (uv.getX(index) - minU) / rangeU,
+        (uv.getY(index) - minV) / rangeV
+      );
+    }
+
+    uv.needsUpdate = true;
+  }
+
+  return geometry;
 };
 
 const disposeMaterial = (material: THREE.Material | THREE.Material[]) => {
@@ -412,6 +549,7 @@ const createFrameGroup = ({
   layout,
   materials,
   unitBox,
+  unitPlane,
 }: {
   index: number;
   x: number;
@@ -419,14 +557,20 @@ const createFrameGroup = ({
   materials: {
     frame: THREE.Material[];
     backing: THREE.Material;
+    plaque: THREE.Material;
+    plaqueText: THREE.Material;
   };
   unitBox: THREE.BoxGeometry;
+  unitPlane: THREE.PlaneGeometry;
 }): THREE.Group => {
   const group = new THREE.Group();
   const frameMaterial = materials.frame[index % materials.frame.length];
   const halfOuterHeight = layout.frameOuterHeight / 2;
   const paintingLightY =
     halfOuterHeight + GALLERY_LIGHTING.paintingSpot.heightOffset;
+  const plaqueWidth = Math.min(0.86, layout.frameOuterWidth * 0.34);
+  const plaqueHeight = 0.18;
+  const plaqueY = halfOuterHeight + 0.34;
 
   group.position.set(x, layout.frameY, 0);
 
@@ -453,6 +597,36 @@ const createFrameGroup = ({
     materials.backing,
     false
   );
+
+  addBox(
+    'artist-plaque',
+    [plaqueWidth, plaqueHeight, 0.035],
+    [0, plaqueY, 0.02],
+    materials.plaque
+  );
+
+  const plaqueText = new THREE.Mesh(unitPlane, materials.plaqueText);
+  plaqueText.name = 'artist-plaque-engraving';
+  plaqueText.scale.set(plaqueWidth * 0.76, plaqueHeight * 0.54, 1);
+  plaqueText.position.set(0, plaqueY, 0.041);
+  plaqueText.castShadow = false;
+  plaqueText.receiveShadow = false;
+  group.add(plaqueText);
+
+  const plaqueGlint = new THREE.PointLight(
+    GALLERY_LIGHTING.plaqueGlint.color,
+    GALLERY_LIGHTING.plaqueGlint.intensity,
+    GALLERY_LIGHTING.plaqueGlint.distance,
+    GALLERY_LIGHTING.plaqueGlint.decay
+  );
+  plaqueGlint.name = 'artist-plaque-specular-light';
+  plaqueGlint.position.set(
+    0,
+    plaqueY + GALLERY_LIGHTING.plaqueGlint.yOffset,
+    GALLERY_LIGHTING.plaqueGlint.z
+  );
+  plaqueGlint.castShadow = false;
+  group.add(plaqueGlint);
 
   const frameGeometry = createFrameRingGeometry(
     layout.frameOuterWidth,
@@ -633,11 +807,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const textureLoader = new THREE.TextureLoader();
     const loadedTextures: THREE.Texture[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
-    const isIOSSafari =
-      /iP(ad|hone|od)/.test(window.navigator.userAgent) &&
-      /Safari/.test(window.navigator.userAgent) &&
-      !/CriOS|FxiOS|EdgiOS/.test(window.navigator.userAgent);
-
+    const unitPlane = new THREE.PlaneGeometry(1, 1);
     const webglHost = document.createElement('div');
     webglHost.className = sceneClassNames.webglLayer;
     const cssHost = document.createElement('div');
@@ -646,7 +816,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     cacheHost.setAttribute('aria-hidden', 'true');
     cacheHost.style.cssText =
       'position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;';
+    const stagingHost = document.createElement('div');
+    stagingHost.setAttribute('aria-hidden', 'true');
+    stagingHost.style.cssText = `position:fixed;left:-10000px;top:0;width:${EMBED_WIDTH_PX}px;min-height:${EMBED_HEIGHT_PX}px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;contain:layout paint style;`;
     viewport.append(webglHost, cssHost, cacheHost);
+    document.body.appendChild(stagingHost);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeee6d9);
@@ -700,6 +874,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return texture;
     };
 
+    const loadSingleSurfaceTexture = (url: string) => {
+      const texture = textureLoader.load(url, () => {
+        if (isMounted) renderer.render(scene, camera);
+      });
+      configureSingleSurfaceTexture(texture, textureAnisotropy);
+      loadedTextures.push(texture);
+      return texture;
+    };
+
     const loadBumpTexture = (url: string, repeatX: number, repeatY: number) => {
       const texture = textureLoader.load(url, () => {
         if (isMounted) renderer.render(scene, camera);
@@ -709,18 +892,38 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return texture;
     };
 
-    const wallRepeatX = Math.max(8, Math.ceil(urls.length / 3));
-    const wallTexture = loadTexture(plasterTextureUrl, wallRepeatX, 2.35);
-    const wallBump = loadBumpTexture(plasterBumpTextureUrl, wallRepeatX, 2.35);
+    const wallWidth = lastFrameX + 18;
+    const wallHeight = 8.2;
+    const floorDepth = 9.8;
+    const wallTextureRepeat = {
+      x: Math.max(1, wallWidth / 12),
+      y: wallHeight / 6.4,
+    };
+    const floorTextureRepeat = {
+      x: Math.max(1, wallWidth / 7.5),
+      y: floorDepth / 3.1,
+    };
+    const wallTexture = loadTexture(
+      plasterTextureUrl,
+      wallTextureRepeat.x,
+      wallTextureRepeat.y
+    );
+    const wallBump = loadBumpTexture(
+      plasterBumpTextureUrl,
+      wallTextureRepeat.x,
+      wallTextureRepeat.y
+    );
     const floorTexture = loadTexture(
       floorTextureUrl,
-      Math.max(10, urls.length / 2),
-      3.4
+      floorTextureRepeat.x,
+      floorTextureRepeat.y
     );
-    const matTexture = loadTexture(matBoardTextureUrl, 1.2, 1.8);
-    const walnutTexture = loadTexture(walnutFrameTextureUrl, 1.9, 1.9);
-    const goldTexture = loadTexture(goldFrameTextureUrl, 1.55, 1.55);
-    const ebonyTexture = loadTexture(ebonyFrameTextureUrl, 1.75, 1.75);
+    const matTexture = loadTexture(matBoardTextureUrl, 1, 1);
+    const walnutTexture = loadSingleSurfaceTexture(walnutFrameTextureUrl);
+    const goldTexture = loadSingleSurfaceTexture(goldFrameTextureUrl);
+    const ebonyTexture = loadSingleSurfaceTexture(ebonyFrameTextureUrl);
+    const plaqueTextTexture = createPlaqueTextTexture();
+    loadedTextures.push(plaqueTextTexture);
 
     const wallMaterial = new THREE.MeshStandardMaterial({
       map: wallTexture,
@@ -783,6 +986,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       roughness: 0.78,
       metalness: 0,
     });
+    const plaqueMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xb9822d,
+      roughness: 0.16,
+      metalness: 0.96,
+      clearcoat: 0.42,
+      clearcoatRoughness: 0.1,
+    });
+    const plaqueTextMaterial = new THREE.MeshStandardMaterial({
+      map: plaqueTextTexture,
+      color: 0x3d2308,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      roughness: 0.82,
+      metalness: 0.04,
+    });
     const materials = [
       wallMaterial,
       floorMaterial,
@@ -791,12 +1012,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       ebonyMaterial,
       backingMaterial,
       baseboardMaterial,
+      plaqueMaterial,
+      plaqueTextMaterial,
     ];
 
-    const wallWidth = lastFrameX + 18;
     const wallGeometry = new THREE.PlaneGeometry(
       wallWidth,
-      8.2,
+      wallHeight,
       Math.max(96, urls.length * 2),
       42
     );
@@ -806,7 +1028,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     wall.receiveShadow = true;
     scene.add(wall);
 
-    const floorGeometry = new THREE.PlaneGeometry(wallWidth, 9.8, 96, 18);
+    const floorGeometry = new THREE.PlaneGeometry(wallWidth, floorDepth, 96, 18);
     roughenPlane(floorGeometry, 0.006);
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
@@ -902,30 +1124,39 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const loadEmbed = () => {
         if (!activeFrames.has(record.index)) return;
 
-        record.element.innerHTML = createMountedEmbedHtml(urls[record.index]);
-        record.iframeObserver?.disconnect();
-        record.iframeObserver = watchInstagramIframes(
-          record.element,
-          record.index
-        );
-
         loadInstagramEmbedScript()
-          .then(() => {
+          .then(async () => {
             if (!activeFrames.has(record.index)) return;
 
-            try {
-              window.instgrm?.Embeds.process();
-            } catch {
+            const stagedElement = createEmbedElement(record.index);
+            stagedElement.innerHTML = createMountedEmbedHtml(
+              urls[record.index]
+            );
+            stagingHost.appendChild(stagedElement);
+
+            await requestInstagramEmbedProcess();
+            const hasIframe = await waitForInstagramIframe(stagedElement);
+
+            if (!activeFrames.has(record.index)) {
+              stagedElement.remove();
+              return;
+            }
+
+            if (!hasIframe) {
+              stagedElement.remove();
               record.element.innerHTML = createFallbackEmbedHtml(
                 urls[record.index]
               );
               return;
             }
-            window.setTimeout(() => {
-              if (activeFrames.has(record.index)) {
-                enhanceInstagramIframes(record.element, record.index);
-              }
-            }, 600);
+
+            record.element.replaceChildren(...stagedElement.childNodes);
+            stagedElement.remove();
+            record.iframeObserver?.disconnect();
+            record.iframeObserver = watchInstagramIframes(
+              record.element,
+              record.index
+            );
             record.embedMounted = true;
           })
           .catch(() => {
@@ -971,17 +1202,18 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         materials: {
           frame: [walnutMaterial, goldMaterial, ebonyMaterial],
           backing: backingMaterial,
+          plaque: plaqueMaterial,
+          plaqueText: plaqueTextMaterial,
         },
         unitBox,
+        unitPlane,
       });
       scene.add(group);
 
       const element = createEmbedElement(index);
       const cssObject = new CSS3DObject(element);
-      const safariScaleInset = isIOSSafari ? 0.035 : 0;
-      const safariYOffset = isIOSSafari ? -0.018 : 0;
-      const cssScale = (layout.postWidth - safariScaleInset) / EMBED_WIDTH_PX;
-      cssObject.position.set(x, layout.frameY + safariYOffset, 0.29);
+      const cssScale = layout.postWidth / EMBED_WIDTH_PX;
+      cssObject.position.set(x, layout.frameY, 0.29);
       cssObject.scale.set(cssScale, cssScale, cssScale);
       cssScene.add(cssObject);
 
@@ -1021,6 +1253,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       record.group.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
         if (object.geometry === unitBox) return;
+        if (object.geometry === unitPlane) return;
         object.geometry.dispose();
       });
       record.element.remove();
@@ -1226,6 +1459,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       cachedFrames.clear();
 
       unitBox.dispose();
+      unitPlane.dispose();
       wall.geometry.dispose();
       floor.geometry.dispose();
       loadedTextures.forEach((texture) => texture.dispose());
@@ -1234,6 +1468,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       webglHost.remove();
       cssHost.remove();
       cacheHost.remove();
+      stagingHost.remove();
     };
   }, [groupCount, isMobile, layout, reducedMotion, sceneClassNames, urls]);
 
@@ -1263,7 +1498,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           aria-label="Previous paintings"
           disabled={navGroupIndex <= 0}
         >
-          ‹
+          <span className={styles.galleryControlIcon} aria-hidden="true">
+            ‹
+          </span>
         </button>
         <button
           ref={nextButtonRef}
@@ -1272,7 +1509,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           aria-label="Next paintings"
           disabled={navGroupIndex >= groupCount - 1}
         >
-          ›
+          <span className={styles.galleryControlIcon} aria-hidden="true">
+            ›
+          </span>
         </button>
       </div>
 
