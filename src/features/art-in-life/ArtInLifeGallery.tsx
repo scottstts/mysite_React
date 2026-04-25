@@ -101,6 +101,14 @@ const GALLERY_LIGHTING = {
     penumbra: 0.72,
     decay: 2,
   },
+  ceilingArea: {
+    color: 0xffffff,
+    intensity: 0.08,
+    width: 8.4,
+    height: 5.8,
+    y: 4.35,
+    z: 2.85,
+  },
 };
 const MOBILE_QUERY = '(max-width: 767px)';
 const TABLET_QUERY = '(max-width: 1180px)';
@@ -614,6 +622,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let targetGroupIndex = 0;
     let targetCameraX = 0;
     let currentGroupIndex = -1;
+    let ceilingAreaLight: THREE.RectAreaLight | null = null;
+    let ceilingAreaSchedule: ScheduledWork | undefined;
     const activeFrames = new Map<number, FrameRecord>();
     const cachedFrames = new Map<number, FrameRecord>();
     const lastFrameIndex = urls.length - 1;
@@ -663,7 +673,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = GALLERY_LIGHTING.exposure;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.VSMShadowMap;
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -818,6 +828,29 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     baseboardCap.receiveShadow = true;
     scene.add(baseboardCap);
 
+    const mountCeilingAreaLight = () => {
+      import('three/examples/jsm/lights/RectAreaLightUniformsLib.js').then(
+        ({ RectAreaLightUniformsLib }) => {
+          if (!isMounted) return;
+
+          RectAreaLightUniformsLib.init();
+          ceilingAreaLight = new THREE.RectAreaLight(
+            GALLERY_LIGHTING.ceilingArea.color,
+            GALLERY_LIGHTING.ceilingArea.intensity,
+            GALLERY_LIGHTING.ceilingArea.width,
+            GALLERY_LIGHTING.ceilingArea.height
+          );
+          ceilingAreaLight.position.set(
+            targetCameraX,
+            GALLERY_LIGHTING.ceilingArea.y,
+            GALLERY_LIGHTING.ceilingArea.z
+          );
+          ceilingAreaLight.lookAt(targetCameraX, layout.frameY - 0.1, -0.08);
+          scene.add(ceilingAreaLight);
+        }
+      );
+    };
+
     const ceilingLight = new THREE.SpotLight(
       GALLERY_LIGHTING.ceilingSpot.color,
       GALLERY_LIGHTING.ceilingSpot.intensity,
@@ -830,13 +863,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     ceilingLight.target.position.set(lastFrameX / 2, -0.1, -0.08);
     ceilingLight.castShadow = true;
     ceilingLight.shadow.mapSize.set(
-      isMobile ? 1024 : 1536,
-      isMobile ? 1024 : 1536
+      isMobile ? 2048 : 4096,
+      isMobile ? 2048 : 4096
     );
-    ceilingLight.shadow.camera.near = 1.0;
-    ceilingLight.shadow.camera.far = 20;
-    ceilingLight.shadow.bias = -0.00006;
-    ceilingLight.shadow.normalBias = 0.022;
+    ceilingLight.shadow.camera.near = 1.6;
+    ceilingLight.shadow.camera.far = 18;
+    ceilingLight.shadow.bias = -0.00004;
+    ceilingLight.shadow.normalBias = 0.035;
+    ceilingLight.shadow.radius = isMobile ? 3 : 4;
+    ceilingLight.shadow.blurSamples = isMobile ? 8 : 12;
     scene.add(ceilingLight, ceilingLight.target);
 
     const createEmbedElement = (index: number) => {
@@ -1131,9 +1166,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       camera.position.z = lerp(camera.position.z, layout.cameraZ, 0.08);
       camera.lookAt(camera.position.x + pointerX, layout.frameY - 0.02, 0);
-      ceilingLight.position.x = camera.position.x;
-      ceilingLight.target.position.x = camera.position.x;
+      ceilingLight.position.x = targetCameraX;
+      ceilingLight.target.position.x = targetCameraX;
       ceilingLight.target.updateMatrixWorld();
+      if (ceilingAreaLight) {
+        ceilingAreaLight.position.x = targetCameraX;
+        ceilingAreaLight.lookAt(targetCameraX, layout.frameY - 0.1, -0.08);
+      }
 
       if (targetGroupIndex !== currentGroupIndex) {
         currentGroupIndex = targetGroupIndex;
@@ -1147,6 +1186,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     targetGroupIndex = 0;
     setNavGroupIndex(0);
+    targetCameraX = getGroupCenter(targetGroupIndex);
+    ceilingLight.position.x = targetCameraX;
+    ceilingLight.target.position.x = targetCameraX;
+    ceilingLight.target.updateMatrixWorld();
+    if (ceilingAreaLight) {
+      ceilingAreaLight.position.x = targetCameraX;
+      ceilingAreaLight.lookAt(targetCameraX, layout.frameY - 0.1, -0.08);
+    }
     camera.position.x = getGroupCenter(targetGroupIndex);
     camera.lookAt(camera.position.x, layout.frameY - 0.02, 0);
     resize();
@@ -1154,6 +1201,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.render(scene, camera);
     cssRenderer.render(cssScene, camera);
     setIsReady(true);
+    ceilingAreaSchedule = scheduleWhenIdle(mountCeilingAreaLight);
     animationFrame = window.requestAnimationFrame(animate);
 
     window.addEventListener('resize', resize, { passive: true });
@@ -1166,6 +1214,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     return () => {
       isMounted = false;
       window.cancelAnimationFrame(animationFrame);
+      cancelScheduledWork(ceilingAreaSchedule);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', handlePointerMove);
       previousButton?.removeEventListener('click', goPrevious);

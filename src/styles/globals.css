@@ -182,7 +182,7 @@ body.art-in-life-mode .site-navigation--gallery {
   flex-wrap: nowrap;
   justify-content: center;
   overflow-x: visible;
-  overflow-y: hidden;
+  overflow-y: visible;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -458,10 +458,14 @@ body.art-in-life-mode .site-navigation--gallery .tab-button:focus-visible {
 }
 
 body.art-in-life-mode .site-navigation--gallery .tab-button::after {
-  bottom: -0.34rem;
+  bottom: -0.22rem;
   height: 1px;
   background: rgba(20, 16, 12, 0.78);
   box-shadow: none;
+}
+
+body.art-in-life-mode .site-navigation--gallery .tab-button.active::after {
+  transform: scaleX(1);
 }
 
 .tab-content {
