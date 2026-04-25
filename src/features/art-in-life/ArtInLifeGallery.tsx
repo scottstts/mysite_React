@@ -123,7 +123,6 @@ const TABLET_QUERY = '(max-width: 1180px)';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 let instagramScriptPromise: Promise<void> | null = null;
-let instagramProcessPromise: Promise<void> | null = null;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
@@ -215,6 +214,22 @@ const supportsWebGL = (): boolean => {
   }
 };
 
+const ensureInstagramPreconnect = () => {
+  ['https://www.instagram.com', 'https://static.cdninstagram.com'].forEach(
+    (href) => {
+      const selector = `link[data-instagram-preconnect="${href}"]`;
+      if (document.querySelector(selector)) return;
+
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = href;
+      link.crossOrigin = 'anonymous';
+      link.dataset.instagramPreconnect = href;
+      document.head.appendChild(link);
+    }
+  );
+};
+
 const loadInstagramEmbedScript = (): Promise<void> => {
   if (window.instgrm?.Embeds) {
     return Promise.resolve();
@@ -235,6 +250,8 @@ const loadInstagramEmbedScript = (): Promise<void> => {
       return;
     }
 
+    ensureInstagramPreconnect();
+
     const script = document.createElement('script');
     script.async = true;
     script.defer = true;
@@ -249,29 +266,21 @@ const loadInstagramEmbedScript = (): Promise<void> => {
   return instagramScriptPromise;
 };
 
-const requestInstagramEmbedProcess = (): Promise<void> => {
-  if (instagramProcessPromise) {
-    return instagramProcessPromise;
-  }
-
-  instagramProcessPromise = new Promise((resolve) => {
+const requestInstagramEmbedProcess = (element: Element): Promise<void> =>
+  new Promise((resolve) => {
     window.requestAnimationFrame(() => {
       try {
-        window.instgrm?.Embeds.process();
+        window.instgrm?.Embeds.process(element);
       } catch {
         // Instagram's embed script throws minified invariants for duplicate or
         // transiently measured embeds. Keep the gallery surface stable.
       } finally {
         window.setTimeout(() => {
-          instagramProcessPromise = null;
           resolve();
         }, 0);
       }
     });
   });
-
-  return instagramProcessPromise;
-};
 
 const waitForInstagramIframe = (
   container: HTMLElement,
@@ -702,7 +711,7 @@ const LazyFallbackEmbed = ({ url, index }: { url: string; index: number }) => {
     loadInstagramEmbedScript()
       .then(() => {
         try {
-          window.instgrm?.Embeds.process();
+          window.instgrm?.Embeds.process(element);
         } catch {
           element.innerHTML = createFallbackEmbedHtml(url);
           return;
@@ -798,12 +807,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let currentGroupIndex = -1;
     let ceilingAreaLight: THREE.RectAreaLight | null = null;
     let ceilingAreaSchedule: ScheduledWork | undefined;
+    let requestRenderLoop = () => {};
     const activeFrames = new Map<number, FrameRecord>();
-    const cachedFrames = new Map<number, FrameRecord>();
     const lastFrameIndex = urls.length - 1;
     const lastFrameX = Math.max(0, lastFrameIndex * layout.spacing);
     const maxGroupIndex = Math.max(0, groupCount - 1);
-    const maxCachedFrames = isMobile ? 8 : 24;
     const textureLoader = new THREE.TextureLoader();
     const loadedTextures: THREE.Texture[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -812,14 +820,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     webglHost.className = sceneClassNames.webglLayer;
     const cssHost = document.createElement('div');
     cssHost.className = sceneClassNames.cssLayer;
-    const cacheHost = document.createElement('div');
-    cacheHost.setAttribute('aria-hidden', 'true');
-    cacheHost.style.cssText =
-      'position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;';
     const stagingHost = document.createElement('div');
     stagingHost.setAttribute('aria-hidden', 'true');
     stagingHost.style.cssText = `position:fixed;left:-10000px;top:0;width:${EMBED_WIDTH_PX}px;min-height:${EMBED_HEIGHT_PX}px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;contain:layout paint style;`;
-    viewport.append(webglHost, cssHost, cacheHost);
+    viewport.append(webglHost, cssHost);
     document.body.appendChild(stagingHost);
 
     const getRenderSize = () => {
@@ -1084,6 +1088,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           );
           ceilingAreaLight.lookAt(targetCameraX, layout.frameY - 0.1, -0.08);
           scene.add(ceilingAreaLight);
+          requestRenderLoop();
         }
       );
     };
@@ -1133,15 +1138,31 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     `;
 
     const mountEmbed = (record: FrameRecord, urgent = false) => {
-      if (record.embedMounted || record.embedRequested) return;
+      if (record.embedMounted) return;
+
+      if (record.embedRequested) {
+        if (!urgent || !record.schedule) return;
+
+        cancelScheduledWork(record.schedule);
+        record.schedule = undefined;
+        record.embedRequested = false;
+      }
 
       record.embedRequested = true;
       const loadEmbed = () => {
-        if (!activeFrames.has(record.index)) return;
+        record.schedule = undefined;
+
+        if (!activeFrames.has(record.index)) {
+          record.embedRequested = false;
+          return;
+        }
 
         loadInstagramEmbedScript()
           .then(async () => {
-            if (!activeFrames.has(record.index)) return;
+            if (!activeFrames.has(record.index)) {
+              record.embedRequested = false;
+              return;
+            }
 
             const stagedElement = createEmbedElement(record.index);
             stagedElement.innerHTML = createMountedEmbedHtml(
@@ -1149,11 +1170,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             );
             stagingHost.appendChild(stagedElement);
 
-            await requestInstagramEmbedProcess();
+            await requestInstagramEmbedProcess(stagedElement);
             const hasIframe = await waitForInstagramIframe(stagedElement);
 
             if (!activeFrames.has(record.index)) {
               stagedElement.remove();
+              record.embedRequested = false;
               return;
             }
 
@@ -1199,16 +1221,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const createFrameRecord = (index: number): FrameRecord => {
-      const cachedRecord = cachedFrames.get(index);
-
-      if (cachedRecord) {
-        cachedFrames.delete(index);
-        cachedRecord.lastTouched = performance.now();
-        scene.add(cachedRecord.group);
-        cssScene.add(cachedRecord.cssObject);
-        return cachedRecord;
-      }
-
       const x = index * layout.spacing;
       const group = createFrameGroup({
         index,
@@ -1284,54 +1296,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       disposeFrameRecord(record);
     };
 
-    const trimFrameCache = (groupIndex: number) => {
-      while (cachedFrames.size > maxCachedFrames) {
-        const groupCenter =
-          (getGroupStart(groupIndex) + getGroupEnd(groupIndex)) / 2;
-        let candidateIndex = -1;
-        let candidateDistance = -1;
-
-        cachedFrames.forEach((record, index) => {
-          const distance = Math.abs(index - groupCenter);
-
-          if (
-            distance > candidateDistance ||
-            (distance === candidateDistance &&
-              record.lastTouched <
-                (cachedFrames.get(candidateIndex)?.lastTouched ?? Infinity))
-          ) {
-            candidateIndex = index;
-            candidateDistance = distance;
-          }
-        });
-
-        const candidate = cachedFrames.get(candidateIndex);
-        if (!candidate) return;
-
-        cachedFrames.delete(candidateIndex);
-        destroyFrameRecord(candidate);
-      }
-    };
-
-    const removeFrameRecord = (record: FrameRecord, groupIndex: number) => {
-      cancelScheduledWork(record.schedule);
-      record.schedule = undefined;
-      scene.remove(record.group);
-      cssScene.remove(record.cssObject);
-
-      if (record.embedMounted) {
-        record.iframeObserver?.disconnect();
-        record.iframeObserver = undefined;
-        record.lastTouched = performance.now();
-        cacheHost.appendChild(record.element);
-        cachedFrames.set(record.index, record);
-        trimFrameCache(groupIndex);
-        return;
-      }
-
-      destroyFrameRecord(record);
-    };
-
     const updateVirtualFrames = (groupIndex: number) => {
       const activeStart = Math.max(
         0,
@@ -1346,7 +1310,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       activeFrames.forEach((record, index) => {
         if (index < activeStart || index > activeEnd) {
-          removeFrameRecord(record, groupIndex);
+          destroyFrameRecord(record);
           activeFrames.delete(index);
         }
       });
@@ -1358,12 +1322,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
 
       activeFrames.forEach((record, index) => {
-        const shouldMountEmbed = index >= embedStart && index <= embedEnd;
-
-        if (shouldMountEmbed) {
+        if (index >= embedStart && index <= embedEnd) {
           mountEmbed(record, true);
-        } else if (!record.embedMounted && record.embedRequested) {
-          unmountEmbed(record);
+        }
+      });
+
+      activeFrames.forEach((record, index) => {
+        if (index < embedStart || index > embedEnd) {
+          mountEmbed(record, false);
         }
       });
     };
@@ -1382,6 +1348,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       renderer.domElement.style.height = `${height}px`;
       cssRenderer.domElement.style.width = `${width}px`;
       cssRenderer.domElement.style.height = `${height}px`;
+      requestRenderLoop();
     };
 
     const previousButton = previousButtonRef.current;
@@ -1391,6 +1358,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const nextGroupIndex = clamp(groupIndex, 0, maxGroupIndex);
       targetGroupIndex = nextGroupIndex;
       setNavGroupIndex(nextGroupIndex);
+      requestRenderLoop();
     };
 
     const goPrevious = () => goToGroup(targetGroupIndex - 1);
@@ -1404,20 +1372,25 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       pointerX = (event.clientX / window.innerWidth - 0.5) * 0.18;
       pointerY = (event.clientY / window.innerHeight - 0.5) * 0.12;
+      requestRenderLoop();
     };
 
-    const animate = () => {
+    const renderScene = () => {
+      renderer.render(scene, camera);
+      cssRenderer.render(cssScene, camera);
+    };
+
+    const renderFrame = () => {
+      animationFrame = 0;
       targetCameraX = getGroupCenter(targetGroupIndex);
+      const targetCameraY = layout.cameraY - pointerY;
+
       camera.position.x = lerp(
         camera.position.x,
         targetCameraX,
         isMobile ? 0.16 : 0.09
       );
-      camera.position.y = lerp(
-        camera.position.y,
-        layout.cameraY - pointerY,
-        0.06
-      );
+      camera.position.y = lerp(camera.position.y, targetCameraY, 0.06);
       camera.position.z = lerp(camera.position.z, layout.cameraZ, 0.08);
       camera.lookAt(camera.position.x + pointerX, layout.frameY - 0.02, 0);
       ceilingLight.position.x = targetCameraX;
@@ -1433,9 +1406,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         updateVirtualFrames(targetGroupIndex);
       }
 
-      renderer.render(scene, camera);
-      cssRenderer.render(cssScene, camera);
-      animationFrame = window.requestAnimationFrame(animate);
+      renderScene();
+
+      const isSettling =
+        Math.abs(camera.position.x - targetCameraX) > 0.002 ||
+        Math.abs(camera.position.y - targetCameraY) > 0.002 ||
+        Math.abs(camera.position.z - layout.cameraZ) > 0.002;
+
+      if (isSettling) {
+        requestRenderLoop();
+      }
+    };
+
+    requestRenderLoop = () => {
+      if (!isMounted || animationFrame) return;
+
+      animationFrame = window.requestAnimationFrame(renderFrame);
     };
 
     targetGroupIndex = 0;
@@ -1452,11 +1438,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     camera.lookAt(camera.position.x, layout.frameY - 0.02, 0);
     resize();
     updateVirtualFrames(targetGroupIndex);
-    renderer.render(scene, camera);
-    cssRenderer.render(cssScene, camera);
+    currentGroupIndex = targetGroupIndex;
+    renderScene();
     setIsReady(true);
     ceilingAreaSchedule = scheduleWhenIdle(mountCeilingAreaLight);
-    animationFrame = window.requestAnimationFrame(animate);
 
     window.addEventListener('resize', resize, { passive: true });
     window.addEventListener('orientationchange', resize, { passive: true });
@@ -1486,8 +1471,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       activeFrames.forEach(destroyFrameRecord);
       activeFrames.clear();
-      cachedFrames.forEach(destroyFrameRecord);
-      cachedFrames.clear();
 
       unitBox.dispose();
       unitPlane.dispose();
@@ -1498,7 +1481,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       renderer.dispose();
       webglHost.remove();
       cssHost.remove();
-      cacheHost.remove();
       stagingHost.remove();
     };
   }, [groupCount, isMobile, layout, reducedMotion, sceneClassNames, urls]);
