@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from 'react';
 import * as THREE from 'three';
 import {
@@ -37,7 +36,6 @@ interface GalleryLayout {
   cameraFov: number;
   groupSize: number;
   frameWindowGroups: number;
-  groupScrollScreens: number;
 }
 
 interface FrameRecord {
@@ -152,7 +150,6 @@ const getLayout = (isMobile: boolean, isTablet: boolean): GalleryLayout => {
       cameraFov: 47,
       groupSize: 1,
       frameWindowGroups: 1,
-      groupScrollScreens: 92,
     };
   }
 
@@ -170,7 +167,6 @@ const getLayout = (isMobile: boolean, isTablet: boolean): GalleryLayout => {
       cameraFov: 41,
       groupSize: 2,
       frameWindowGroups: 1,
-      groupScrollScreens: 84,
     };
   }
 
@@ -187,7 +183,6 @@ const getLayout = (isMobile: boolean, isTablet: boolean): GalleryLayout => {
     cameraFov: 40,
     groupSize: 3,
     frameWindowGroups: 1,
-    groupScrollScreens: 78,
   };
 };
 
@@ -566,8 +561,11 @@ const FallbackGallery = ({ urls }: ArtInLifeGalleryProps) => (
 const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const previousButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nextButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
+  const [navGroupIndex, setNavGroupIndex] = useState(0);
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const isTablet = useMediaQuery(TABLET_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -576,10 +574,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     [isMobile, isTablet]
   );
   const groupCount = Math.max(1, Math.ceil(urls.length / layout.groupSize));
-  const scrollScreens = Math.max(
-    140,
-    Math.round(92 + groupCount * layout.groupScrollScreens)
-  );
   const sceneClassNames = useMemo<SceneClassNames>(
     () => ({
       webglLayer: styles.webglLayer,
@@ -617,15 +611,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     let isMounted = true;
     let animationFrame = 0;
-    let scrollSnapTimeout = 0;
-    let gestureUnlockTimeout = 0;
-    let gestureLocked = false;
-    let intendedGroupIndex = 0;
+    let targetGroupIndex = 0;
     let targetCameraX = 0;
     let currentGroupIndex = -1;
-    let pointerStartX = 0;
-    let pointerStartY = 0;
-    let pointerTracking = false;
     const activeFrames = new Map<number, FrameRecord>();
     const cachedFrames = new Map<number, FrameRecord>();
     const lastFrameIndex = urls.length - 1;
@@ -635,6 +623,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const textureLoader = new THREE.TextureLoader();
     const loadedTextures: THREE.Texture[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
+    const isIOSSafari =
+      /iP(ad|hone|od)/.test(window.navigator.userAgent) &&
+      /Safari/.test(window.navigator.userAgent) &&
+      !/CriOS|FxiOS|EdgiOS/.test(window.navigator.userAgent);
 
     const webglHost = document.createElement('div');
     webglHost.className = sceneClassNames.webglLayer;
@@ -951,8 +943,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       const element = createEmbedElement(index);
       const cssObject = new CSS3DObject(element);
-      const cssScale = layout.postWidth / EMBED_WIDTH_PX;
-      cssObject.position.set(x, layout.frameY, 0.29);
+      const safariScaleInset = isIOSSafari ? 0.035 : 0;
+      const safariYOffset = isIOSSafari ? -0.018 : 0;
+      const cssScale = (layout.postWidth - safariScaleInset) / EMBED_WIDTH_PX;
+      cssObject.position.set(x, layout.frameY + safariYOffset, 0.29);
       cssObject.scale.set(cssScale, cssScale, cssScale);
       cssScene.add(cssObject);
 
@@ -1101,42 +1095,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       cssRenderer.setSize(width, height);
     };
 
-    const getScrollProgress = () => {
-      const stageTop = stage.offsetTop;
-      const scrollable = Math.max(1, stage.offsetHeight - window.innerHeight);
-      return clamp((window.scrollY - stageTop) / scrollable, 0, 1);
+    const previousButton = previousButtonRef.current;
+    const nextButton = nextButtonRef.current;
+
+    const goToGroup = (groupIndex: number) => {
+      const nextGroupIndex = clamp(groupIndex, 0, maxGroupIndex);
+      targetGroupIndex = nextGroupIndex;
+      setNavGroupIndex(nextGroupIndex);
     };
 
-    const isSceneNavigationActive = () => {
-      const stageTop = stage.offsetTop;
-      const stageBottom = stageTop + stage.offsetHeight;
-      const viewportMiddle = window.scrollY + window.innerHeight * 0.5;
-
-      return viewportMiddle >= stageTop && viewportMiddle <= stageBottom;
-    };
-
-    const getScrollGroupIndex = () =>
-      clamp(Math.round(getScrollProgress() * maxGroupIndex), 0, maxGroupIndex);
-
-    const scrollToGroup = (groupIndex: number, behavior: ScrollBehavior) => {
-      const clampedGroup = clamp(groupIndex, 0, maxGroupIndex);
-      intendedGroupIndex = clampedGroup;
-      const stageTop = stage.offsetTop;
-      const scrollable = Math.max(1, stage.offsetHeight - window.innerHeight);
-      const top =
-        stageTop +
-        (maxGroupIndex === 0 ? 0 : (clampedGroup / maxGroupIndex) * scrollable);
-
-      window.scrollTo({ top, behavior });
-    };
-
-    const scheduleGestureUnlock = () => {
-      window.clearTimeout(gestureUnlockTimeout);
-      gestureUnlockTimeout = window.setTimeout(() => {
-        gestureLocked = false;
-        intendedGroupIndex = getScrollGroupIndex();
-      }, 760);
-    };
+    const goPrevious = () => goToGroup(targetGroupIndex - 1);
+    const goNext = () => goToGroup(targetGroupIndex + 1);
 
     let pointerX = 0;
     let pointerY = 0;
@@ -1148,91 +1117,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       pointerY = (event.clientY / window.innerHeight - 0.5) * 0.12;
     };
 
-    const scheduleScrollSnap = () => {
-      if (gestureLocked) return;
-
-      const stageTop = stage.offsetTop;
-      const stageBottom = stageTop + stage.offsetHeight;
-
-      if (
-        window.scrollY < stageTop - 4 ||
-        window.scrollY > stageBottom - window.innerHeight + 4
-      ) {
-        return;
-      }
-
-      window.clearTimeout(scrollSnapTimeout);
-      scrollSnapTimeout = window.setTimeout(() => {
-        const scrollGroupIndex = getScrollGroupIndex();
-        intendedGroupIndex = scrollGroupIndex;
-        scrollToGroup(scrollGroupIndex, 'smooth');
-      }, 150);
-    };
-
-    const handleWheel = (event: WheelEvent) => {
-      if (!isSceneNavigationActive()) return;
-
-      const horizontalDelta = event.deltaX;
-      const verticalDelta = event.deltaY;
-      const dominantDelta =
-        Math.abs(horizontalDelta) > Math.abs(verticalDelta) * 0.72
-          ? horizontalDelta
-          : verticalDelta;
-
-      if (Math.abs(dominantDelta) < 8) return;
-
-      event.preventDefault();
-      if (gestureLocked) {
-        scheduleGestureUnlock();
-        return;
-      }
-
-      gestureLocked = true;
-      const direction =
-        Math.abs(horizontalDelta) > Math.abs(verticalDelta) * 0.72
-          ? horizontalDelta < 0
-            ? 1
-            : -1
-          : verticalDelta > 0
-            ? 1
-            : -1;
-
-      scrollToGroup(intendedGroupIndex + direction, 'smooth');
-      scheduleGestureUnlock();
-    };
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!isSceneNavigationActive()) return;
-      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-
-      pointerStartX = event.clientX;
-      pointerStartY = event.clientY;
-      pointerTracking = true;
-    };
-
-    const handlePointerUp = (event: PointerEvent) => {
-      if (!pointerTracking) return;
-
-      pointerTracking = false;
-      const deltaX = event.clientX - pointerStartX;
-      const deltaY = event.clientY - pointerStartY;
-
-      if (Math.abs(deltaX) < 44 || Math.abs(deltaX) < Math.abs(deltaY) * 1.05) {
-        return;
-      }
-
-      if (gestureLocked) {
-        scheduleGestureUnlock();
-        return;
-      }
-
-      gestureLocked = true;
-      scrollToGroup(intendedGroupIndex + (deltaX > 0 ? 1 : -1), 'smooth');
-      scheduleGestureUnlock();
-    };
-
     const animate = () => {
-      const targetGroupIndex = getScrollGroupIndex();
       targetCameraX = getGroupCenter(targetGroupIndex);
       camera.position.x = lerp(
         camera.position.x,
@@ -1260,57 +1145,31 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       animationFrame = window.requestAnimationFrame(animate);
     };
 
-    intendedGroupIndex = getScrollGroupIndex();
-    camera.position.x = getGroupCenter(intendedGroupIndex);
+    targetGroupIndex = 0;
+    setNavGroupIndex(0);
+    camera.position.x = getGroupCenter(targetGroupIndex);
     camera.lookAt(camera.position.x, layout.frameY - 0.02, 0);
     resize();
-    updateVirtualFrames(intendedGroupIndex);
+    updateVirtualFrames(targetGroupIndex);
     renderer.render(scene, camera);
     cssRenderer.render(cssScene, camera);
     setIsReady(true);
     animationFrame = window.requestAnimationFrame(animate);
 
-    const capturedWheelOptions: AddEventListenerOptions = {
-      capture: true,
-      passive: false,
-    };
-    const capturedPointerOptions: AddEventListenerOptions = {
-      capture: true,
-      passive: true,
-    };
-
     window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('scroll', scheduleScrollSnap, { passive: true });
-    window.addEventListener('wheel', handleWheel, capturedWheelOptions);
     window.addEventListener('pointermove', handlePointerMove, {
       passive: true,
     });
-    window.addEventListener(
-      'pointerdown',
-      handlePointerDown,
-      capturedPointerOptions
-    );
-    window.addEventListener(
-      'pointerup',
-      handlePointerUp,
-      capturedPointerOptions
-    );
+    previousButton?.addEventListener('click', goPrevious);
+    nextButton?.addEventListener('click', goNext);
 
     return () => {
       isMounted = false;
       window.cancelAnimationFrame(animationFrame);
-      window.clearTimeout(scrollSnapTimeout);
-      window.clearTimeout(gestureUnlockTimeout);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('scroll', scheduleScrollSnap);
-      window.removeEventListener('wheel', handleWheel, { capture: true });
       window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerdown', handlePointerDown, {
-        capture: true,
-      });
-      window.removeEventListener('pointerup', handlePointerUp, {
-        capture: true,
-      });
+      previousButton?.removeEventListener('click', goPrevious);
+      nextButton?.removeEventListener('click', goNext);
 
       activeFrames.forEach(destroyFrameRecord);
       activeFrames.clear();
@@ -1334,11 +1193,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   }
 
   return (
-    <div
-      ref={stageRef}
-      className={styles.galleryStage}
-      style={{ minHeight: `${scrollScreens}svh` } as CSSProperties}
-    >
+    <div ref={stageRef} className={styles.galleryStage}>
       <div ref={viewportRef} className={styles.sceneViewport}>
         <div className={styles.sceneOverlay} aria-hidden="true" />
         <div
@@ -1350,6 +1205,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           <span className={styles.loadingMark} aria-hidden="true" />
           <span>Preparing gallery</span>
         </div>
+      </div>
+      <div className={styles.galleryControls} aria-label="Gallery navigation">
+        <button
+          ref={previousButtonRef}
+          type="button"
+          className={styles.galleryControlButton}
+          aria-label="Previous paintings"
+          disabled={navGroupIndex <= 0}
+        >
+          ‹
+        </button>
+        <button
+          ref={nextButtonRef}
+          type="button"
+          className={styles.galleryControlButton}
+          aria-label="Next paintings"
+          disabled={navGroupIndex >= groupCount - 1}
+        >
+          ›
+        </button>
       </div>
 
       <ul className={styles.srOnly}>
