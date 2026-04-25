@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Realistic Wooden Painting Frame Mesh - Portrait - Three.js</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #17110c;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    canvas { display: block; }
+    .hint {
+      position: fixed;
+      left: 18px;
+      bottom: 16px;
+      color: rgba(255, 242, 220, 0.78);
+      background: rgba(20, 13, 7, 0.52);
+      border: 1px solid rgba(255, 226, 180, 0.14);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">Portrait frame · Drag to inspect the carved mesh · Wheel to zoom · Double click to reset</div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x17110c);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.05, 80);
+    const target = new THREE.Vector3(0, 0, 0.08);
+
+    let orbitRadius = 6.35;
+    let orbitTheta = 0.0;
+    let orbitPhi = 1.54;
+
+    function updateCamera() {
+      camera.position.set(
+        target.x + orbitRadius * Math.sin(orbitPhi) * Math.sin(orbitTheta),
+        target.y + orbitRadius * Math.cos(orbitPhi),
+        target.z + orbitRadius * Math.sin(orbitPhi) * Math.cos(orbitTheta)
+      );
+      camera.lookAt(target);
+    }
+    updateCamera();
+
+    // -----------------------------------------------------------------------
+    // Procedural material: varnished walnut-ish wood with map + bump.
+    // The frame geometry supplies UVs so the grain runs along each rail length.
+    // -----------------------------------------------------------------------
+    function smoothstep(edge0, edge1, x) {
+      const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+
+    function rand2(x, y) {
+      const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+      return n - Math.floor(n);
+    }
+
+    function noise2(x, y) {
+      const ix = Math.floor(x);
+      const iy = Math.floor(y);
+      const fx = x - ix;
+      const fy = y - iy;
+      const ux = fx * fx * (3 - 2 * fx);
+      const uy = fy * fy * (3 - 2 * fy);
+      const a = rand2(ix, iy);
+      const b = rand2(ix + 1, iy);
+      const c = rand2(ix, iy + 1);
+      const d = rand2(ix + 1, iy + 1);
+      return THREE.MathUtils.lerp(
+        THREE.MathUtils.lerp(a, b, ux),
+        THREE.MathUtils.lerp(c, d, ux),
+        uy
+      );
+    }
+
+    function fbm(x, y) {
+      let f = 0;
+      let amp = 0.5;
+      let freq = 1;
+      for (let i = 0; i < 5; i++) {
+        f += amp * noise2(x * freq, y * freq);
+        freq *= 2.04;
+        amp *= 0.51;
+      }
+      return f;
+    }
+
+    function makeWoodTextures(size = 768) {
+      const colorCanvas = document.createElement('canvas');
+      colorCanvas.width = colorCanvas.height = size;
+      const bumpCanvas = document.createElement('canvas');
+      bumpCanvas.width = bumpCanvas.height = size;
+
+      const ctx = colorCanvas.getContext('2d');
+      const btx = bumpCanvas.getContext('2d');
+      const img = ctx.createImageData(size, size);
+      const bump = btx.createImageData(size, size);
+
+      const dark = new THREE.Color(0x44200f);
+      const mid = new THREE.Color(0x8a4f25);
+      const light = new THREE.Color(0xc08748);
+      const reddish = new THREE.Color(0x6c2e18);
+      const scratch = new THREE.Color(0xe3b26d);
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const u = x / size;
+          const v = y / size;
+
+          // Long vertical-ish grain in UV space. Since UV u follows the rail,
+          // the rings flow with the wood length instead of looking like noise.
+          const warp = fbm(u * 5.0, v * 11.0) * 1.8 + Math.sin(v * 18.0) * 0.18;
+          const longWave = Math.sin((u * 36.0 + warp) * Math.PI * 2.0);
+          const fineWave = Math.sin((u * 146.0 + fbm(u * 26.0, v * 7.0) * 3.6) * Math.PI * 2.0);
+          const pores = fbm(u * 90.0, v * 34.0);
+          const broad = fbm(u * 2.6, v * 5.4);
+
+          let value = 0.48 + longWave * 0.18 + fineWave * 0.045 + (broad - 0.5) * 0.28;
+          value -= smoothstep(0.72, 0.96, pores) * 0.25;
+          value = THREE.MathUtils.clamp(value, 0.05, 0.95);
+
+          const color = new THREE.Color();
+          if (value < 0.48) {
+            color.copy(dark).lerp(mid, value / 0.48);
+          } else {
+            color.copy(mid).lerp(light, (value - 0.48) / 0.52);
+          }
+
+          // Occasional pale fibers and reddish varnish pockets.
+          const paleFiber = smoothstep(0.975, 1.0, Math.sin((u * 410.0 + fbm(u * 55.0, v * 9.0)) * Math.PI * 2.0) * 0.5 + 0.5);
+          color.lerp(scratch, paleFiber * 0.22);
+          color.lerp(reddish, smoothstep(0.70, 0.95, broad) * 0.18);
+
+          const i = (y * size + x) * 4;
+          img.data[i] = Math.round(color.r * 255);
+          img.data[i + 1] = Math.round(color.g * 255);
+          img.data[i + 2] = Math.round(color.b * 255);
+          img.data[i + 3] = 255;
+
+          const bumpVal = THREE.MathUtils.clamp(116 + value * 96 + fineWave * 20 - smoothstep(0.68, 0.92, pores) * 40, 0, 255);
+          bump.data[i] = bumpVal;
+          bump.data[i + 1] = bumpVal;
+          bump.data[i + 2] = bumpVal;
+          bump.data[i + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
+      btx.putImageData(bump, 0, 0);
+
+      const map = new THREE.CanvasTexture(colorCanvas);
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+      bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+      bumpMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      return { map, bumpMap };
+    }
+
+    const woodTextures = makeWoodTextures();
+
+    const woodMaterial = new THREE.MeshPhysicalMaterial({
+      map: woodTextures.map,
+      bumpMap: woodTextures.bumpMap,
+      bumpScale: 0.055,
+      color: 0xffffff,
+      roughness: 0.48,
+      metalness: 0.0,
+      clearcoat: 0.38,
+      clearcoatRoughness: 0.22,
+      sheen: 0.18,
+      sheenRoughness: 0.78,
+      side: THREE.DoubleSide
+    });
+
+    const darkCreviceMaterial = new THREE.MeshStandardMaterial({
+      color: 0x160b05,
+      roughness: 0.85,
+      metalness: 0.0,
+      side: THREE.DoubleSide
+    });
+
+    const wornEdgeMaterial = new THREE.MeshStandardMaterial({
+      color: 0xc28a4f,
+      roughness: 0.38,
+      metalness: 0.03,
+      emissive: 0x050201,
+      side: THREE.DoubleSide
+    });
+
+    // -----------------------------------------------------------------------
+    // Sculpted frame rail geometry.
+    //
+    // The rail is not four boxes. Each side is a swept ornate cross-section:
+    // inner rabbet, bead, carved groove, high crown, cove, outer bead,
+    // bottom thickness, and actual 45-degree mitered corners.
+    // -----------------------------------------------------------------------
+    const outerW = 4.35;
+    const outerH = 6.25;
+    const innerW = 2.85;
+    const innerH = 4.75;
+    const railW = (outerW - innerW) * 0.5;
+    const bottomZ = -0.18;
+
+    function profileZAt(t) {
+      const crown = 0.355 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.56);
+      const innerBead = 0.105 * Math.exp(-Math.pow((t - 0.085) / 0.033, 2));
+      const outerBead = 0.092 * Math.exp(-Math.pow((t - 0.905) / 0.038, 2));
+      const innerGroove = -0.115 * Math.exp(-Math.pow((t - 0.205) / 0.043, 2));
+      const outerGroove = -0.102 * Math.exp(-Math.pow((t - 0.735) / 0.052, 2));
+      const shoulder = 0.045 * Math.exp(-Math.pow((t - 0.42) / 0.15, 2));
+      const cove = -0.035 * Math.exp(-Math.pow((t - 0.61) / 0.095, 2));
+
+      let z = 0.070 + crown + innerBead + outerBead + innerGroove + outerGroove + shoulder + cove;
+      z = THREE.MathUtils.lerp(0.105, z, smoothstep(0.000, 0.052, t)); // crisp lower inner rabbet
+      z = THREE.MathUtils.lerp(z, 0.095, smoothstep(0.952, 1.000, t)); // lower outer back edge
+      return z;
+    }
+
+    function buildProfile(samples = 120) {
+      const p = [];
+      for (let i = 0; i < samples; i++) {
+        const t = i / (samples - 1);
+        p.push({ t, a: t * railW, z: profileZAt(t) });
+      }
+      return p;
+    }
+
+    const profile = buildProfile();
+
+    function railPoint(orientation, t, s, z) {
+      const OW = outerW * 0.5;
+      const OH = outerH * 0.5;
+      const IW = innerW * 0.5;
+      const IH = innerH * 0.5;
+      const a = t * railW;
+
+      let x, y;
+
+      if (orientation === 'top') {
+        y = IH + a;
+        const offset = railW - a;
+        const x0 = -OW + offset;
+        const x1 = OW - offset;
+        x = THREE.MathUtils.lerp(x0, x1, s);
+      } else if (orientation === 'bottom') {
+        y = -IH - a;
+        const offset = railW - a;
+        const x0 = -OW + offset;
+        const x1 = OW - offset;
+        x = THREE.MathUtils.lerp(x0, x1, s);
+      } else if (orientation === 'right') {
+        x = IW + a;
+        const offset = railW - a;
+        const y0 = -OH + offset;
+        const y1 = OH - offset;
+        y = THREE.MathUtils.lerp(y0, y1, s);
+      } else {
+        x = -IW - a;
+        const offset = railW - a;
+        const y0 = -OH + offset;
+        const y1 = OH - offset;
+        y = THREE.MathUtils.lerp(y0, y1, s);
+      }
+
+      return new THREE.Vector3(x, y, z);
+    }
+
+    function addFace(indices, a, b, c, d) {
+      indices.push(a, b, c, b, d, c);
+    }
+
+    function createRailGeometry(orientation, lengthSegments = 170) {
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+      const topIdx = [];
+      const bottomIdx = [];
+      const pCount = profile.length;
+      const sCount = lengthSegments + 1;
+      const longDim = (orientation === 'top' || orientation === 'bottom') ? outerW : outerH;
+
+      function pushVertex(v, u, vv) {
+        const id = positions.length / 3;
+        positions.push(v.x, v.y, v.z);
+        uvs.push(u, vv);
+        return id;
+      }
+
+      for (let i = 0; i < pCount; i++) {
+        topIdx[i] = [];
+        bottomIdx[i] = [];
+        const { t, z } = profile[i];
+
+        for (let j = 0; j < sCount; j++) {
+          const s = j / lengthSegments;
+          const u = s * longDim * 1.18;
+          const v = t * 3.3;
+
+          const top = railPoint(orientation, t, s, z);
+          const bottom = railPoint(orientation, t, s, bottomZ);
+
+          topIdx[i][j] = pushVertex(top, u, v);
+          bottomIdx[i][j] = pushVertex(bottom, u, v + 0.08);
+        }
+      }
+
+      // Sculpted top surface
+      for (let i = 0; i < pCount - 1; i++) {
+        for (let j = 0; j < lengthSegments; j++) {
+          addFace(indices, topIdx[i][j], topIdx[i][j + 1], topIdx[i + 1][j], topIdx[i + 1][j + 1]);
+        }
+      }
+
+      // Flat bottom, mostly hidden but makes the rail a real solid mesh.
+      for (let i = 0; i < pCount - 1; i++) {
+        for (let j = 0; j < lengthSegments; j++) {
+          addFace(indices, bottomIdx[i + 1][j], bottomIdx[i + 1][j + 1], bottomIdx[i][j], bottomIdx[i][j + 1]);
+        }
+      }
+
+      // Inner and outer vertical walls.
+      for (let j = 0; j < lengthSegments; j++) {
+        addFace(indices, bottomIdx[0][j], bottomIdx[0][j + 1], topIdx[0][j], topIdx[0][j + 1]);
+        addFace(indices, topIdx[pCount - 1][j], topIdx[pCount - 1][j + 1], bottomIdx[pCount - 1][j], bottomIdx[pCount - 1][j + 1]);
+      }
+
+      // Miter end caps.
+      for (let i = 0; i < pCount - 1; i++) {
+        addFace(indices, bottomIdx[i][0], topIdx[i][0], bottomIdx[i + 1][0], topIdx[i + 1][0]);
+        addFace(indices, topIdx[i][lengthSegments], bottomIdx[i][lengthSegments], topIdx[i + 1][lengthSegments], bottomIdx[i + 1][lengthSegments]);
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      geometry.computeBoundingSphere();
+      return geometry;
+    }
+
+    const frameGroup = new THREE.Group();
+    frameGroup.name = 'Sculpted_Wooden_Painting_Frame_Group';
+
+    const railOrientations = ['top', 'bottom', 'left', 'right'];
+    for (const orientation of railOrientations) {
+      const mesh = new THREE.Mesh(createRailGeometry(orientation), woodMaterial);
+      mesh.name = `swept_mitered_${orientation}_rail`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      frameGroup.add(mesh);
+    }
+
+    // Dark shadow line in the inner rabbet, behind the raised lip.
+    function createRectRingShapeGeometry(outerWidth, outerHeight, innerWidth, innerHeight) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-outerWidth / 2, -outerHeight / 2);
+      shape.lineTo(outerWidth / 2, -outerHeight / 2);
+      shape.lineTo(outerWidth / 2, outerHeight / 2);
+      shape.lineTo(-outerWidth / 2, outerHeight / 2);
+      shape.lineTo(-outerWidth / 2, -outerHeight / 2);
+
+      const hole = new THREE.Path();
+      hole.moveTo(-innerWidth / 2, -innerHeight / 2);
+      hole.lineTo(-innerWidth / 2, innerHeight / 2);
+      hole.lineTo(innerWidth / 2, innerHeight / 2);
+      hole.lineTo(innerWidth / 2, -innerHeight / 2);
+      hole.lineTo(-innerWidth / 2, -innerHeight / 2);
+      shape.holes.push(hole);
+
+      return new THREE.ShapeGeometry(shape);
+    }
+
+    const rabbetShadow = new THREE.Mesh(
+      createRectRingShapeGeometry(innerW + 0.16, innerH + 0.16, innerW - 0.10, innerH - 0.10),
+      darkCreviceMaterial
+    );
+    rabbetShadow.name = 'deep_inner_rabbet_shadow_ring';
+    rabbetShadow.position.z = -0.085;
+    rabbetShadow.receiveShadow = true;
+    frameGroup.add(rabbetShadow);
+
+    // Subtle worn highlights on sharp high points: small actual tube geometry
+    // riding on the beads/groove ridges, not just a texture.
+    function makeRailTube(orientation, t, radius, material, zLift = 0.012, samples = 90) {
+      const pts = [];
+      for (let i = 0; i <= samples; i++) {
+        const s = i / samples;
+        pts.push(railPoint(orientation, t, s, profileZAt(t) + zLift));
+      }
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const geometry = new THREE.TubeGeometry(curve, samples, radius, 7, false);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    for (const orientation of railOrientations) {
+      const innerWear = makeRailTube(orientation, 0.085, 0.0065, wornEdgeMaterial, 0.010);
+      innerWear.name = `${orientation}_raised_inner_bead_worn_edge`;
+      frameGroup.add(innerWear);
+
+      const outerWear = makeRailTube(orientation, 0.905, 0.0055, wornEdgeMaterial, 0.009);
+      outerWear.name = `${orientation}_raised_outer_bead_worn_edge`;
+      frameGroup.add(outerWear);
+
+      const grooveA = makeRailTube(orientation, 0.205, 0.0042, darkCreviceMaterial, 0.006);
+      grooveA.name = `${orientation}_inner_carved_groove_shadow`;
+      frameGroup.add(grooveA);
+
+      const grooveB = makeRailTube(orientation, 0.735, 0.0042, darkCreviceMaterial, 0.006);
+      grooveB.name = `${orientation}_outer_carved_groove_shadow`;
+      frameGroup.add(grooveB);
+    }
+
+    function makeMiterSeam(cornerName) {
+      const pts = [];
+      for (let i = 0; i <= 34; i++) {
+        const t = i / 34;
+        let x = 0, y = 0;
+        if (cornerName === 'topLeft') {
+          x = -innerW / 2 - t * railW;
+          y = innerH / 2 + t * railW;
+        } else if (cornerName === 'topRight') {
+          x = innerW / 2 + t * railW;
+          y = innerH / 2 + t * railW;
+        } else if (cornerName === 'bottomRight') {
+          x = innerW / 2 + t * railW;
+          y = -innerH / 2 - t * railW;
+        } else {
+          x = -innerW / 2 - t * railW;
+          y = -innerH / 2 - t * railW;
+        }
+        pts.push(new THREE.Vector3(x, y, profileZAt(t) + 0.018));
+      }
+
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const geom = new THREE.TubeGeometry(curve, 40, 0.006, 6, false);
+      const seam = new THREE.Mesh(geom, darkCreviceMaterial);
+      seam.name = `${cornerName}_visible_45_degree_miter_seam`;
+      seam.castShadow = true;
+      seam.receiveShadow = true;
+      return seam;
+    }
+
+    ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'].forEach(c => frameGroup.add(makeMiterSeam(c)));
+
+    // Tiny individual dents and darker pores as shallow discs on the surface.
+    // They are actual mesh details scattered on the crown so close-up inspection
+    // does not feel like one perfectly clean procedural texture.
+    const dentMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1b0d06,
+      roughness: 0.95,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.28,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    function seededRandom(seed) {
+      let s = seed;
+      return function () {
+        s = Math.sin(s * 12.9898) * 43758.5453;
+        return s - Math.floor(s);
+      };
+    }
+
+    const rnd = seededRandom(42.0);
+    for (let k = 0; k < 64; k++) {
+      const orientation = railOrientations[Math.floor(rnd() * railOrientations.length)];
+      const t = THREE.MathUtils.lerp(0.28, 0.68, rnd());
+      const s = THREE.MathUtils.lerp(0.06, 0.94, rnd());
+      const pos = railPoint(orientation, t, s, profileZAt(t) + 0.021);
+
+      const dent = new THREE.Mesh(new THREE.CircleGeometry(THREE.MathUtils.lerp(0.008, 0.025, rnd()), 14), dentMaterial);
+      dent.name = 'subtle_dark_wood_pore_or_dent';
+      dent.position.copy(pos);
+
+      // Discs face the viewer/front plane. Good enough for tiny surface pores.
+      dent.rotation.z = rnd() * Math.PI;
+      dent.scale.x *= THREE.MathUtils.lerp(0.45, 1.2, rnd());
+      dent.scale.y *= THREE.MathUtils.lerp(0.25, 0.7, rnd());
+      frameGroup.add(dent);
+    }
+
+    scene.add(frameGroup);
+    window.frameMeshGroup = frameGroup; // handy if you want to inspect/export from DevTools
+
+    // Neutral canvas/painting behind the frame, just to show the inner rabbet.
+    function makePaintingTexture() {
+      const c = document.createElement('canvas');
+      c.width = 768;
+      c.height = 1180;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
+      grad.addColorStop(0, '#ece4d3');
+      grad.addColorStop(0.45, '#d0b58f');
+      grad.addColorStop(1, '#65503c');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      ctx.globalAlpha = 0.24;
+      for (let i = 0; i < 1700; i++) {
+        const x = Math.random() * c.width;
+        const y = Math.random() * c.height;
+        const l = Math.random() * 26 + 4;
+        ctx.strokeStyle = Math.random() > 0.5 ? '#fff4dc' : '#372619';
+        ctx.lineWidth = Math.random() * 1.4 + 0.3;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + l * (Math.random() - 0.5), y + l * (Math.random() - 0.5));
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // Soft inner vignette.
+      const vignette = ctx.createRadialGradient(c.width / 2, c.height / 2, c.height * 0.18, c.width / 2, c.height / 2, c.width * 0.62);
+      vignette.addColorStop(0, 'rgba(255,255,255,0.08)');
+      vignette.addColorStop(1, 'rgba(32,16,8,0.38)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return tex;
+    }
+
+    const painting = new THREE.Mesh(
+      new THREE.PlaneGeometry(innerW - 0.18, innerH - 0.18, 1, 1),
+      new THREE.MeshStandardMaterial({
+        map: makePaintingTexture(),
+        roughness: 0.92,
+        metalness: 0.0
+      })
+    );
+    painting.name = 'recessed_canvas_painting_plane_for_scale';
+    painting.position.z = -0.145;
+    painting.receiveShadow = true;
+    scene.add(painting);
+
+    // Backing board just visible in edge shadow.
+    const backing = new THREE.Mesh(
+      new THREE.BoxGeometry(innerW + 0.20, innerH + 0.20, 0.055),
+      new THREE.MeshStandardMaterial({ color: 0x2a170c, roughness: 0.88 })
+    );
+    backing.position.z = -0.218;
+    backing.receiveShadow = true;
+    scene.add(backing);
+
+    // Simple gallery wall/floor context with warm top lighting.
+    function makeWallTexture() {
+      const c = document.createElement('canvas');
+      c.width = c.height = 512;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(c.width, c.height);
+      for (let y = 0; y < c.height; y++) {
+        for (let x = 0; x < c.width; x++) {
+          const n = fbm(x / 42, y / 42);
+          const v = 214 + (n - 0.5) * 22;
+          const i = (y * c.width + x) * 4;
+          img.data[i] = v + 8;
+          img.data[i + 1] = v + 3;
+          img.data[i + 2] = v - 7;
+          img.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 3);
+      return tex;
+    }
+
+    const wall = new THREE.Mesh(
+      new THREE.PlaneGeometry(11, 7),
+      new THREE.MeshStandardMaterial({ map: makeWallTexture(), roughness: 0.93 })
+    );
+    wall.position.set(0, 0, -0.34);
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    const hemi = new THREE.HemisphereLight(0xffe8c8, 0x26120a, 1.4);
+    scene.add(hemi);
+
+    const topWarm = new THREE.SpotLight(0xffcf9b, 75, 10, Math.PI / 5.6, 0.5, 1.8);
+    topWarm.position.set(0, 2.6, 3.4);
+    topWarm.target.position.set(0, 0.1, 0);
+    topWarm.castShadow = true;
+    topWarm.shadow.mapSize.set(2048, 2048);
+    scene.add(topWarm);
+    scene.add(topWarm.target);
+
+    const leftFill = new THREE.PointLight(0xffe0bd, 12, 7, 2.0);
+    leftFill.position.set(-3.2, 1.5, 2.4);
+    scene.add(leftFill);
+
+    const glint = new THREE.DirectionalLight(0xfff1d8, 2.1);
+    glint.position.set(3.0, 1.2, 3.8);
+    scene.add(glint);
+
+    // Lightweight built-in orbit camera so this remains one HTML file with no addon imports.
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      renderer.domElement.setPointerCapture(e.pointerId);
+    });
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      orbitTheta -= dx * 0.0062;
+      orbitPhi = THREE.MathUtils.clamp(orbitPhi - dy * 0.0048, 0.55, 2.38);
+      updateCamera();
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      isDragging = false;
+      try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    renderer.domElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      orbitRadius = THREE.MathUtils.clamp(orbitRadius * (1 + e.deltaY * 0.0011), 3.15, 11.5);
+      updateCamera();
+    }, { passive: false });
+
+    renderer.domElement.addEventListener('dblclick', () => {
+      orbitRadius = 6.35;
+      orbitTheta = 0;
+      orbitPhi = 1.54;
+      updateCamera();
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

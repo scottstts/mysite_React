@@ -75,10 +75,25 @@ interface ScheduledWork {
   id: number;
 }
 
+declare global {
+  interface Window {
+    __ART_IN_LIFE_CARD_SIZE_SCALE__?: number;
+  }
+}
+
 const EMBED_WIDTH_PX = 326;
 const EMBED_HEIGHT_PX = 492;
+const EMBED_ASPECT_RATIO = EMBED_WIDTH_PX / EMBED_HEIGHT_PX;
+const FRAME_RAIL_Z_OFFSET = 0.055;
+const FRAME_INNER_RIM_T = 0;
+const FRAME_CARD_SIZE_SCALE = 1;
 const INSTAGRAM_IFRAME_ALLOW =
   'clipboard-write; encrypted-media; picture-in-picture; web-share';
+
+if (typeof window !== 'undefined') {
+  window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
+  window.dispatchEvent(new Event('art-in-life-card-scale-change'));
+}
 const GALLERY_LIGHTING = {
   exposure: 8.82,
   paintingSpot: {
@@ -129,6 +144,21 @@ const clamp = (value: number, min: number, max: number): number =>
 
 const lerp = (start: number, end: number, amount: number): number =>
   start + (end - start) * amount;
+
+const snapLerp = (
+  start: number,
+  end: number,
+  amount: number,
+  threshold: number
+): number => {
+  const next = lerp(start, end, amount);
+  return Math.abs(next - end) <= threshold ? end : next;
+};
+
+const smoothstep = (edge0: number, edge1: number, value: number): number => {
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
 const useMediaQuery = (query: string): boolean => {
   const [matches, setMatches] = useState(() => {
@@ -477,73 +507,258 @@ const roughenPlane = (geometry: THREE.BufferGeometry, amplitude: number) => {
   geometry.computeVertexNormals();
 };
 
-const createFrameRingGeometry = (
-  outerWidth: number,
-  outerHeight: number,
-  innerWidth: number,
-  innerHeight: number,
-  depth: number,
-  bevelSize: number
+const addQuadFace = (
+  indices: number[],
+  a: number,
+  b: number,
+  c: number,
+  d: number
 ) => {
-  const outerHalfWidth = outerWidth / 2;
-  const outerHalfHeight = outerHeight / 2;
-  const innerHalfWidth = innerWidth / 2;
-  const innerHalfHeight = innerHeight / 2;
-  const shape = new THREE.Shape();
-  shape.moveTo(-outerHalfWidth, -outerHalfHeight);
-  shape.lineTo(outerHalfWidth, -outerHalfHeight);
-  shape.lineTo(outerHalfWidth, outerHalfHeight);
-  shape.lineTo(-outerHalfWidth, outerHalfHeight);
-  shape.lineTo(-outerHalfWidth, -outerHalfHeight);
+  indices.push(a, b, c, b, d, c);
+};
 
-  const hole = new THREE.Path();
-  hole.moveTo(-innerHalfWidth, -innerHalfHeight);
-  hole.lineTo(-innerHalfWidth, innerHalfHeight);
-  hole.lineTo(innerHalfWidth, innerHalfHeight);
-  hole.lineTo(innerHalfWidth, -innerHalfHeight);
-  hole.lineTo(-innerHalfWidth, -innerHalfHeight);
-  shape.holes.push(hole);
+const profileZAt = (
+  t: number,
+  railWidth: number
+): number => {
+  const scale = railWidth / 0.75;
+  const crown =
+    0.355 * scale * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.56);
+  const innerBead =
+    0.105 * scale * Math.exp(-Math.pow((t - 0.085) / 0.033, 2));
+  const outerBead =
+    0.092 * scale * Math.exp(-Math.pow((t - 0.905) / 0.038, 2));
+  const innerGroove =
+    -0.115 * scale * Math.exp(-Math.pow((t - 0.205) / 0.043, 2));
+  const outerGroove =
+    -0.102 * scale * Math.exp(-Math.pow((t - 0.735) / 0.052, 2));
+  const shoulder =
+    0.045 * scale * Math.exp(-Math.pow((t - 0.42) / 0.15, 2));
+  const cove =
+    -0.035 * scale * Math.exp(-Math.pow((t - 0.61) / 0.095, 2));
 
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: true,
-    bevelSegments: 5,
-    bevelSize,
-    bevelThickness: bevelSize * 0.9,
-    curveSegments: 1,
+  let z =
+    0.07 * scale +
+    crown +
+    innerBead +
+    outerBead +
+    innerGroove +
+    outerGroove +
+    shoulder +
+    cove;
+
+  z = lerp(0.105 * scale, z, smoothstep(0, 0.052, t));
+  z = lerp(z, 0.095 * scale, smoothstep(0.952, 1, t));
+
+  return z;
+};
+
+const buildFrameProfile = (railWidth: number, samples = 92) =>
+  Array.from({ length: samples }, (_, index) => {
+    const t = index / (samples - 1);
+    return { t, z: profileZAt(t, railWidth) };
   });
-  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
 
-  if (uv) {
-    let minU = Infinity;
-    let maxU = -Infinity;
-    let minV = Infinity;
-    let maxV = -Infinity;
+const getRailPoint = (
+  orientation: 'top' | 'bottom' | 'left' | 'right',
+  dimensions: {
+    outerWidth: number;
+    outerHeight: number;
+    innerWidth: number;
+    innerHeight: number;
+    railWidthX: number;
+    railWidthY: number;
+  },
+  t: number,
+  s: number,
+  z: number
+) => {
+  const outerHalfWidth = dimensions.outerWidth / 2;
+  const outerHalfHeight = dimensions.outerHeight / 2;
+  const innerHalfWidth = dimensions.innerWidth / 2;
+  const innerHalfHeight = dimensions.innerHeight / 2;
+  const railWidth =
+    orientation === 'top' || orientation === 'bottom'
+      ? dimensions.railWidthY
+      : dimensions.railWidthX;
+  const a = t * railWidth;
+  let x = 0;
+  let y = 0;
 
-    for (let index = 0; index < uv.count; index++) {
-      const u = uv.getX(index);
-      const v = uv.getY(index);
-      minU = Math.min(minU, u);
-      maxU = Math.max(maxU, u);
-      minV = Math.min(minV, v);
-      maxV = Math.max(maxV, v);
-    }
-
-    const rangeU = maxU - minU || 1;
-    const rangeV = maxV - minV || 1;
-
-    for (let index = 0; index < uv.count; index++) {
-      uv.setXY(
-        index,
-        (uv.getX(index) - minU) / rangeU,
-        (uv.getY(index) - minV) / rangeV
-      );
-    }
-
-    uv.needsUpdate = true;
+  if (orientation === 'top') {
+    y = innerHalfHeight + a;
+    x = lerp(
+      -outerHalfWidth + dimensions.railWidthX - t * dimensions.railWidthX,
+      outerHalfWidth - dimensions.railWidthX + t * dimensions.railWidthX,
+      s
+    );
+  } else if (orientation === 'bottom') {
+    y = -innerHalfHeight - a;
+    x = lerp(
+      -outerHalfWidth + dimensions.railWidthX - t * dimensions.railWidthX,
+      outerHalfWidth - dimensions.railWidthX + t * dimensions.railWidthX,
+      s
+    );
+  } else if (orientation === 'right') {
+    x = innerHalfWidth + a;
+    y = lerp(
+      -outerHalfHeight + dimensions.railWidthY - t * dimensions.railWidthY,
+      outerHalfHeight - dimensions.railWidthY + t * dimensions.railWidthY,
+      s
+    );
+  } else {
+    x = -innerHalfWidth - a;
+    y = lerp(
+      -outerHalfHeight + dimensions.railWidthY - t * dimensions.railWidthY,
+      outerHalfHeight - dimensions.railWidthY + t * dimensions.railWidthY,
+      s
+    );
   }
 
+  return new THREE.Vector3(x, y, z);
+};
+
+const createSculptedRailGeometry = (
+  orientation: 'top' | 'bottom' | 'left' | 'right',
+  dimensions: {
+    outerWidth: number;
+    outerHeight: number;
+    innerWidth: number;
+    innerHeight: number;
+    railWidthX: number;
+    railWidthY: number;
+    profileRailWidth: number;
+    frameDepth: number;
+  }
+) => {
+  const railWidth =
+    orientation === 'top' || orientation === 'bottom'
+      ? dimensions.railWidthY
+      : dimensions.railWidthX;
+  const profile = buildFrameProfile(dimensions.profileRailWidth);
+  const lengthSegments =
+    orientation === 'top' || orientation === 'bottom' ? 132 : 156;
+  const bottomZ = -0.18 * (dimensions.profileRailWidth / 0.75);
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const topIndices: number[][] = [];
+  const bottomIndices: number[][] = [];
+
+  const pushVertex = (vertex: THREE.Vector3, u: number, v: number) => {
+    const id = positions.length / 3;
+    positions.push(vertex.x, vertex.y, vertex.z);
+    uvs.push(u, v);
+    return id;
+  };
+
+  profile.forEach(({ t, z }, profileIndex) => {
+    topIndices[profileIndex] = [];
+    bottomIndices[profileIndex] = [];
+
+    for (let segment = 0; segment <= lengthSegments; segment++) {
+      const s = segment / lengthSegments;
+      const u = s;
+      const v = t;
+      const top = getRailPoint(orientation, dimensions, t, s, z);
+      const bottom = getRailPoint(orientation, dimensions, t, s, bottomZ);
+
+      topIndices[profileIndex][segment] = pushVertex(top, u, v);
+      bottomIndices[profileIndex][segment] = pushVertex(bottom, u, v + 0.08);
+    }
+  });
+
+  for (let profileIndex = 0; profileIndex < profile.length - 1; profileIndex++) {
+    for (let segment = 0; segment < lengthSegments; segment++) {
+      addQuadFace(
+        indices,
+        topIndices[profileIndex][segment],
+        topIndices[profileIndex][segment + 1],
+        topIndices[profileIndex + 1][segment],
+        topIndices[profileIndex + 1][segment + 1]
+      );
+      addQuadFace(
+        indices,
+        bottomIndices[profileIndex + 1][segment],
+        bottomIndices[profileIndex + 1][segment + 1],
+        bottomIndices[profileIndex][segment],
+        bottomIndices[profileIndex][segment + 1]
+      );
+    }
+  }
+
+  for (let segment = 0; segment < lengthSegments; segment++) {
+    addQuadFace(
+      indices,
+      bottomIndices[0][segment],
+      bottomIndices[0][segment + 1],
+      topIndices[0][segment],
+      topIndices[0][segment + 1]
+    );
+    addQuadFace(
+      indices,
+      topIndices[profile.length - 1][segment],
+      topIndices[profile.length - 1][segment + 1],
+      bottomIndices[profile.length - 1][segment],
+      bottomIndices[profile.length - 1][segment + 1]
+    );
+  }
+
+  for (let profileIndex = 0; profileIndex < profile.length - 1; profileIndex++) {
+    addQuadFace(
+      indices,
+      bottomIndices[profileIndex][0],
+      topIndices[profileIndex][0],
+      bottomIndices[profileIndex + 1][0],
+      topIndices[profileIndex + 1][0]
+    );
+    addQuadFace(
+      indices,
+      topIndices[profileIndex][lengthSegments],
+      bottomIndices[profileIndex][lengthSegments],
+      topIndices[profileIndex + 1][lengthSegments],
+      bottomIndices[profileIndex + 1][lengthSegments]
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+
   return geometry;
+};
+
+const getFrameCardSizeScale = () =>
+  typeof window === 'undefined'
+    ? FRAME_CARD_SIZE_SCALE
+    : window.__ART_IN_LIFE_CARD_SIZE_SCALE__ ?? FRAME_CARD_SIZE_SCALE;
+
+const getFrameMetrics = (layout: GalleryLayout) => {
+  const innerWidth = layout.postWidth;
+  const innerHeight = innerWidth / EMBED_ASPECT_RATIO;
+  const railWidthX = (layout.frameOuterWidth - innerWidth) / 2;
+  const railWidthY = (layout.frameOuterHeight - innerHeight) / 2;
+  const referenceRailWidth = Math.min(railWidthX, railWidthY);
+  const cardSizeScale = getFrameCardSizeScale();
+
+  return {
+    innerWidth,
+    innerHeight,
+    railWidthX,
+    railWidthY,
+    profileRailWidth: referenceRailWidth,
+    cardWidth: innerWidth * cardSizeScale,
+    cardHeight: innerHeight * cardSizeScale,
+    cardZ:
+      FRAME_RAIL_Z_OFFSET +
+      profileZAt(FRAME_INNER_RIM_T, referenceRailWidth),
+  };
 };
 
 const disposeMaterial = (material: THREE.Material | THREE.Material[]) => {
@@ -577,6 +792,7 @@ const createFrameGroup = ({
   const halfOuterHeight = layout.frameOuterHeight / 2;
   const paintingLightY =
     halfOuterHeight + GALLERY_LIGHTING.paintingSpot.heightOffset;
+  const frameMetrics = getFrameMetrics(layout);
   const plaqueWidth = Math.min(0.86, layout.frameOuterWidth * 0.34);
   const plaqueHeight = 0.18;
   const plaqueY = halfOuterHeight + 0.34;
@@ -601,7 +817,7 @@ const createFrameGroup = ({
 
   addBox(
     'backing',
-    [layout.postWidth + 0.08, layout.postHeight + 0.08, 0.045],
+    [frameMetrics.innerWidth + 0.08, frameMetrics.innerHeight + 0.08, 0.045],
     [0, 0, 0.018],
     materials.backing,
     false
@@ -637,20 +853,28 @@ const createFrameGroup = ({
   plaqueGlint.castShadow = false;
   group.add(plaqueGlint);
 
-  const frameGeometry = createFrameRingGeometry(
-    layout.frameOuterWidth,
-    layout.frameOuterHeight,
-    layout.postWidth + 0.1,
-    layout.postHeight + 0.1,
-    layout.frameDepth,
-    0.07
-  );
-  const frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
-  frameMesh.name = 'beveled-frame';
-  frameMesh.position.z = 0.055;
-  frameMesh.castShadow = true;
-  frameMesh.receiveShadow = true;
-  group.add(frameMesh);
+  const frameDimensions = {
+    outerWidth: layout.frameOuterWidth,
+    outerHeight: layout.frameOuterHeight,
+    innerWidth: frameMetrics.innerWidth,
+    innerHeight: frameMetrics.innerHeight,
+    railWidthX: frameMetrics.railWidthX,
+    railWidthY: frameMetrics.railWidthY,
+    profileRailWidth: frameMetrics.profileRailWidth,
+    frameDepth: layout.frameDepth,
+  };
+
+  (['top', 'bottom', 'left', 'right'] as const).forEach((orientation) => {
+    const frameRail = new THREE.Mesh(
+      createSculptedRailGeometry(orientation, frameDimensions),
+      frameMaterial
+    );
+    frameRail.name = `sculpted-${orientation}-frame-rail`;
+    frameRail.position.z = FRAME_RAIL_Z_OFFSET;
+    frameRail.castShadow = true;
+    frameRail.receiveShadow = true;
+    group.add(frameRail);
+  });
 
   const spotlight = new THREE.SpotLight(
     GALLERY_LIGHTING.paintingSpot.color,
@@ -1220,6 +1444,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       record.element.innerHTML = createSkeletonHtml(sceneClassNames);
     };
 
+    const updateCardTransform = (record: FrameRecord) => {
+      const frameMetrics = getFrameMetrics(layout);
+      const cssScale = Math.min(
+        frameMetrics.cardWidth / EMBED_WIDTH_PX,
+        frameMetrics.cardHeight / EMBED_HEIGHT_PX
+      );
+
+      record.cssObject.position.set(
+        record.index * layout.spacing,
+        layout.frameY,
+        frameMetrics.cardZ
+      );
+      record.cssObject.scale.set(cssScale, cssScale, cssScale);
+    };
+
+    const handleCardScaleChange = () => {
+      activeFrames.forEach(updateCardTransform);
+      requestRenderLoop();
+    };
+
     const createFrameRecord = (index: number): FrameRecord => {
       const x = index * layout.spacing;
       const group = createFrameGroup({
@@ -1239,15 +1483,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       const element = createEmbedElement(index);
       const cssObject = new CSS3DObject(element);
-      const cssScale = Math.min(
-        layout.postWidth / EMBED_WIDTH_PX,
-        layout.postHeight / EMBED_HEIGHT_PX
-      );
-      cssObject.position.set(x, layout.frameY, 0.29);
-      cssObject.scale.set(cssScale, cssScale, cssScale);
       cssScene.add(cssObject);
 
-      return {
+      const record: FrameRecord = {
         index,
         group,
         cssObject,
@@ -1256,6 +1494,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         embedRequested: false,
         lastTouched: performance.now(),
       };
+
+      updateCardTransform(record);
+
+      return record;
     };
 
     const getGroupStart = (groupIndex: number) => {
@@ -1384,14 +1626,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       animationFrame = 0;
       targetCameraX = getGroupCenter(targetGroupIndex);
       const targetCameraY = layout.cameraY - pointerY;
+      const cameraSnapThreshold = isMobile ? 0.012 : 0.01;
 
-      camera.position.x = lerp(
+      camera.position.x = snapLerp(
         camera.position.x,
         targetCameraX,
-        isMobile ? 0.16 : 0.09
+        isMobile ? 0.28 : 0.22,
+        cameraSnapThreshold
       );
-      camera.position.y = lerp(camera.position.y, targetCameraY, 0.06);
-      camera.position.z = lerp(camera.position.z, layout.cameraZ, 0.08);
+      camera.position.y = snapLerp(
+        camera.position.y,
+        targetCameraY,
+        0.16,
+        cameraSnapThreshold
+      );
+      camera.position.z = snapLerp(
+        camera.position.z,
+        layout.cameraZ,
+        0.16,
+        cameraSnapThreshold
+      );
       camera.lookAt(camera.position.x + pointerX, layout.frameY - 0.02, 0);
       ceilingLight.position.x = targetCameraX;
       ceilingLight.target.position.x = targetCameraX;
@@ -1454,6 +1708,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     window.addEventListener('pointermove', handlePointerMove, {
       passive: true,
     });
+    window.addEventListener(
+      'art-in-life-card-scale-change',
+      handleCardScaleChange
+    );
     previousButton?.addEventListener('click', goPrevious);
     nextButton?.addEventListener('click', goNext);
 
@@ -1466,6 +1724,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       window.visualViewport?.removeEventListener('resize', resize);
       window.visualViewport?.removeEventListener('scroll', resize);
       window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener(
+        'art-in-life-card-scale-change',
+        handleCardScaleChange
+      );
       previousButton?.removeEventListener('click', goPrevious);
       nextButton?.removeEventListener('click', goNext);
 
