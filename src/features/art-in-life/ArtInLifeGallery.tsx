@@ -18,6 +18,7 @@ import floorTextureUrl from '@/assets/textures/gallery-floor.webp';
 import matBoardTextureUrl from '@/assets/textures/gallery-mat-board.webp';
 import plasterBumpTextureUrl from '@/assets/textures/gallery-plaster-bump.webp';
 import plasterTextureUrl from '@/assets/textures/gallery-plaster.webp';
+import neonSignSvgUrl from '@/assets/art_in_life_text_strokes_cropped_smooth.svg';
 
 interface ArtInLifeGalleryProps {
   urls: string[];
@@ -108,6 +109,19 @@ interface CameraTransition {
   direction: 1 | -1;
 }
 
+type NeonPaletteKind = 'blue' | 'pink';
+
+type SVGLoaderConstructor = typeof import('three/examples/jsm/loaders/SVGLoader.js').SVGLoader;
+type EffectComposerInstance = import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
+type UnrealBloomPassInstance = import('three/examples/jsm/postprocessing/UnrealBloomPass.js').UnrealBloomPass;
+
+interface NeonMaterialBuckets {
+  frontBlue: THREE.MeshStandardMaterial[];
+  frontPink: THREE.MeshStandardMaterial[];
+  sideBlue: THREE.MeshStandardMaterial[];
+  sidePink: THREE.MeshStandardMaterial[];
+}
+
 declare global {
   interface Window {
     __ART_IN_LIFE_CARD_SIZE_SCALE__?: number;
@@ -129,6 +143,8 @@ const CEILING_SPOTLIGHT_NAME = 'gallery-group-ceiling-spotlight';
 const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
+const NEON_SIGN_TARGET_WIDTH = 10.4 * (2 / 3);
+const NEON_SIGN_WALL_OFFSET = 0.08;
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -193,6 +209,170 @@ const easeInOutCubic = (value: number): number =>
   value < 0.5
     ? 4 * value * value * value
     : 1 - Math.pow(-2 * value + 2, 3) / 2;
+
+const buildNeonGroupSvg = (doc: Document, groupId: string): string => {
+  const root = doc.documentElement;
+  const viewBox = root.getAttribute('viewBox') || '0 0 1251 918';
+  const width = root.getAttribute('width') || '1251';
+  const height = root.getAttribute('height') || '918';
+  const group = doc.getElementById(groupId);
+
+  if (!group) {
+    throw new Error(`Missing SVG group: ${groupId}`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${group.outerHTML}</svg>`;
+};
+
+const makeNeonPalette = (kind: NeonPaletteKind) => {
+  if (kind === 'blue') {
+    return {
+      front: 0xf4fdff,
+      emissive: 0x27c8ff,
+      side: 0x79dbff,
+    };
+  }
+
+  return {
+    front: 0xfff5fb,
+    emissive: 0xff1788,
+    side: 0xff71ba,
+  };
+};
+
+const createExtrudedNeonGroup = (
+  SVGLoaderClass: SVGLoaderConstructor,
+  groupSvgText: string,
+  kind: NeonPaletteKind,
+  materialBuckets: NeonMaterialBuckets,
+  geometries: THREE.BufferGeometry[],
+  materials: THREE.Material[]
+): THREE.Group => {
+  const loader = new SVGLoaderClass();
+  const data = loader.parse(groupSvgText);
+  const palette = makeNeonPalette(kind);
+  const group = new THREE.Group();
+
+  data.paths.forEach((path) => {
+    const shapes = SVGLoaderClass.createShapes(path);
+
+    shapes.forEach((shape) => {
+      const geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: 8,
+        steps: 1,
+        bevelEnabled: false,
+        curveSegments: 10,
+      });
+      const frontMaterial = new THREE.MeshStandardMaterial({
+        color: palette.front,
+        emissive: palette.emissive,
+        emissiveIntensity: kind === 'blue' ? 2.25 : 2.7,
+        roughness: 0.35,
+        metalness: 0,
+      });
+      const sideMaterial = new THREE.MeshStandardMaterial({
+        color: palette.side,
+        emissive: palette.emissive,
+        emissiveIntensity: kind === 'blue' ? 0.5 : 0.64,
+        roughness: 0.45,
+        metalness: 0,
+      });
+      const mesh = new THREE.Mesh(geometry, [frontMaterial, sideMaterial]);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      group.add(mesh);
+
+      geometries.push(geometry);
+      materials.push(frontMaterial, sideMaterial);
+
+      if (kind === 'blue') {
+        materialBuckets.frontBlue.push(frontMaterial);
+        materialBuckets.sideBlue.push(sideMaterial);
+      } else {
+        materialBuckets.frontPink.push(frontMaterial);
+        materialBuckets.sidePink.push(sideMaterial);
+      }
+    });
+  });
+
+  return group;
+};
+
+const createNeonSign = (
+  SVGLoaderClass: SVGLoaderConstructor,
+  svgText: string,
+  targetWidth: number,
+  materialBuckets: NeonMaterialBuckets,
+  geometries: THREE.BufferGeometry[],
+  materials: THREE.Material[]
+): THREE.Group => {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  const signRoot = new THREE.Group();
+  const blueGroup = createExtrudedNeonGroup(
+    SVGLoaderClass,
+    buildNeonGroupSvg(doc, 'blue-word-group'),
+    'blue',
+    materialBuckets,
+    geometries,
+    materials
+  );
+  const pinkGroup = createExtrudedNeonGroup(
+    SVGLoaderClass,
+    buildNeonGroupSvg(doc, 'pink-word-group'),
+    'pink',
+    materialBuckets,
+    geometries,
+    materials
+  );
+  const rawSign = new THREE.Group();
+
+  rawSign.add(blueGroup);
+  rawSign.add(pinkGroup);
+  rawSign.scale.y = -1;
+  rawSign.updateMatrixWorld(true);
+
+  const rawBox = new THREE.Box3().setFromObject(rawSign);
+  const rawCenter = rawBox.getCenter(new THREE.Vector3());
+  const rawSize = rawBox.getSize(new THREE.Vector3());
+
+  rawSign.position.sub(rawCenter);
+  rawSign.position.z = 0;
+
+  const scale = targetWidth / rawSize.x;
+  rawSign.scale.set(scale, -scale, scale);
+  signRoot.add(rawSign);
+  signRoot.position.set(0, -0.04, 0);
+
+  signRoot.updateMatrixWorld(true);
+  const signBox = new THREE.Box3().setFromObject(signRoot);
+  const signCenter = signBox.getCenter(new THREE.Vector3());
+  signRoot.position.x -= signCenter.x;
+  signRoot.position.y -= signCenter.y;
+
+  return signRoot;
+};
+
+const neonCycle = (timeSeconds: number): number => {
+  const cycle = ((timeSeconds + 0.6) % 6.4) / 6.4;
+  let multiplier = 1;
+
+  const down = smoothstep(0.55, 0.6, cycle);
+  const recover = smoothstep(0.72, 0.84, cycle);
+  multiplier *= 1 - 0.4 * down * (1 - recover);
+
+  const window =
+    smoothstep(0.61, 0.64, cycle) *
+    (1 - smoothstep(0.77, 0.81, cycle));
+  const sputter =
+    Math.sin(timeSeconds * 38) * Math.sin(timeSeconds * 71) * 0.5 + 0.5;
+  multiplier -= window * 0.16 * Math.pow(sputter, 3);
+
+  multiplier +=
+    0.018 * Math.sin(timeSeconds * 13) +
+    0.01 * Math.sin(timeSeconds * 29.5);
+
+  return clamp(multiplier, 0.5, 1.03);
+};
 
 const useMediaQuery = (query: string): boolean => {
   const [matches, setMatches] = useState(() => {
@@ -516,6 +696,58 @@ const configureSingleSurfaceTexture = (
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.repeat.set(1, 1);
   texture.anisotropy = anisotropy;
+};
+
+const createNeonWallGlowTexture = (
+  anisotropy: number
+): THREE.CanvasTexture => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 512;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.globalCompositeOperation = 'lighter';
+
+    const addGlow = (
+      x: number,
+      y: number,
+      radius: number,
+      color: [number, number, number],
+      alpha: number
+    ) => {
+      const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(
+        0,
+        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`
+      );
+      gradient.addColorStop(
+        0.32,
+        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.42})`
+      );
+      gradient.addColorStop(
+        0.72,
+        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.11})`
+      );
+      gradient.addColorStop(1, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`);
+      context.fillStyle = gradient;
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    };
+
+    addGlow(canvas.width * 0.34, canvas.height * 0.42, 250, [39, 200, 255], 0.54);
+    addGlow(canvas.width * 0.58, canvas.height * 0.5, 290, [255, 23, 136], 0.44);
+    addGlow(canvas.width * 0.72, canvas.height * 0.58, 220, [255, 113, 186], 0.34);
+    addGlow(canvas.width * 0.48, canvas.height * 0.65, 300, [255, 80, 164], 0.18);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = anisotropy;
+  texture.needsUpdate = true;
+  return texture;
 };
 
 const createPlaqueTextTexture = (): THREE.CanvasTexture => {
@@ -1308,9 +1540,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       alpha: true,
       powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)
+    const initialPixelRatio = Math.min(
+      window.devicePixelRatio,
+      isMobile ? 1.5 : 2
     );
+    renderer.setPixelRatio(initialPixelRatio);
     renderer.setSize(initialRenderSize.width, initialRenderSize.height, true);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1322,6 +1556,49 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.domElement.style.height = `${initialRenderSize.height}px`;
     renderer.domElement.style.pointerEvents = 'none';
     webglHost.appendChild(renderer.domElement);
+
+    let composer: EffectComposerInstance | null = null;
+    let bloomPass: UnrealBloomPassInstance | null = null;
+
+    const loadBloomComposer = async () => {
+      const [
+        { EffectComposer },
+        { RenderPass },
+        { UnrealBloomPass },
+        { OutputPass },
+      ] = await Promise.all([
+        import('three/examples/jsm/postprocessing/EffectComposer.js'),
+        import('three/examples/jsm/postprocessing/RenderPass.js'),
+        import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+        import('three/examples/jsm/postprocessing/OutputPass.js'),
+      ]);
+
+      if (!isMounted) return;
+
+      const { width, height } = getRenderSize();
+      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+      const nextComposer = new EffectComposer(renderer);
+      nextComposer.setPixelRatio(pixelRatio);
+      nextComposer.setSize(width, height);
+      nextComposer.addPass(new RenderPass(scene, camera));
+
+      const nextBloomPass = new UnrealBloomPass(
+        new THREE.Vector2(width, height),
+        0.15,
+        0.08,
+        0.80
+      );
+      nextComposer.addPass(nextBloomPass);
+      nextComposer.addPass(new OutputPass());
+
+      composer = nextComposer;
+      bloomPass = nextBloomPass;
+      requestRenderLoop();
+    };
+
+    void loadBloomComposer().catch(() => {
+      // The gallery can render without bloom if the postprocessing chunk fails.
+    });
 
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.setSize(initialRenderSize.width, initialRenderSize.height);
@@ -1650,6 +1927,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     ];
 
     const environmentGeometries: THREE.BufferGeometry[] = [];
+    const neonGeometries: THREE.BufferGeometry[] = [];
+    const neonMaterials: THREE.Material[] = [];
+    const neonGlowMaterials: THREE.MeshBasicMaterial[] = [];
+    const neonAnchors: THREE.Group[] = [];
+    const neonMaterialBuckets: NeonMaterialBuckets = {
+      frontBlue: [],
+      frontPink: [],
+      sideBlue: [],
+      sidePink: [],
+    };
     const wallSegments = Math.max(96, Math.min(420, groupCount * 10));
     const floorSegments = Math.max(96, Math.min(480, groupCount * 12));
 
@@ -1693,6 +1980,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     endWall.position.set(0, wallCenterY, hallEndZ);
     endWall.receiveShadow = true;
     scene.add(endWall);
+
+    const startWallGeometry = new THREE.PlaneGeometry(
+      layout.hallwayWidth + ceilingWallOverlap * 2,
+      wallDrawHeight,
+      48,
+      42
+    );
+    roughenPlane(startWallGeometry, 0.008);
+    environmentGeometries.push(startWallGeometry);
+    const startWall = new THREE.Mesh(startWallGeometry, endWallMaterial);
+    startWall.rotation.y = Math.PI;
+    startWall.position.set(0, wallCenterY, hallStartZ);
+    startWall.receiveShadow = true;
+    scene.add(startWall);
 
     const floorGeometry = new THREE.PlaneGeometry(
       layout.hallwayWidth + ceilingWallOverlap * 2,
@@ -1761,6 +2062,93 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     endBaseboardCap.castShadow = true;
     endBaseboardCap.receiveShadow = true;
     scene.add(endBaseboardCap);
+
+    const startBaseboard = new THREE.Mesh(unitBox, baseboardMaterial);
+    startBaseboard.scale.set(layout.hallwayWidth, 0.13, 0.18);
+    startBaseboard.position.set(0, layout.floorY + 0.2, hallStartZ - 0.09);
+    startBaseboard.castShadow = true;
+    startBaseboard.receiveShadow = true;
+    scene.add(startBaseboard);
+
+    const startBaseboardCap = new THREE.Mesh(unitBox, baseboardMaterial);
+    startBaseboardCap.scale.set(layout.hallwayWidth, 0.025, 0.055);
+    startBaseboardCap.position.set(0, layout.floorY + 0.29, hallStartZ - 0.03);
+    startBaseboardCap.castShadow = true;
+    startBaseboardCap.receiveShadow = true;
+    scene.add(startBaseboardCap);
+
+    const neonGlowTexture = createNeonWallGlowTexture(textureAnisotropy);
+    loadedTextures.push(neonGlowTexture);
+
+    const createWallNeonSign = (
+      SVGLoaderClass: SVGLoaderConstructor,
+      svgText: string,
+      wallZ: number,
+      rotationY: number
+    ) => {
+      const anchor = new THREE.Group();
+      anchor.rotation.y = rotationY;
+      anchor.position.set(0, wallCenterY, wallZ);
+
+      const glowGeometry = new THREE.PlaneGeometry(
+        NEON_SIGN_TARGET_WIDTH * 1.38,
+        NEON_SIGN_TARGET_WIDTH * 0.82,
+        1,
+        1
+      );
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        map: neonGlowTexture,
+        transparent: true,
+        opacity: 0.34,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      });
+      const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
+      glowPlane.position.z = 0.012;
+      glowPlane.renderOrder = 1;
+      anchor.add(glowPlane);
+      neonGeometries.push(glowGeometry);
+      neonMaterials.push(glowMaterial);
+      neonGlowMaterials.push(glowMaterial);
+
+      const sign = createNeonSign(
+        SVGLoaderClass,
+        svgText,
+        NEON_SIGN_TARGET_WIDTH,
+        neonMaterialBuckets,
+        neonGeometries,
+        neonMaterials
+      );
+      sign.position.z += NEON_SIGN_WALL_OFFSET;
+      anchor.add(sign);
+      scene.add(anchor);
+      neonAnchors.push(anchor);
+    };
+
+    const loadNeonSigns = async () => {
+      try {
+        const [{ SVGLoader: SVGLoaderClass }, response] = await Promise.all([
+          import('three/examples/jsm/loaders/SVGLoader.js'),
+          fetch(neonSignSvgUrl),
+        ]);
+        if (!response.ok) return;
+
+        const svgText = await response.text();
+        if (!isMounted) return;
+
+        createWallNeonSign(SVGLoaderClass, svgText, hallEndZ, 0);
+        createWallNeonSign(SVGLoaderClass, svgText, hallStartZ, Math.PI);
+        requestRenderLoop();
+      } catch {
+        // The gallery remains usable if the decorative sign asset fails to load.
+      }
+    };
+
+    void loadNeonSigns();
 
     const chandelierRoot = new THREE.Group();
     scene.add(chandelierRoot);
@@ -3229,10 +3617,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       camera.aspect = width / height;
       camera.fov = layout.cameraFov;
       camera.updateProjectionMatrix();
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)
-      );
+      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+      renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, true);
+      if (composer) {
+        composer.setPixelRatio(pixelRatio);
+        composer.setSize(width, height);
+      }
+      bloomPass?.resolution.set(width, height);
       cssRenderer.setSize(width, height);
       renderer.domElement.style.width = `${width}px`;
       renderer.domElement.style.height = `${height}px`;
@@ -3280,8 +3672,51 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       requestRenderLoop();
     };
 
+    const neonStartedAt = performance.now();
+
+    const updateNeonSign = () => {
+      const timeSeconds = (performance.now() - neonStartedAt) / 1000;
+      const glow = neonCycle(timeSeconds);
+
+      neonMaterialBuckets.frontBlue.forEach((material, index) => {
+        const value =
+          glow * (0.985 + 0.02 * Math.sin(timeSeconds * 7.5 + index * 0.7));
+        material.emissiveIntensity = 2.25 * value;
+      });
+      neonMaterialBuckets.sideBlue.forEach((material, index) => {
+        const value =
+          glow * (0.985 + 0.02 * Math.sin(timeSeconds * 7.5 + index * 0.7));
+        material.emissiveIntensity = 0.5 * value;
+      });
+
+      neonMaterialBuckets.frontPink.forEach((material, index) => {
+        const value =
+          glow * (1 + 0.025 * Math.sin(timeSeconds * 9 + index * 0.55));
+        material.emissiveIntensity = 2.7 * value;
+      });
+      neonMaterialBuckets.sidePink.forEach((material, index) => {
+        const value =
+          glow * (1 + 0.025 * Math.sin(timeSeconds * 9 + index * 0.55));
+        material.emissiveIntensity = 0.64 * value;
+      });
+
+      neonGlowMaterials.forEach((material) => {
+        material.opacity = 0.34 * glow;
+      });
+
+      if (bloomPass) {
+        bloomPass.strength = 0.11 + glow * 0.04;
+        bloomPass.radius = 0.06 + glow * 0.02;
+        bloomPass.threshold = 0.8;
+}
+    };
+
     const renderScene = () => {
-      renderer.render(scene, camera);
+      if (composer) {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
       cssRenderer.render(cssScene, camera);
     };
 
@@ -3374,13 +3809,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         1
       );
       const easedProgress = easeInOutCubic(cameraProgress);
-      const fromPose = getCameraPose(transition.fromGroupIndex);
-      const toPose = getCameraPose(transition.toGroupIndex);
+      const fromPose = getCameraPose(
+        transition.fromGroupIndex,
+        pointerX,
+        -pointerY
+      );
+      const toPose = getCameraPose(
+        transition.toGroupIndex,
+        pointerX,
+        -pointerY
+      );
       const position = fromPose.position.clone().lerp(
         toPose.position,
         easedProgress
       );
-      position.y += Math.sin(cameraProgress * Math.PI) * layout.transitionLift;
 
       const fromDirection = fromPose.target
         .clone()
@@ -3393,7 +3835,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const hallwayDirection = new THREE.Vector3(
         0,
         (layout.frameY - layout.cameraY) / layout.transitionLookDistance,
-        -1
+        transition.direction > 0 ? -1 : 1
       ).normalize();
       const direction =
         cameraProgress < 0.5
@@ -3444,7 +3886,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         if (!isSettling) {
           cameraTransition = null;
-          pose = getCameraPose(targetGroupIndex);
+          pose = getCameraPose(targetGroupIndex, pointerX, -pointerY);
         }
       } else {
         pose = getCameraPose(targetGroupIndex, pointerX, -pointerY);
@@ -3459,12 +3901,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
       updatePaintingSpotlights(cameraTransition ? now : null);
       updateCeilingSpotlights(cameraTransition ? now : null);
+      updateNeonSign();
 
       renderScene();
 
-      if (isSettling) {
-        requestRenderLoop();
-      }
+      requestRenderLoop();
     };
 
     requestRenderLoop = () => {
@@ -3523,13 +3964,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       activeFrames.clear();
       activeCeilingSpotlights.forEach(removeGroupCeilingSpotlight);
       activeCeilingSpotlights.clear();
+      neonAnchors.forEach((anchor) => scene.remove(anchor));
+      neonAnchors.length = 0;
 
       chandelierGeometries.forEach((geometry) => geometry.dispose());
+      neonGeometries.forEach((geometry) => geometry.dispose());
       unitBox.dispose();
       unitPlane.dispose();
       environmentGeometries.forEach((geometry) => geometry.dispose());
       loadedTextures.forEach((texture) => texture.dispose());
       materials.forEach(disposeMaterial);
+      neonMaterials.forEach(disposeMaterial);
+      bloomPass?.dispose();
+      composer?.dispose();
       renderer.dispose();
       webglHost.remove();
       cssHost.remove();

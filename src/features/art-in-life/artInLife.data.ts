@@ -1,4 +1,5 @@
 const urls = [
+  'https://www.instagram.com/p/DXoqBOXCuWw/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXZURs6ihJ6/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXEKmcwipRF/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXBsT77irnW/?utm_source=ig_embed&amp;utm_campaign=loading',
@@ -132,19 +133,10 @@ const urls = [
 
 export const artInLifeUrls = urls;
 
-const getCanonicalInstagramUrl = (url: string): string => {
-  try {
-    const parsedUrl = new URL(url.replaceAll('&amp;', '&'));
-    return `${parsedUrl.origin}${parsedUrl.pathname}`;
-  } catch {
-    return url.replaceAll('&amp;', '&');
-  }
-};
-
 export const createInstagramEmbedHtml = (url: string): string => `
   <blockquote
     class="instagram-media"
-    data-instgrm-permalink="${getCanonicalInstagramUrl(url)}"
+    data-instgrm-permalink="${url}"
     data-instgrm-version="14"
     style="background:#fff;border:0;margin:0;min-width:0;width:100%;"
   ></blockquote>
