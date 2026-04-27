@@ -1422,6 +1422,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const [navGroupIndex, setNavGroupIndex] = useState(0);
+  const [isNavThrottled, setIsNavThrottled] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const isTablet = useMediaQuery(TABLET_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -1466,6 +1467,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     if (!viewport || !stage || urls.length === 0) return;
 
     let isMounted = true;
+    setIsNavThrottled(false);
     let animationFrame = 0;
     let targetGroupIndex = 0;
     let currentGroupIndex = -1;
@@ -3658,6 +3660,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       };
       targetGroupIndex = nextGroupIndex;
       setNavGroupIndex(nextGroupIndex);
+      setIsNavThrottled(true);
       updateTransitionFrames(fromGroupIndex, nextGroupIndex);
       requestRenderLoop();
     };
@@ -3890,6 +3893,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         if (!isSettling) {
           cameraTransition = null;
+          setIsNavThrottled(false);
           pose = getCameraPose(targetGroupIndex, pointerX, -pointerY);
         }
       } else {
@@ -3992,6 +3996,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     return <FallbackGallery urls={urls} />;
   }
 
+  const controlButtonClassName = `${styles.galleryControlButton} ${
+    isNavThrottled ? styles.galleryControlButtonThrottled : ''
+  }`;
+
   return (
     <div ref={stageRef} className={styles.galleryStage}>
       <div ref={viewportRef} className={styles.sceneViewport}>
@@ -4006,13 +4014,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           <span>Preparing gallery</span>
         </div>
       </div>
-      <div className={styles.galleryControls} aria-label="Gallery navigation">
+      <div
+        className={styles.galleryControls}
+        aria-label="Gallery navigation"
+        aria-busy={isNavThrottled}
+      >
         <button
           ref={previousButtonRef}
           type="button"
-          className={styles.galleryControlButton}
+          className={controlButtonClassName}
           aria-label="Previous paintings"
-          disabled={navGroupIndex <= 0}
+          disabled={isNavThrottled || navGroupIndex <= 0}
         >
           <span className={styles.galleryControlIcon} aria-hidden="true">
             ‹
@@ -4021,9 +4033,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         <button
           ref={nextButtonRef}
           type="button"
-          className={styles.galleryControlButton}
+          className={controlButtonClassName}
           aria-label="Next paintings"
-          disabled={navGroupIndex >= groupCount - 1}
+          disabled={isNavThrottled || navGroupIndex >= groupCount - 1}
         >
           <span className={styles.galleryControlIcon} aria-hidden="true">
             ›

@@ -218,7 +218,8 @@
     border-color 160ms ease,
     color 160ms ease,
     opacity 160ms ease,
-    transform 160ms ease;
+    transform 160ms ease,
+    filter 160ms ease;
 }
 
 .galleryControlButton:hover:not(:disabled),
@@ -237,6 +238,21 @@
 .galleryControlButton:disabled {
   cursor: default;
   opacity: 0.28;
+}
+
+
+.galleryControlButtonThrottled,
+.galleryControlButtonThrottled:disabled {
+  border-color: rgba(178, 178, 178, 0.42);
+  background: rgba(52, 52, 52, 0.58);
+  color: rgba(232, 232, 232, 0.54);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  cursor: default;
+  opacity: 0.46;
+  filter: grayscale(0.72) saturate(0.45);
+  transform: none;
 }
 
 .galleryControlIcon {
