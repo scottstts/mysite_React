@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import process from 'node:process';
 
 /**
  * Lightweight markdown-to-semantic-HTML for crawler fallback.
@@ -11,11 +12,14 @@ function markdownToHtml(md) {
   let inList = false;
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
 
     // Horizontal rules
     if (/^---+$/.test(line.trim())) {
-      if (inList) { out.push('</ul>'); inList = false; }
+      if (inList) {
+        out.push('</ul>');
+        inList = false;
+      }
       out.push('<hr>');
       continue;
     }
@@ -23,7 +27,10 @@ function markdownToHtml(md) {
     // Headings
     const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
-      if (inList) { out.push('</ul>'); inList = false; }
+      if (inList) {
+        out.push('</ul>');
+        inList = false;
+      }
       const level = headingMatch[1].length;
       out.push(`<h${level}>${inline(headingMatch[2])}</h${level}>`);
       continue;
@@ -31,26 +38,38 @@ function markdownToHtml(md) {
 
     // Blockquote
     if (line.startsWith('> ')) {
-      if (inList) { out.push('</ul>'); inList = false; }
+      if (inList) {
+        out.push('</ul>');
+        inList = false;
+      }
       out.push(`<blockquote>${inline(line.slice(2))}</blockquote>`);
       continue;
     }
 
     // List items
     if (line.match(/^\s*-\s+/)) {
-      if (!inList) { out.push('<ul>'); inList = true; }
+      if (!inList) {
+        out.push('<ul>');
+        inList = true;
+      }
       out.push(`<li>${inline(line.replace(/^\s*-\s+/, ''))}</li>`);
       continue;
     }
 
     // Empty line
     if (line.trim() === '') {
-      if (inList) { out.push('</ul>'); inList = false; }
+      if (inList) {
+        out.push('</ul>');
+        inList = false;
+      }
       continue;
     }
 
     // Paragraph
-    if (inList) { out.push('</ul>'); inList = false; }
+    if (inList) {
+      out.push('</ul>');
+      inList = false;
+    }
     out.push(`<p>${inline(line)}</p>`);
   }
 

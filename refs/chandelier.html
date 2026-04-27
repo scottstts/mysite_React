@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Realistic Three.js Chandelier</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #070605;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+
+    .label {
+      position: fixed;
+      left: 18px;
+      bottom: 16px;
+      color: rgba(255, 240, 205, 0.72);
+      font-size: 12px;
+      line-height: 1.45;
+      letter-spacing: 0.02em;
+      user-select: none;
+      text-shadow: 0 1px 18px rgba(255, 176, 84, 0.22);
+    }
+
+    .label strong {
+      color: rgba(255, 238, 195, 0.94);
+      font-weight: 650;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="app"></div>
+  <div class="label">
+    <strong>Realistic chandelier mesh · cable suspension · fully stable candle lighting</strong><br>
+    Drag to orbit · Scroll to zoom · R to reset view
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+    import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+    import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+    import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+    import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+    const app = document.getElementById("app");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x070605);
+    scene.fog = new THREE.FogExp2(0x070605, 0.018);
+
+    const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 120);
+    camera.position.set(6.2, 4.15, 8.2);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: "high-performance"
+    });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.03;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    app.appendChild(renderer.domElement);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envRT = pmrem.fromScene(new RoomEnvironment(renderer), 0.04);
+    scene.environment = envRT.texture;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.15, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.055;
+    controls.minDistance = 3.2;
+    controls.maxDistance = 18;
+    controls.maxPolarAngle = Math.PI * 0.53;
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.75, 0.86);
+    composer.addPass(bloom);
+
+    // ---------------------------------------------------------------------
+    // Materials: layered enough to look plausible under warm close lighting.
+    // ---------------------------------------------------------------------
+
+    function makeNoiseTexture(size = 256) {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const image = ctx.createImageData(size, size);
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4;
+          const band = Math.sin((x * 0.06) + Math.sin(y * 0.022) * 3.1) * 0.5 + 0.5;
+          const speck = Math.random();
+          const v = Math.floor(118 + band * 44 + speck * 42);
+          image.data[i + 0] = v;
+          image.data[i + 1] = Math.floor(v * 0.92);
+          image.data[i + 2] = Math.floor(v * 0.78);
+          image.data[i + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(image, 0, 0);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(5, 2);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      return tex;
+    }
+
+    const metalNoise = makeNoiseTexture();
+
+    const agedGold = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#c89a45"),
+      metalness: 1.0,
+      roughness: 0.27,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.22,
+      sheen: 0.15,
+      envMapIntensity: 1.15,
+      map: metalNoise
+    });
+
+    const darkGold = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#8f642b"),
+      metalness: 1.0,
+      roughness: 0.36,
+      clearcoat: 0.38,
+      clearcoatRoughness: 0.28,
+      envMapIntensity: 0.92,
+      map: metalNoise
+    });
+
+    const cableMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#4a3528"),
+      metalness: 0.08,
+      roughness: 0.84,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.72,
+      envMapIntensity: 0.35
+    });
+
+    const warmGlass = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#fff0c5"),
+      roughness: 0.05,
+      metalness: 0.0,
+      transmission: 0.55,
+      thickness: 0.38,
+      ior: 1.48,
+      transparent: true,
+      opacity: 0.55,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.025,
+      envMapIntensity: 1.35
+    });
+
+    const crystal = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#f7fbff"),
+      roughness: 0.015,
+      metalness: 0.0,
+      transmission: 0.82,
+      thickness: 0.8,
+      ior: 1.74,
+      transparent: true,
+      opacity: 0.58,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.01,
+      attenuationColor: new THREE.Color("#fff4dc"),
+      attenuationDistance: 4.5,
+      envMapIntensity: 1.9
+    });
+
+    const bulbGlass = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#fff7df"),
+      roughness: 0.02,
+      metalness: 0,
+      transmission: 0.62,
+      thickness: 0.32,
+      transparent: true,
+      opacity: 0.62,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.03,
+      envMapIntensity: 1.15
+    });
+
+    const candleSleeveMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#f6ecd2"),
+      roughness: 0.48,
+      metalness: 0.0,
+      emissive: new THREE.Color("#ffefc6"),
+      emissiveIntensity: 0.32
+    });
+
+    const bulbLitMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#fff7e2"),
+      roughness: 0.22,
+      metalness: 0.0,
+      emissive: new THREE.Color("#ffd99b"),
+      emissiveIntensity: 1.05
+    });
+
+    const filamentMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#ffd07a"),
+      transparent: true,
+      opacity: 1.0
+    });
+
+    const flameGlowMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#ffb759"),
+      transparent: true,
+      opacity: 0.42,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const velvet = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#21140f"),
+      roughness: 0.82,
+      metalness: 0.02
+    });
+
+    // ---------------------------------------------------------------------
+    // Geometry helpers.
+    // ---------------------------------------------------------------------
+
+    const chandelier = new THREE.Group();
+    chandelier.position.y = 1.5;
+    scene.add(chandelier);
+
+    const tmp = new THREE.Vector3();
+
+    function addMesh(parent, geometry, material, pos = [0,0,0], rot = [0,0,0], scale = [1,1,1], cast = true, receive = false) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(...pos);
+      mesh.rotation.set(...rot);
+      mesh.scale.set(...scale);
+      mesh.castShadow = cast;
+      mesh.receiveShadow = receive;
+      parent.add(mesh);
+      return mesh;
+    }
+
+    function addCylinderBetween(parent, from, to, radius, material, radialSegments = 18) {
+      const a = new THREE.Vector3(...from);
+      const b = new THREE.Vector3(...to);
+      const mid = a.clone().add(b).multiplyScalar(0.5);
+      const length = a.distanceTo(b);
+
+      const cyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, length, radialSegments, 1, false),
+        material
+      );
+      cyl.position.copy(mid);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      cyl.castShadow = true;
+      parent.add(cyl);
+      return cyl;
+    }
+
+    function makePearCrystal(scale = 1) {
+      const g = new THREE.Group();
+
+      const top = addMesh(
+        g,
+        new THREE.OctahedronGeometry(0.17 * scale, 0),
+        crystal,
+        [0, 0.16 * scale, 0],
+        [0, 0.22, 0],
+        [0.78, 1.25, 0.78]
+      );
+
+      const drop = addMesh(
+        g,
+        new THREE.SphereGeometry(0.18 * scale, 14, 18),
+        crystal,
+        [0, -0.09 * scale, 0],
+        [0, 0, 0],
+        [0.82, 1.42, 0.82]
+      );
+
+      const tip = addMesh(
+        g,
+        new THREE.ConeGeometry(0.15 * scale, 0.22 * scale, 7, 1),
+        crystal,
+        [0, -0.33 * scale, 0],
+        [Math.PI, 0.15, 0],
+        [1, 1, 1]
+      );
+
+      const cap = addMesh(
+        g,
+        new THREE.TorusGeometry(0.055 * scale, 0.008 * scale, 8, 16),
+        agedGold,
+        [0, 0.35 * scale, 0],
+        [Math.PI / 2, 0, 0],
+        [1, 1, 1]
+      );
+
+      return g;
+    }
+
+    function makeLongPrism(scale = 1) {
+      const g = new THREE.Group();
+      const prism = addMesh(
+        g,
+        new THREE.CylinderGeometry(0.055 * scale, 0.065 * scale, 0.52 * scale, 6, 1, false),
+        crystal,
+        [0, 0, 0],
+        [0, Math.PI / 6, 0],
+        [1, 1, 1]
+      );
+      addMesh(
+        g,
+        new THREE.ConeGeometry(0.064 * scale, 0.12 * scale, 6),
+        crystal,
+        [0, -0.32 * scale, 0],
+        [Math.PI, Math.PI / 6, 0],
+        [1, 1, 1]
+      );
+      addMesh(
+        g,
+        new THREE.ConeGeometry(0.054 * scale, 0.11 * scale, 6),
+        crystal,
+        [0, 0.32 * scale, 0],
+        [0, Math.PI / 6, 0],
+        [1, 1, 1]
+      );
+      return g;
+    }
+
+    function addCable(parent, topY = 3.28, bottomY = 1.66, x = 0, z = 0) {
+      const group = new THREE.Group();
+
+      const cableCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(x, topY, z),
+        new THREE.Vector3(x + 0.01, THREE.MathUtils.lerp(topY, bottomY, 0.32), z - 0.008),
+        new THREE.Vector3(x - 0.012, THREE.MathUtils.lerp(topY, bottomY, 0.68), z + 0.006),
+        new THREE.Vector3(x, bottomY, z)
+      ]);
+
+      const cable = new THREE.Mesh(
+        new THREE.TubeGeometry(cableCurve, 64, 0.026, 18, false),
+        cableMat
+      );
+      cable.castShadow = true;
+      group.add(cable);
+
+      addMesh(group, new THREE.CylinderGeometry(0.05, 0.06, 0.1, 24), agedGold, [x, topY + 0.015, z]);
+      addMesh(group, new THREE.CylinderGeometry(0.044, 0.052, 0.09, 24), agedGold, [x, bottomY - 0.015, z]);
+
+      parent.add(group);
+      return group;
+    }
+
+    // ---------------------------------------------------------------------
+    // Main chandelier body: ceiling plate, chain, stem, ornate bowls, rings.
+    // ---------------------------------------------------------------------
+
+    addMesh(chandelier, new THREE.CylinderGeometry(0.74, 0.84, 0.12, 96), darkGold, [0, 3.62, 0]);
+    addMesh(chandelier, new THREE.TorusGeometry(0.79, 0.035, 14, 128), agedGold, [0, 3.55, 0], [Math.PI / 2, 0, 0]);
+    addMesh(chandelier, new THREE.CylinderGeometry(0.34, 0.45, 0.2, 96), agedGold, [0, 3.42, 0]);
+    addMesh(chandelier, new THREE.TorusGeometry(0.39, 0.035, 14, 96), darkGold, [0, 3.31, 0], [Math.PI / 2, 0, 0]);
+
+    addCable(chandelier, 3.28, 1.66, 0, 0);
+
+    addMesh(chandelier, new THREE.CylinderGeometry(0.09, 0.09, 1.75, 48), agedGold, [0, 1.55, 0]);
+    addMesh(chandelier, new THREE.SphereGeometry(0.18, 48, 24), agedGold, [0, 2.34, 0], [0,0,0], [1, 0.8, 1]);
+    addMesh(chandelier, new THREE.SphereGeometry(0.25, 64, 28), agedGold, [0, 1.22, 0], [0,0,0], [1, 0.72, 1]);
+    addMesh(chandelier, new THREE.SphereGeometry(0.16, 48, 24), darkGold, [0, 0.38, 0], [0,0,0], [1, 1.4, 1]);
+
+    addMesh(chandelier, new THREE.TorusGeometry(0.52, 0.045, 18, 128), agedGold, [0, 1.83, 0], [Math.PI / 2, 0, 0]);
+    addMesh(chandelier, new THREE.TorusGeometry(0.34, 0.035, 14, 128), darkGold, [0, 1.98, 0], [Math.PI / 2, 0, 0]);
+    addMesh(chandelier, new THREE.TorusGeometry(0.74, 0.05, 18, 160), agedGold, [0, 0.83, 0], [Math.PI / 2, 0, 0]);
+    addMesh(chandelier, new THREE.TorusGeometry(0.92, 0.036, 18, 160), darkGold, [0, 0.66, 0], [Math.PI / 2, 0, 0]);
+
+    // Concave-looking glass bowl built from transparent shells.
+    const bowlGroup = new THREE.Group();
+    chandelier.add(bowlGroup);
+    addMesh(bowlGroup, new THREE.SphereGeometry(0.72, 96, 24, 0, Math.PI * 2, 0, Math.PI * 0.42), warmGlass, [0, 0.98, 0], [Math.PI, 0, 0], [1, 0.28, 1]);
+    addMesh(bowlGroup, new THREE.TorusGeometry(0.71, 0.028, 14, 128), agedGold, [0, 0.78, 0], [Math.PI / 2, 0, 0]);
+    addMesh(bowlGroup, new THREE.TorusGeometry(0.42, 0.018, 10, 96), darkGold, [0, 0.95, 0], [Math.PI / 2, 0, 0]);
+
+    // Decorative bead garland around the lower ring.
+    const beadGeo = new THREE.SphereGeometry(0.043, 18, 12);
+    for (let i = 0; i < 72; i++) {
+      const a = i / 72 * Math.PI * 2;
+      const r = 0.94;
+      addMesh(chandelier, beadGeo, crystal, [Math.cos(a) * r, 0.61 + Math.sin(i * 0.5) * 0.012, Math.sin(a) * r], [0,0,0], [1, 1, 1]);
+    }
+
+    // ---------------------------------------------------------------------
+    // Arms and candle cups.
+    // ---------------------------------------------------------------------
+
+    function createArm(index, total, radius = 2.06, y = 1.18) {
+      const a = index / total * Math.PI * 2;
+      const dir = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+      const side = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a));
+
+      const arm = new THREE.Group();
+      arm.rotation.y = -a;
+      chandelier.add(arm);
+
+      // Elegant curved arm made from bevelled tube curve.
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.46, y - 0.03, 0),
+        new THREE.Vector3(0.83, y - 0.24, 0),
+        new THREE.Vector3(1.25, y - 0.28, 0),
+        new THREE.Vector3(1.7, y - 0.05, 0),
+        new THREE.Vector3(radius, y + 0.24, 0)
+      ]);
+
+      const tube = new THREE.TubeGeometry(curve, 72, 0.035, 16, false);
+      addMesh(arm, tube, agedGold);
+
+      // Under-arm scrollwork.
+      const scroll1 = addMesh(
+        arm,
+        new THREE.TorusGeometry(0.25, 0.018, 10, 52, Math.PI * 1.42),
+        darkGold,
+        [1.05, y - 0.15, 0],
+        [0, Math.PI / 2, 0.2],
+        [1, 0.7, 1]
+      );
+      const scroll2 = addMesh(
+        arm,
+        new THREE.TorusGeometry(0.17, 0.014, 10, 44, Math.PI * 1.55),
+        agedGold,
+        [1.48, y - 0.05, 0],
+        [0, -Math.PI / 2, -0.45],
+        [1, 0.7, 1]
+      );
+
+      // Candle cup and saucer.
+      addMesh(arm, new THREE.CylinderGeometry(0.19, 0.29, 0.18, 64), agedGold, [radius, y + 0.21, 0]);
+      addMesh(arm, new THREE.TorusGeometry(0.29, 0.035, 14, 90), agedGold, [radius, y + 0.32, 0], [Math.PI / 2, 0, 0]);
+      addMesh(arm, new THREE.TorusGeometry(0.19, 0.022, 10, 70), darkGold, [radius, y + 0.39, 0], [Math.PI / 2, 0, 0]);
+      addMesh(arm, new THREE.CylinderGeometry(0.13, 0.13, 0.42, 48), candleSleeveMat, [radius, y + 0.62, 0]);
+      addMesh(arm, new THREE.CylinderGeometry(0.105, 0.13, 0.09, 48), agedGold, [radius, y + 0.39, 0]);
+
+      const bulb = addMesh(arm, new THREE.SphereGeometry(0.135, 36, 24), bulbLitMat, [radius, y + 0.89, 0], [0,0,0], [0.82, 1.28, 0.82]);
+      const flame = addMesh(arm, new THREE.SphereGeometry(0.09, 24, 16), flameGlowMat, [radius, y + 0.91, 0], [0,0,0], [0.9, 1.65, 0.9], false, false);
+
+      const filamentCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(radius - 0.035, y + 0.83, 0),
+        new THREE.Vector3(radius - 0.015, y + 0.875, 0.022),
+        new THREE.Vector3(radius + 0.018, y + 0.875, -0.022),
+        new THREE.Vector3(radius + 0.038, y + 0.83, 0)
+      ]);
+      const filament = new THREE.Mesh(new THREE.TubeGeometry(filamentCurve, 24, 0.006, 6, false), filamentMat);
+      filament.castShadow = false;
+      arm.add(filament);
+
+      const p = new THREE.PointLight(0xffc06d, 0.78, 5.2, 1.75);
+      p.position.set(radius, y + 0.87, 0);
+      p.castShadow = true;
+      p.shadow.mapSize.set(512, 512);
+      p.shadow.bias = -0.00008;
+      arm.add(p);
+
+      // Hanging crystals from cup.
+      for (let k = -1; k <= 1; k++) {
+        const c = makePearCrystal(0.62 - Math.abs(k) * 0.08);
+        c.position.set(radius + k * 0.13, y - 0.08 - Math.abs(k) * 0.035, 0.03 * Math.abs(k));
+        c.rotation.set(0, k * 0.28, k * 0.06);
+        arm.add(c);
+
+        addCylinderBetween(
+          arm,
+          [radius + k * 0.13, y + 0.22, 0],
+          [radius + k * 0.13, y + 0.09 - Math.abs(k) * 0.035, 0.03 * Math.abs(k)],
+          0.004,
+          agedGold,
+          8
+        );
+      }
+
+      return arm;
+    }
+
+    const armCount = 10;
+    for (let i = 0; i < armCount; i++) {
+      createArm(i, armCount, i % 2 === 0 ? 2.14 : 1.88, i % 2 === 0 ? 1.13 : 1.02);
+    }
+
+    // Smaller upper crown arms.
+    function createUpperArm(index, total) {
+      const a = index / total * Math.PI * 2 + Math.PI / total;
+      const arm = new THREE.Group();
+      arm.rotation.y = -a;
+      chandelier.add(arm);
+
+      const y = 1.96;
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.28, y, 0),
+        new THREE.Vector3(0.62, y + 0.1, 0),
+        new THREE.Vector3(0.92, y + 0.22, 0),
+        new THREE.Vector3(1.18, y + 0.44, 0)
+      ]);
+
+      addMesh(arm, new THREE.TubeGeometry(curve, 52, 0.025, 14, false), agedGold);
+      addMesh(arm, new THREE.CylinderGeometry(0.1, 0.16, 0.12, 48), agedGold, [1.18, y + 0.47, 0]);
+      addMesh(arm, new THREE.SphereGeometry(0.08, 24, 18), flameGlowMat, [1.18, y + 0.66, 0], [0,0,0], [0.9, 1.55, 0.9], false);
+      addMesh(arm, new THREE.SphereGeometry(0.105, 24, 18), bulbLitMat, [1.18, y + 0.64, 0], [0,0,0], [0.75, 1.22, 0.75]);
+      const p = new THREE.PointLight(0xffbd68, 0.36, 3.5, 1.8);
+      p.position.set(1.18, y + 0.64, 0);
+      arm.add(p);
+    }
+
+    for (let i = 0; i < 5; i++) createUpperArm(i, 5);
+
+    // Crystal curtains: chains of beads and prisms descending from main ring.
+    for (let i = 0; i < 40; i++) {
+      const a = i / 40 * Math.PI * 2;
+      const r = i % 2 === 0 ? 0.83 : 0.68;
+      const yTop = 0.73;
+      const dropLen = i % 3 === 0 ? 0.58 : 0.43;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+
+      const strand = new THREE.Group();
+      strand.position.set(x, yTop, z);
+      strand.rotation.y = -a;
+      chandelier.add(strand);
+
+      const beads = i % 3 === 0 ? 4 : 3;
+      for (let b = 0; b < beads; b++) {
+        const y = -b * (dropLen / beads);
+        addMesh(strand, beadGeo, crystal, [0, y, 0], [0,0,0], [0.72, 0.72, 0.72]);
+        if (b > 0) {
+          addCylinderBetween(strand, [0, y + dropLen / beads * 0.78, 0], [0, y + 0.04, 0], 0.0035, agedGold, 6);
+        }
+      }
+
+      const terminal = i % 4 === 0 ? makePearCrystal(0.72) : makeLongPrism(0.74);
+      terminal.position.set(0, -dropLen - 0.08, 0);
+      terminal.rotation.set(0.04 * Math.sin(i), a * 0.37, 0.08 * Math.cos(i));
+      strand.add(terminal);
+    }
+
+    // Larger central hanging crystal cluster.
+    addCylinderBetween(chandelier, [0, 0.42, 0], [0, -0.27, 0], 0.007, agedGold, 8);
+    const centerCrystal = makePearCrystal(1.25);
+    centerCrystal.position.set(0, -0.38, 0);
+    chandelier.add(centerCrystal);
+
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2;
+      const c = makeLongPrism(0.78);
+      c.position.set(Math.cos(a) * 0.33, 0.12 + Math.sin(i * 0.7) * 0.03, Math.sin(a) * 0.33);
+      c.rotation.set(0.25, -a, 0.05 * Math.sin(i));
+      chandelier.add(c);
+      addCylinderBetween(chandelier, [Math.cos(a) * 0.27, 0.55, Math.sin(a) * 0.27], [Math.cos(a) * 0.33, 0.28, Math.sin(a) * 0.33], 0.004, agedGold, 8);
+    }
+
+    // Tiny randomized facets and surface specks to break computer-perfect symmetry.
+    const fleckGeo = new THREE.SphereGeometry(0.009, 6, 4);
+    const fleckMat = new THREE.MeshBasicMaterial({
+      color: 0xffe7a4,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    for (let i = 0; i < 180; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const y = THREE.MathUtils.randFloat(0.35, 2.35);
+      const r = THREE.MathUtils.randFloat(0.25, 2.18);
+      const m = new THREE.Mesh(fleckGeo, fleckMat);
+      m.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
+      m.scale.setScalar(THREE.MathUtils.randFloat(0.6, 1.8));
+      m.userData.twinkle = Math.random() * Math.PI * 2;
+      chandelier.add(m);
+    }
+
+    // ---------------------------------------------------------------------
+    // Room context: ceiling, dark warm floor, background shadows/reflections.
+    // ---------------------------------------------------------------------
+
+    const ceilingMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#211914"),
+      roughness: 0.74,
+      metalness: 0.02
+    });
+
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#15100d"),
+      roughness: 0.56,
+      metalness: 0.08
+    });
+
+    addMesh(scene, new THREE.CylinderGeometry(4.2, 4.2, 0.08, 128), ceilingMat, [0, 5.1, 0], [0, 0, 0], [1, 1, 1], false, true);
+    addMesh(scene, new THREE.PlaneGeometry(22, 22), floorMat, [0, -1.4, 0], [-Math.PI / 2, 0, 0], [1, 1, 1], false, true);
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#120d0b"),
+      roughness: 0.88,
+      metalness: 0.0
+    });
+    addMesh(scene, new THREE.PlaneGeometry(18, 9), wallMat, [0, 2.1, -6.6], [0, 0, 0], [1, 1, 1], false, true);
+
+    const rug = addMesh(scene, new THREE.CircleGeometry(3.7, 128), velvet, [0, -1.36, 0], [-Math.PI / 2, 0, 0], [1.0, 0.52, 1.0], false, true);
+
+    // Room lighting, mostly indirect.
+    const hemi = new THREE.HemisphereLight(0x221811, 0x070504, 0.54);
+    scene.add(hemi);
+
+    const key = new THREE.DirectionalLight(0xffd7a0, 0.72);
+    key.position.set(-3.2, 6.1, 4.4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 14;
+    key.shadow.camera.left = -6;
+    key.shadow.camera.right = 6;
+    key.shadow.camera.top = 6;
+    key.shadow.camera.bottom = -6;
+    key.shadow.bias = -0.00012;
+    scene.add(key);
+
+    const lowWarm = new THREE.PointLight(0xff9d54, 0.95, 9.5, 2.0);
+    lowWarm.position.set(0, 0.9, 2.8);
+    scene.add(lowWarm);
+
+    const backSpark = new THREE.PointLight(0xd7efff, 0.18, 5.5, 2.2);
+    backSpark.position.set(-2.5, 2.7, -2.8);
+    scene.add(backSpark);
+
+    // ---------------------------------------------------------------------
+    // Animation.
+    // ---------------------------------------------------------------------
+
+    const resetCamera = () => {
+      camera.position.set(6.2, 4.15, 8.2);
+      controls.target.set(0, 1.15, 0);
+      controls.update();
+    };
+
+    addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "r") resetCamera();
+    });
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      const t = clock.getElapsedTime();
+
+      chandelier.rotation.y = Math.sin(t * 0.18) * 0.018;
+      chandelier.position.y = 1.5 + Math.sin(t * 0.42) * 0.012;
+
+      chandelier.traverse((obj) => {
+        if (obj.isMesh && obj.material === fleckMat) {
+          obj.material.opacity = 0.22;
+        }
+      });
+
+      lowWarm.intensity = 0.87;
+      bloom.strength = 0.39;
+
+      controls.update();
+      composer.render();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+      bloom.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+</html>
