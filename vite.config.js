@@ -7,6 +7,7 @@ import crawlable from './vite-plugin-crawlable.js';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), crawlable()],
+  assetsInclude: ['**/*.glb'],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

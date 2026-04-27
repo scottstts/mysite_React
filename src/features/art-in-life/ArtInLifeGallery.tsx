@@ -18,7 +18,7 @@ import floorTextureUrl from '@/assets/textures/gallery-floor.webp';
 import matBoardTextureUrl from '@/assets/textures/gallery-mat-board.webp';
 import plasterBumpTextureUrl from '@/assets/textures/gallery-plaster-bump.webp';
 import plasterTextureUrl from '@/assets/textures/gallery-plaster.webp';
-import neonSignSvgUrl from '@/assets/art_in_life_text_strokes_cropped_smooth.svg';
+import neonSignGlbUrl from '@/assets/art_in_life_neon.glb';
 
 interface ArtInLifeGalleryProps {
   urls: string[];
@@ -109,9 +109,6 @@ interface CameraTransition {
   direction: 1 | -1;
 }
 
-type NeonPaletteKind = 'blue' | 'pink';
-
-type SVGLoaderConstructor = typeof import('three/examples/jsm/loaders/SVGLoader.js').SVGLoader;
 type EffectComposerInstance = import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
 type UnrealBloomPassInstance = import('three/examples/jsm/postprocessing/UnrealBloomPass.js').UnrealBloomPass;
 
@@ -210,146 +207,141 @@ const easeInOutCubic = (value: number): number =>
     ? 4 * value * value * value
     : 1 - Math.pow(-2 * value + 2, 3) / 2;
 
-const buildNeonGroupSvg = (doc: Document, groupId: string): string => {
-  const root = doc.documentElement;
-  const viewBox = root.getAttribute('viewBox') || '0 0 1251 918';
-  const width = root.getAttribute('width') || '1251';
-  const height = root.getAttribute('height') || '918';
-  const group = doc.getElementById(groupId);
+interface BakedNeonMaterialProfile {
+  bucket: keyof NeonMaterialBuckets;
+  color: number;
+  emissive: number;
+  emissiveIntensity: number;
+  roughness: number;
+  metalness: number;
+}
 
-  if (!group) {
-    throw new Error(`Missing SVG group: ${groupId}`);
-  }
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${group.outerHTML}</svg>`;
-};
-
-const makeNeonPalette = (kind: NeonPaletteKind) => {
-  if (kind === 'blue') {
-    return {
-      front: 0xf4fdff,
-      emissive: 0x27c8ff,
-      side: 0x79dbff,
-    };
-  }
-
-  return {
-    front: 0xfff5fb,
+const BAKED_NEON_MATERIAL_PROFILES = {
+  neon_blue_front: {
+    bucket: 'frontBlue',
+    color: 0xf4fdff,
+    emissive: 0x27c8ff,
+    emissiveIntensity: 2.25,
+    roughness: 0.35,
+    metalness: 0,
+  },
+  neon_blue_side: {
+    bucket: 'sideBlue',
+    color: 0x79dbff,
+    emissive: 0x27c8ff,
+    emissiveIntensity: 0.5,
+    roughness: 0.45,
+    metalness: 0,
+  },
+  neon_pink_front: {
+    bucket: 'frontPink',
+    color: 0xfff5fb,
     emissive: 0xff1788,
-    side: 0xff71ba,
-  };
+    emissiveIntensity: 2.7,
+    roughness: 0.35,
+    metalness: 0,
+  },
+  neon_pink_side: {
+    bucket: 'sidePink',
+    color: 0xff71ba,
+    emissive: 0xff1788,
+    emissiveIntensity: 0.64,
+    roughness: 0.45,
+    metalness: 0,
+  },
+} as const satisfies Record<string, BakedNeonMaterialProfile>;
+
+type BakedNeonMaterialName = keyof typeof BAKED_NEON_MATERIAL_PROFILES;
+
+const getBakedNeonMaterialName = (
+  mesh: THREE.Mesh,
+  material: THREE.Material
+): BakedNeonMaterialName | null => {
+  const label = `${mesh.name} ${material.name}`.toLowerCase();
+
+  if (label.includes('blue') && label.includes('front')) {
+    return 'neon_blue_front';
+  }
+
+  if (label.includes('blue') && label.includes('side')) {
+    return 'neon_blue_side';
+  }
+
+  if (label.includes('pink') && label.includes('front')) {
+    return 'neon_pink_front';
+  }
+
+  if (label.includes('pink') && label.includes('side')) {
+    return 'neon_pink_side';
+  }
+
+  return null;
 };
 
-const createExtrudedNeonGroup = (
-  SVGLoaderClass: SVGLoaderConstructor,
-  groupSvgText: string,
-  kind: NeonPaletteKind,
-  materialBuckets: NeonMaterialBuckets,
-  geometries: THREE.BufferGeometry[],
-  materials: THREE.Material[]
-): THREE.Group => {
-  const loader = new SVGLoaderClass();
-  const data = loader.parse(groupSvgText);
-  const palette = makeNeonPalette(kind);
-  const group = new THREE.Group();
-
-  data.paths.forEach((path) => {
-    const shapes = SVGLoaderClass.createShapes(path);
-
-    shapes.forEach((shape) => {
-      const geometry = new THREE.ExtrudeGeometry(shape, {
-        depth: 8,
-        steps: 1,
-        bevelEnabled: false,
-        curveSegments: 10,
-      });
-      const frontMaterial = new THREE.MeshStandardMaterial({
-        color: palette.front,
-        emissive: palette.emissive,
-        emissiveIntensity: kind === 'blue' ? 2.25 : 2.7,
-        roughness: 0.35,
-        metalness: 0,
-      });
-      const sideMaterial = new THREE.MeshStandardMaterial({
-        color: palette.side,
-        emissive: palette.emissive,
-        emissiveIntensity: kind === 'blue' ? 0.5 : 0.64,
-        roughness: 0.45,
-        metalness: 0,
-      });
-      const mesh = new THREE.Mesh(geometry, [frontMaterial, sideMaterial]);
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
-      group.add(mesh);
-
-      geometries.push(geometry);
-      materials.push(frontMaterial, sideMaterial);
-
-      if (kind === 'blue') {
-        materialBuckets.frontBlue.push(frontMaterial);
-        materialBuckets.sideBlue.push(sideMaterial);
-      } else {
-        materialBuckets.frontPink.push(frontMaterial);
-        materialBuckets.sidePink.push(sideMaterial);
-      }
-    });
+const createBakedNeonMaterial = (
+  materialName: BakedNeonMaterialName
+): THREE.MeshStandardMaterial => {
+  const profile = BAKED_NEON_MATERIAL_PROFILES[materialName];
+  const material = new THREE.MeshStandardMaterial({
+    color: profile.color,
+    emissive: profile.emissive,
+    emissiveIntensity: profile.emissiveIntensity,
+    roughness: profile.roughness,
+    metalness: profile.metalness,
   });
 
-  return group;
+  material.name = materialName;
+  return material;
 };
 
-const createNeonSign = (
-  SVGLoaderClass: SVGLoaderConstructor,
-  svgText: string,
-  targetWidth: number,
+const registerNeonGeometry = (
+  geometry: THREE.BufferGeometry,
+  geometries: THREE.BufferGeometry[]
+) => {
+  if (!geometries.includes(geometry)) {
+    geometries.push(geometry);
+  }
+};
+
+const createBakedNeonSign = (
+  source: THREE.Object3D,
   materialBuckets: NeonMaterialBuckets,
   geometries: THREE.BufferGeometry[],
   materials: THREE.Material[]
 ): THREE.Group => {
-  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
-  const signRoot = new THREE.Group();
-  const blueGroup = createExtrudedNeonGroup(
-    SVGLoaderClass,
-    buildNeonGroupSvg(doc, 'blue-word-group'),
-    'blue',
-    materialBuckets,
-    geometries,
-    materials
-  );
-  const pinkGroup = createExtrudedNeonGroup(
-    SVGLoaderClass,
-    buildNeonGroupSvg(doc, 'pink-word-group'),
-    'pink',
-    materialBuckets,
-    geometries,
-    materials
-  );
-  const rawSign = new THREE.Group();
+  const sign = source.clone(true) as THREE.Group;
 
-  rawSign.add(blueGroup);
-  rawSign.add(pinkGroup);
-  rawSign.scale.y = -1;
-  rawSign.updateMatrixWorld(true);
+  sign.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) {
+      return;
+    }
 
-  const rawBox = new THREE.Box3().setFromObject(rawSign);
-  const rawCenter = rawBox.getCenter(new THREE.Vector3());
-  const rawSize = rawBox.getSize(new THREE.Vector3());
+    object.castShadow = false;
+    object.receiveShadow = false;
+    registerNeonGeometry(object.geometry, geometries);
 
-  rawSign.position.sub(rawCenter);
-  rawSign.position.z = 0;
+    const applyMaterial = (sourceMaterial: THREE.Material) => {
+      const materialName = getBakedNeonMaterialName(object, sourceMaterial);
 
-  const scale = targetWidth / rawSize.x;
-  rawSign.scale.set(scale, -scale, scale);
-  signRoot.add(rawSign);
-  signRoot.position.set(0, -0.04, 0);
+      if (!materialName) {
+        const fallback = sourceMaterial.clone();
+        materials.push(fallback);
+        return fallback;
+      }
 
-  signRoot.updateMatrixWorld(true);
-  const signBox = new THREE.Box3().setFromObject(signRoot);
-  const signCenter = signBox.getCenter(new THREE.Vector3());
-  signRoot.position.x -= signCenter.x;
-  signRoot.position.y -= signCenter.y;
+      const material = createBakedNeonMaterial(materialName);
+      const profile = BAKED_NEON_MATERIAL_PROFILES[materialName];
+      materialBuckets[profile.bucket].push(material);
+      materials.push(material);
+      return material;
+    };
 
-  return signRoot;
+    object.material = Array.isArray(object.material)
+      ? object.material.map(applyMaterial)
+      : applyMaterial(object.material);
+  });
+
+  return sign;
 };
 
 const neonCycle = (timeSeconds: number): number => {
@@ -2081,8 +2073,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     loadedTextures.push(neonGlowTexture);
 
     const createWallNeonSign = (
-      SVGLoaderClass: SVGLoaderConstructor,
-      svgText: string,
+      neonSignTemplate: THREE.Object3D,
       wallZ: number,
       rotationY: number
     ) => {
@@ -2115,10 +2106,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       neonMaterials.push(glowMaterial);
       neonGlowMaterials.push(glowMaterial);
 
-      const sign = createNeonSign(
-        SVGLoaderClass,
-        svgText,
-        NEON_SIGN_TARGET_WIDTH,
+      const sign = createBakedNeonSign(
+        neonSignTemplate,
         neonMaterialBuckets,
         neonGeometries,
         neonMaterials
@@ -2131,17 +2120,32 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const loadNeonSigns = async () => {
       try {
-        const [{ SVGLoader: SVGLoaderClass }, response] = await Promise.all([
-          import('three/examples/jsm/loaders/SVGLoader.js'),
-          fetch(neonSignSvgUrl),
-        ]);
-        if (!response.ok) return;
+        const { GLTFLoader } = await import(
+          'three/examples/jsm/loaders/GLTFLoader.js'
+        );
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(neonSignGlbUrl);
 
-        const svgText = await response.text();
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
-        createWallNeonSign(SVGLoaderClass, svgText, hallEndZ, 0);
-        createWallNeonSign(SVGLoaderClass, svgText, hallStartZ, Math.PI);
+        createWallNeonSign(gltf.scene, hallEndZ, 0);
+        createWallNeonSign(gltf.scene, hallStartZ, Math.PI);
+
+        const sourceMaterials = new Set<THREE.Material>();
+        gltf.scene.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) {
+            return;
+          }
+
+          const objectMaterials = Array.isArray(object.material)
+            ? object.material
+            : [object.material];
+          objectMaterials.forEach((material) => sourceMaterials.add(material));
+        });
+        sourceMaterials.forEach((material) => material.dispose());
+
         requestRenderLoop();
       } catch {
         // The gallery remains usable if the decorative sign asset fails to load.
@@ -3708,7 +3712,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         bloomPass.strength = 0.11 + glow * 0.04;
         bloomPass.radius = 0.06 + glow * 0.02;
         bloomPass.threshold = 0.8;
-}
+      }
     };
 
     const renderScene = () => {
