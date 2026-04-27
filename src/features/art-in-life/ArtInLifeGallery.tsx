@@ -1259,6 +1259,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const hallLength = hallStartZ - hallEndZ;
     const hallCenterZ = (hallStartZ + hallEndZ) / 2;
     const halfHallWidth = layout.hallwayWidth / 2;
+    const wallCeilingOverlap = 0.35;
+    const ceilingWallOverlap = 0.45;
+    const roomHeight = layout.ceilingY - layout.floorY;
+    const wallDrawHeight = roomHeight + wallCeilingOverlap * 2;
+    const wallCenterY = layout.floorY + roomHeight / 2;
     const textureLoader = new THREE.TextureLoader();
     const loadedTextures: THREE.Texture[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -1360,14 +1365,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const sideWallTextureRepeat = {
       x: Math.max(1, hallLength / 12),
-      y: layout.wallHeight / 6.4,
+      y: wallDrawHeight / 6.4,
     };
     const endWallTextureRepeat = {
-      x: Math.max(1, layout.hallwayWidth / 8),
-      y: layout.wallHeight / 6.4,
+      x: Math.max(1, (layout.hallwayWidth + ceilingWallOverlap * 2) / 8),
+      y: wallDrawHeight / 6.4,
     };
     const ceilingTextureRepeat = {
-      x: Math.max(1, layout.hallwayWidth / 6.5),
+      x: Math.max(1, (layout.hallwayWidth + ceilingWallOverlap * 2) / 6.5),
       y: Math.max(1, hallLength / 11),
     };
     const estimatedHallwayMeters = isMobile ? 3.6 : isTablet ? 4.2 : 4.6;
@@ -1650,7 +1655,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const leftWallGeometry = new THREE.PlaneGeometry(
       hallLength,
-      layout.wallHeight,
+      wallDrawHeight,
       wallSegments,
       42
     );
@@ -1658,13 +1663,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     environmentGeometries.push(leftWallGeometry);
     const leftWall = new THREE.Mesh(leftWallGeometry, sideWallMaterial);
     leftWall.rotation.y = Math.PI / 2;
-    leftWall.position.set(-halfHallWidth, 0.42, hallCenterZ);
+    leftWall.position.set(-halfHallWidth, wallCenterY, hallCenterZ);
     leftWall.receiveShadow = true;
     scene.add(leftWall);
 
     const rightWallGeometry = new THREE.PlaneGeometry(
       hallLength,
-      layout.wallHeight,
+      wallDrawHeight,
       wallSegments,
       42
     );
@@ -1672,25 +1677,25 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     environmentGeometries.push(rightWallGeometry);
     const rightWall = new THREE.Mesh(rightWallGeometry, sideWallMaterial);
     rightWall.rotation.y = -Math.PI / 2;
-    rightWall.position.set(halfHallWidth, 0.42, hallCenterZ);
+    rightWall.position.set(halfHallWidth, wallCenterY, hallCenterZ);
     rightWall.receiveShadow = true;
     scene.add(rightWall);
 
     const endWallGeometry = new THREE.PlaneGeometry(
-      layout.hallwayWidth,
-      layout.wallHeight,
+      layout.hallwayWidth + ceilingWallOverlap * 2,
+      wallDrawHeight,
       48,
       42
     );
     roughenPlane(endWallGeometry, 0.008);
     environmentGeometries.push(endWallGeometry);
     const endWall = new THREE.Mesh(endWallGeometry, endWallMaterial);
-    endWall.position.set(0, 0.42, hallEndZ);
+    endWall.position.set(0, wallCenterY, hallEndZ);
     endWall.receiveShadow = true;
     scene.add(endWall);
 
     const floorGeometry = new THREE.PlaneGeometry(
-      layout.hallwayWidth,
+      layout.hallwayWidth + ceilingWallOverlap * 2,
       hallLength,
       28,
       floorSegments
@@ -1704,7 +1709,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     scene.add(floor);
 
     const ceilingGeometry = new THREE.PlaneGeometry(
-      layout.hallwayWidth,
+      layout.hallwayWidth + ceilingWallOverlap * 2,
       hallLength,
       24,
       floorSegments
