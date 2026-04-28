@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import {
   CSS3DObject,
@@ -109,8 +104,15 @@ interface CameraTransition {
   direction: 1 | -1;
 }
 
-type EffectComposerInstance = import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
-type UnrealBloomPassInstance = import('three/examples/jsm/postprocessing/UnrealBloomPass.js').UnrealBloomPass;
+interface NeonLightRig {
+  blue: THREE.PointLight[];
+  pink: THREE.PointLight[];
+}
+
+type EffectComposerInstance =
+  import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
+type UnrealBloomPassInstance =
+  import('three/examples/jsm/postprocessing/UnrealBloomPass.js').UnrealBloomPass;
 
 interface NeonMaterialBuckets {
   frontBlue: THREE.MeshStandardMaterial[];
@@ -140,7 +142,6 @@ const CEILING_SPOTLIGHT_NAME = 'gallery-group-ceiling-spotlight';
 const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
-const NEON_SIGN_TARGET_WIDTH = 10.4 * (2 / 3);
 const NEON_SIGN_WALL_OFFSET = 0.08;
 
 if (typeof window !== 'undefined') {
@@ -176,6 +177,14 @@ const GALLERY_LIGHTING = {
     decay: 1.75,
     yOffset: 1.05,
   },
+  neon: {
+    blueColor: 0x27c8ff,
+    pinkColor: 0xff1788,
+    blueIntensity: 2.2,
+    pinkIntensity: 2.8,
+    distance: 10.5,
+    decay: 1.85,
+  },
   plaqueGlint: {
     color: 0xffd391,
     intensity: 0.16,
@@ -203,9 +212,7 @@ const smoothstep = (edge0: number, edge1: number, value: number): number => {
 };
 
 const easeInOutCubic = (value: number): number =>
-  value < 0.5
-    ? 4 * value * value * value
-    : 1 - Math.pow(-2 * value + 2, 3) / 2;
+  value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
 
 interface BakedNeonMaterialProfile {
   bucket: keyof NeonMaterialBuckets;
@@ -353,15 +360,13 @@ const neonCycle = (timeSeconds: number): number => {
   multiplier *= 1 - 0.4 * down * (1 - recover);
 
   const window =
-    smoothstep(0.61, 0.64, cycle) *
-    (1 - smoothstep(0.77, 0.81, cycle));
+    smoothstep(0.61, 0.64, cycle) * (1 - smoothstep(0.77, 0.81, cycle));
   const sputter =
     Math.sin(timeSeconds * 38) * Math.sin(timeSeconds * 71) * 0.5 + 0.5;
   multiplier -= window * 0.16 * Math.pow(sputter, 3);
 
   multiplier +=
-    0.018 * Math.sin(timeSeconds * 13) +
-    0.01 * Math.sin(timeSeconds * 29.5);
+    0.018 * Math.sin(timeSeconds * 13) + 0.01 * Math.sin(timeSeconds * 29.5);
 
   return clamp(multiplier, 0.5, 1.03);
 };
@@ -566,7 +571,9 @@ const waitForInstagramIframe = (
     });
     const timeoutId = window.setTimeout(
       () =>
-        finish(Boolean(container.querySelector('iframe[src*="instagram.com"]'))),
+        finish(
+          Boolean(container.querySelector('iframe[src*="instagram.com"]'))
+        ),
       timeout
     );
 
@@ -688,58 +695,6 @@ const configureSingleSurfaceTexture = (
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.repeat.set(1, 1);
   texture.anisotropy = anisotropy;
-};
-
-const createNeonWallGlowTexture = (
-  anisotropy: number
-): THREE.CanvasTexture => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 768;
-  canvas.height = 512;
-  const context = canvas.getContext('2d');
-
-  if (context) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.globalCompositeOperation = 'lighter';
-
-    const addGlow = (
-      x: number,
-      y: number,
-      radius: number,
-      color: [number, number, number],
-      alpha: number
-    ) => {
-      const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(
-        0,
-        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`
-      );
-      gradient.addColorStop(
-        0.32,
-        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.42})`
-      );
-      gradient.addColorStop(
-        0.72,
-        `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.11})`
-      );
-      gradient.addColorStop(1, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`);
-      context.fillStyle = gradient;
-      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    };
-
-    addGlow(canvas.width * 0.34, canvas.height * 0.42, 250, [39, 200, 255], 0.54);
-    addGlow(canvas.width * 0.58, canvas.height * 0.5, 290, [255, 23, 136], 0.44);
-    addGlow(canvas.width * 0.72, canvas.height * 0.58, 220, [255, 113, 186], 0.34);
-    addGlow(canvas.width * 0.48, canvas.height * 0.65, 300, [255, 80, 164], 0.18);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.anisotropy = anisotropy;
-  texture.needsUpdate = true;
-  return texture;
 };
 
 const createPlaqueTextTexture = (): THREE.CanvasTexture => {
@@ -899,10 +854,8 @@ const createChandelierMetalNoiseTexture = (
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const offset = (y * size + x) * 4;
-        const band =
-          Math.sin(x * 0.06 + Math.sin(y * 0.022) * 3.1) * 0.5 + 0.5;
-        const speck =
-          Math.sin(x * 12.9898 + y * 78.233 + 17) * 43758.5453;
+        const band = Math.sin(x * 0.06 + Math.sin(y * 0.022) * 3.1) * 0.5 + 0.5;
+        const speck = Math.sin(x * 12.9898 + y * 78.233 + 17) * 43758.5453;
         const speckValue = speck - Math.floor(speck);
         const value = Math.floor(118 + band * 44 + speckValue * 42);
 
@@ -954,25 +907,18 @@ const addQuadFace = (
   indices.push(a, b, c, b, d, c);
 };
 
-const profileZAt = (
-  t: number,
-  railWidth: number
-): number => {
+const profileZAt = (t: number, railWidth: number): number => {
   const scale = railWidth / 0.75;
   const crown =
     0.355 * scale * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.56);
-  const innerBead =
-    0.105 * scale * Math.exp(-Math.pow((t - 0.085) / 0.033, 2));
-  const outerBead =
-    0.092 * scale * Math.exp(-Math.pow((t - 0.905) / 0.038, 2));
+  const innerBead = 0.105 * scale * Math.exp(-Math.pow((t - 0.085) / 0.033, 2));
+  const outerBead = 0.092 * scale * Math.exp(-Math.pow((t - 0.905) / 0.038, 2));
   const innerGroove =
     -0.115 * scale * Math.exp(-Math.pow((t - 0.205) / 0.043, 2));
   const outerGroove =
     -0.102 * scale * Math.exp(-Math.pow((t - 0.735) / 0.052, 2));
-  const shoulder =
-    0.045 * scale * Math.exp(-Math.pow((t - 0.42) / 0.15, 2));
-  const cove =
-    -0.035 * scale * Math.exp(-Math.pow((t - 0.61) / 0.095, 2));
+  const shoulder = 0.045 * scale * Math.exp(-Math.pow((t - 0.42) / 0.15, 2));
+  const cove = -0.035 * scale * Math.exp(-Math.pow((t - 0.61) / 0.095, 2));
 
   let z =
     0.07 * scale +
@@ -1105,7 +1051,11 @@ const createSculptedRailGeometry = (
     }
   });
 
-  for (let profileIndex = 0; profileIndex < profile.length - 1; profileIndex++) {
+  for (
+    let profileIndex = 0;
+    profileIndex < profile.length - 1;
+    profileIndex++
+  ) {
     for (let segment = 0; segment < lengthSegments; segment++) {
       addQuadFace(
         indices,
@@ -1141,7 +1091,11 @@ const createSculptedRailGeometry = (
     );
   }
 
-  for (let profileIndex = 0; profileIndex < profile.length - 1; profileIndex++) {
+  for (
+    let profileIndex = 0;
+    profileIndex < profile.length - 1;
+    profileIndex++
+  ) {
     addQuadFace(
       indices,
       bottomIndices[profileIndex][0],
@@ -1174,7 +1128,7 @@ const createSculptedRailGeometry = (
 const getFrameCardSizeScale = () =>
   typeof window === 'undefined'
     ? FRAME_CARD_SIZE_SCALE
-    : window.__ART_IN_LIFE_CARD_SIZE_SCALE__ ?? FRAME_CARD_SIZE_SCALE;
+    : (window.__ART_IN_LIFE_CARD_SIZE_SCALE__ ?? FRAME_CARD_SIZE_SCALE);
 
 const getFrameMetrics = (layout: GalleryLayout) => {
   const innerWidth = layout.postWidth;
@@ -1193,8 +1147,7 @@ const getFrameMetrics = (layout: GalleryLayout) => {
     cardWidth: innerWidth * cardSizeScale,
     cardHeight: innerHeight * cardSizeScale,
     cardZ:
-      FRAME_RAIL_Z_OFFSET +
-      profileZAt(FRAME_INNER_RIM_T, referenceRailWidth),
+      FRAME_RAIL_Z_OFFSET + profileZAt(FRAME_INNER_RIM_T, referenceRailWidth),
   };
 };
 
@@ -1475,6 +1428,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let activeFrameStart = 0;
     let activeFrameEnd = -1;
     let requestRenderLoop = () => {};
+    let isDocumentVisible = document.visibilityState === 'visible';
+    let isViewportVisible = true;
+    const shouldRunRenderLoop = () => isDocumentVisible && isViewportVisible;
     const activeFrames = new Map<number, FrameRecord>();
     const activeCeilingSpotlights = new Map<number, THREE.SpotLight>();
     const maxGroupIndex = Math.max(0, groupCount - 1);
@@ -1580,7 +1536,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         new THREE.Vector2(width, height),
         0.15,
         0.08,
-        0.80
+        0.8
       );
       nextComposer.addPass(nextBloomPass);
       nextComposer.addPass(new OutputPass());
@@ -1693,9 +1649,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const ebonyTexture = loadSingleSurfaceTexture(ebonyFrameTextureUrl);
     const plaqueTextTexture = createPlaqueTextTexture();
     loadedTextures.push(plaqueTextTexture);
-    const chandelierMetalNoise = createChandelierMetalNoiseTexture(
-      textureAnisotropy
-    );
+    const chandelierMetalNoise =
+      createChandelierMetalNoiseTexture(textureAnisotropy);
     loadedTextures.push(chandelierMetalNoise);
 
     const placeholderTextures = Array.from(
@@ -1854,6 +1809,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       attenuationDistance: 4.5,
       envMapIntensity: 1.9,
     });
+    const chandelierCrystalLiteMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf2f8ff,
+      roughness: 0.18,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.48,
+    });
     const chandelierCandleSleeveMaterial = new THREE.MeshStandardMaterial({
       color: 0xf6ecd2,
       roughness: 0.48,
@@ -1877,12 +1839,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       opacity: 0.55,
       depthWrite: false,
     });
+    const chandelierSimpleFlameGlowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffb759,
+      transparent: true,
+      opacity: 0.46,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
     const plaqueMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xb9822d,
-      roughness: 0.16,
-      metalness: 0.96,
-      clearcoat: 0.42,
-      clearcoatRoughness: 0.1,
+      roughness: 0.34,
+      metalness: 0.82,
+      clearcoat: 0.22,
+      clearcoatRoughness: 0.18,
     });
     const plaqueTextMaterial = new THREE.MeshStandardMaterial({
       map: plaqueTextTexture,
@@ -1912,10 +1882,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       chandelierCableMaterial,
       chandelierWarmGlassMaterial,
       chandelierCrystalMaterial,
+      chandelierCrystalLiteMaterial,
       chandelierCandleSleeveMaterial,
       chandelierBulbLitMaterial,
       chandelierFilamentMaterial,
       chandelierFlameGlowMaterial,
+      chandelierSimpleFlameGlowMaterial,
       plaqueMaterial,
       plaqueTextMaterial,
     ];
@@ -1923,7 +1895,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const environmentGeometries: THREE.BufferGeometry[] = [];
     const neonGeometries: THREE.BufferGeometry[] = [];
     const neonMaterials: THREE.Material[] = [];
-    const neonGlowMaterials: THREE.MeshBasicMaterial[] = [];
+    const neonLightRigs: NeonLightRig[] = [];
     const neonAnchors: THREE.Group[] = [];
     const neonMaterialBuckets: NeonMaterialBuckets = {
       frontBlue: [],
@@ -2071,8 +2043,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     startBaseboardCap.receiveShadow = true;
     scene.add(startBaseboardCap);
 
-    const neonGlowTexture = createNeonWallGlowTexture(textureAnisotropy);
-    loadedTextures.push(neonGlowTexture);
+    const createNeonLight = (
+      color: number,
+      intensity: number,
+      position: [number, number, number]
+    ) => {
+      const light = new THREE.PointLight(
+        color,
+        intensity,
+        GALLERY_LIGHTING.neon.distance,
+        GALLERY_LIGHTING.neon.decay
+      );
+      light.position.set(...position);
+      light.userData.baseIntensity = intensity;
+      light.castShadow = false;
+      return light;
+    };
 
     const createWallNeonSign = (
       neonSignTemplate: THREE.Object3D,
@@ -2083,31 +2069,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       anchor.rotation.y = rotationY;
       anchor.position.set(0, wallCenterY, wallZ);
 
-      const glowGeometry = new THREE.PlaneGeometry(
-        NEON_SIGN_TARGET_WIDTH * 1.38,
-        NEON_SIGN_TARGET_WIDTH * 0.82,
-        1,
-        1
-      );
-      const glowMaterial = new THREE.MeshBasicMaterial({
-        map: neonGlowTexture,
-        transparent: true,
-        opacity: 0.34,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        toneMapped: false,
-        polygonOffset: true,
-        polygonOffsetFactor: -2,
-        polygonOffsetUnits: -2,
-      });
-      const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
-      glowPlane.position.z = 0.012;
-      glowPlane.renderOrder = 1;
-      anchor.add(glowPlane);
-      neonGeometries.push(glowGeometry);
-      neonMaterials.push(glowMaterial);
-      neonGlowMaterials.push(glowMaterial);
-
       const sign = createBakedNeonSign(
         neonSignTemplate,
         neonMaterialBuckets,
@@ -2116,6 +2077,34 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       sign.position.z += NEON_SIGN_WALL_OFFSET;
       anchor.add(sign);
+
+      const lightZ = NEON_SIGN_WALL_OFFSET + 0.42;
+      const blueLights = [
+        createNeonLight(
+          GALLERY_LIGHTING.neon.blueColor,
+          GALLERY_LIGHTING.neon.blueIntensity,
+          [-2.1, 1.5, lightZ]
+        ),
+        createNeonLight(
+          GALLERY_LIGHTING.neon.blueColor,
+          GALLERY_LIGHTING.neon.blueIntensity * 0.58,
+          [-0.7, 0.5, lightZ + 0.18]
+        ),
+      ];
+      const pinkLights = [
+        createNeonLight(
+          GALLERY_LIGHTING.neon.pinkColor,
+          GALLERY_LIGHTING.neon.pinkIntensity,
+          [1.35, 0.08, lightZ]
+        ),
+        createNeonLight(
+          GALLERY_LIGHTING.neon.pinkColor,
+          GALLERY_LIGHTING.neon.pinkIntensity * 0.64,
+          [2.38, -0.34, lightZ + 0.18]
+        ),
+      ];
+      anchor.add(...blueLights, ...pinkLights);
+      neonLightRigs.push({ blue: blueLights, pink: pinkLights });
       scene.add(anchor);
       neonAnchors.push(anchor);
     };
@@ -2281,15 +2270,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return group;
     };
 
-    const addCable = (
-      parent: THREE.Object3D,
-      topY = 3.28,
-      bottomY = 1.66
-    ) => {
+    const addCable = (parent: THREE.Object3D, topY = 3.28, bottomY = 1.66) => {
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(0, topY, 0),
-        new THREE.Vector3(0.01, THREE.MathUtils.lerp(topY, bottomY, 0.32), -0.008),
-        new THREE.Vector3(-0.012, THREE.MathUtils.lerp(topY, bottomY, 0.68), 0.006),
+        new THREE.Vector3(
+          0.01,
+          THREE.MathUtils.lerp(topY, bottomY, 0.32),
+          -0.008
+        ),
+        new THREE.Vector3(
+          -0.012,
+          THREE.MathUtils.lerp(topY, bottomY, 0.68),
+          0.006
+        ),
         new THREE.Vector3(0, bottomY, 0),
       ]);
 
@@ -2398,7 +2391,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       addChandelierMesh(
         chandelier,
-        new THREE.SphereGeometry(0.72, 96, 24, 0, Math.PI * 2, 0, Math.PI * 0.42),
+        new THREE.SphereGeometry(
+          0.72,
+          96,
+          24,
+          0,
+          Math.PI * 2,
+          0,
+          Math.PI * 0.42
+        ),
         chandelierWarmGlassMaterial,
         [0, 0.98, 0],
         [Math.PI, 0, 0],
@@ -2620,7 +2621,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         const radius = index % 2 === 0 ? 0.83 : 0.68;
         const dropLength = index % 3 === 0 ? 0.58 : 0.43;
         const strand = new THREE.Group();
-        strand.position.set(Math.cos(angle) * radius, 0.73, Math.sin(angle) * radius);
+        strand.position.set(
+          Math.cos(angle) * radius,
+          0.73,
+          Math.sin(angle) * radius
+        );
         strand.rotation.y = -angle;
         chandelier.add(strand);
 
@@ -2715,6 +2720,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     fullChandelier.name = CHANDELIER_LOD_NAME;
     fullChandelier.visible = false;
     fullChandelier.scale.setScalar(chandelierScale);
+    fullChandelier.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+
+      object.visible = Boolean(object.userData.detailCull);
+    });
     chandelierRoot.add(fullChandelier);
     chandelierAnchors.forEach((anchor) => {
       const light = new THREE.PointLight(
@@ -2734,11 +2744,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     });
 
     const simpleChandelierDummy = new THREE.Object3D();
-    const simpleChandelierZeroMatrix = new THREE.Matrix4().compose(
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Quaternion(),
-      PLACEHOLDER_ZERO_SCALE
-    );
     const simpleChandelierCanopyGeometry = new THREE.CylinderGeometry(
       0.42,
       0.52,
@@ -2762,11 +2767,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       14,
       10
     );
-    const simpleChandelierGlowGeometry = new THREE.SphereGeometry(
-      0.15,
-      12,
-      8
-    );
+    const simpleChandelierGlowGeometry = new THREE.SphereGeometry(0.15, 12, 8);
     const simpleChandelierCrystalGeometry = new THREE.OctahedronGeometry(
       0.115,
       0
@@ -2823,12 +2824,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       ),
       glow: createSimpleChandelierMesh(
         simpleChandelierGlowGeometry,
-        chandelierFlameGlowMaterial,
+        chandelierSimpleFlameGlowMaterial,
         chandelierCount * 6
       ),
       crystals: createSimpleChandelierMesh(
         simpleChandelierCrystalGeometry,
-        chandelierCrystalMaterial,
+        chandelierCrystalLiteMaterial,
         chandelierCount * 8
       ),
       arms: createSimpleChandelierMesh(
@@ -2838,7 +2839,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       ),
     };
     const simpleChandelierMeshes = Object.values(simpleChandeliers);
-    let lastChandelierLodKey = '';
+    let simpleChandelierMatricesReady = false;
 
     const setSimpleChandelierMatrix = (
       mesh: THREE.InstancedMesh,
@@ -2854,100 +2855,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       mesh.setMatrixAt(instanceIndex, simpleChandelierDummy.matrix);
     };
 
-    const hideSimpleChandelier = (
-      anchorIndex: number,
-      hideBulbDetails: boolean
-    ) => {
-      simpleChandeliers.canopy.setMatrixAt(
-        anchorIndex,
-        simpleChandelierZeroMatrix
-      );
-      simpleChandeliers.stem.setMatrixAt(
-        anchorIndex,
-        simpleChandelierZeroMatrix
-      );
-      simpleChandeliers.ring.setMatrixAt(
-        anchorIndex,
-        simpleChandelierZeroMatrix
-      );
-
-      for (let index = 0; index < 6; index++) {
-        const bulbIndex = anchorIndex * 6 + index;
-        simpleChandeliers.arms.setMatrixAt(
-          bulbIndex,
-          simpleChandelierZeroMatrix
-        );
-        simpleChandeliers.bulbs.setMatrixAt(
-          bulbIndex,
-          simpleChandelierZeroMatrix
-        );
-        simpleChandeliers.glow.setMatrixAt(
-          bulbIndex,
-          simpleChandelierZeroMatrix
-        );
-      }
-
-      if (hideBulbDetails) {
-        for (let index = 0; index < 8; index++) {
-          simpleChandeliers.crystals.setMatrixAt(
-            anchorIndex * 8 + index,
-            simpleChandelierZeroMatrix
-          );
-        }
-      }
-    };
-
-    const updateChandelierLod = (pose: CameraPose) => {
-      let nearestIndex = 0;
-      let nearestDistance = Number.POSITIVE_INFINITY;
-
+    const populateSimpleChandeliers = () => {
       chandelierAnchors.forEach((anchor) => {
-        const distance = Math.abs(anchor.position.z - pose.position.z);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = anchor.index;
-        }
-      });
-
-      const fullDistance = chandelierStep * 0.58;
-      const fullVisible = nearestDistance <= fullDistance;
-      const fullDetailVisible = nearestDistance < fullDistance * 0.72;
-      const nearestAnchor = chandelierAnchors[nearestIndex];
-      const detailMask = chandelierAnchors
-        .map((anchor) =>
-          Math.abs(anchor.position.z - pose.position.z) <=
-          chandelierStep * (isMobile ? 2 : 2.8)
-            ? '1'
-            : '0'
-        )
-        .join('');
-      const lodKey = `${nearestIndex}:${fullVisible ? '1' : '0'}:${
-        fullDetailVisible ? '1' : '0'
-      }:${detailMask}`;
-
-      if (lodKey === lastChandelierLodKey) return;
-      lastChandelierLodKey = lodKey;
-
-      fullChandelier.visible = fullVisible;
-      if (fullVisible) {
-        fullChandelier.position.copy(nearestAnchor.position);
-        fullChandelier.rotation.y = nearestAnchor.rotationY;
-        fullChandelier.traverse((object) => {
-          if (!(object instanceof THREE.Mesh)) return;
-
-          object.visible =
-            !object.userData.detailCull || fullDetailVisible;
-        });
-      }
-
-      chandelierAnchors.forEach((anchor) => {
-        const distance = Math.abs(anchor.position.z - pose.position.z);
-        const useSimple = !fullVisible || anchor.index !== nearestIndex;
-        const showDetail = distance <= chandelierStep * (isMobile ? 2 : 2.8);
-
-        hideSimpleChandelier(anchor.index, true);
-        if (!useSimple) return;
-
         const rootY = anchor.position.y;
         const rootRotation = anchor.rotationY;
         const rootScale = chandelierScale;
@@ -2956,21 +2865,33 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         setSimpleChandelierMatrix(
           simpleChandeliers.canopy,
           anchor.index,
-          new THREE.Vector3(rootPosition.x, rootY + 3.6 * rootScale, rootPosition.z),
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 3.6 * rootScale,
+            rootPosition.z
+          ),
           new THREE.Euler(0, rootRotation, 0),
           new THREE.Vector3(rootScale, rootScale, rootScale)
         );
         setSimpleChandelierMatrix(
           simpleChandeliers.stem,
           anchor.index,
-          new THREE.Vector3(rootPosition.x, rootY + 2.28 * rootScale, rootPosition.z),
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 2.28 * rootScale,
+            rootPosition.z
+          ),
           new THREE.Euler(0, rootRotation, 0),
           new THREE.Vector3(rootScale, rootScale, rootScale)
         );
         setSimpleChandelierMatrix(
           simpleChandeliers.ring,
           anchor.index,
-          new THREE.Vector3(rootPosition.x, rootY + 0.86 * rootScale, rootPosition.z),
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 0.86 * rootScale,
+            rootPosition.z
+          ),
           new THREE.Euler(Math.PI / 2, rootRotation, 0),
           new THREE.Vector3(rootScale, rootScale, rootScale)
         );
@@ -3013,22 +2934,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           );
         }
 
-        if (showDetail) {
-          for (let crystalIndex = 0; crystalIndex < 8; crystalIndex++) {
-            const angle = rootRotation + (crystalIndex / 8) * Math.PI * 2;
-            const radius = (crystalIndex % 2 === 0 ? 0.72 : 0.52) * rootScale;
-            setSimpleChandelierMatrix(
-              simpleChandeliers.crystals,
-              anchor.index * 8 + crystalIndex,
-              new THREE.Vector3(
-                rootPosition.x + Math.cos(angle) * radius,
-                rootY + (0.26 - (crystalIndex % 3) * 0.08) * rootScale,
-                rootPosition.z + Math.sin(angle) * radius
-              ),
-              new THREE.Euler(0.25, -angle, 0.1),
-              new THREE.Vector3(rootScale, rootScale * 1.35, rootScale)
-            );
-          }
+        for (let crystalIndex = 0; crystalIndex < 8; crystalIndex++) {
+          const angle = rootRotation + (crystalIndex / 8) * Math.PI * 2;
+          const radius = (crystalIndex % 2 === 0 ? 0.72 : 0.52) * rootScale;
+          setSimpleChandelierMatrix(
+            simpleChandeliers.crystals,
+            anchor.index * 8 + crystalIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + (0.26 - (crystalIndex % 3) * 0.08) * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            new THREE.Euler(0.25, -angle, 0.1),
+            new THREE.Vector3(rootScale, rootScale * 1.35, rootScale)
+          );
         }
       });
 
@@ -3036,6 +2955,47 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         mesh.instanceMatrix.needsUpdate = true;
         mesh.computeBoundingSphere();
       });
+      simpleChandelierMatricesReady = true;
+    };
+
+    const setDetailedChandelierOpacity = (opacityFactor: number) => {
+      chandelierCrystalMaterial.opacity = 0.58 * opacityFactor;
+      chandelierWarmGlassMaterial.opacity = 0.55 * opacityFactor;
+      chandelierFlameGlowMaterial.opacity = 0.55 * opacityFactor;
+    };
+
+    const updateChandelierLod = (pose: CameraPose) => {
+      if (!simpleChandelierMatricesReady) {
+        populateSimpleChandeliers();
+      }
+
+      let nearestIndex = 0;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      chandelierAnchors.forEach((anchor) => {
+        const distance = Math.abs(anchor.position.z - pose.position.z);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = anchor.index;
+        }
+      });
+
+      const nearestAnchor = chandelierAnchors[nearestIndex];
+      const detailOpacity =
+        1 -
+        smoothstep(
+          chandelierStep * 0.24,
+          chandelierStep * 0.44,
+          nearestDistance
+        );
+
+      fullChandelier.visible = detailOpacity > 0.015;
+      setDetailedChandelierOpacity(detailOpacity);
+
+      if (fullChandelier.visible) {
+        fullChandelier.position.copy(nearestAnchor.position);
+        fullChandelier.rotation.y = nearestAnchor.rotationY;
+      }
     };
 
     const getGroupSide = (groupIndex: number): GalleryWallSide =>
@@ -3088,7 +3048,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return {
         position: new THREE.Vector3(0, layout.cameraY, groupZ),
         target: new THREE.Vector3(
-          side === 'left' ? -halfHallWidth + wallInset : halfHallWidth - wallInset,
+          side === 'left'
+            ? -halfHallWidth + wallInset
+            : halfHallWidth - wallInset,
           layout.frameY - 0.02 + verticalLookOffset,
           groupZ + horizontalLookOffset
         ),
@@ -3107,7 +3069,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       z: number
     ) => {
       const localPoint = new THREE.Vector3(x, y, z);
-      localPoint.applyAxisAngle(new THREE.Vector3(0, 1, 0), placement.rotationY);
+      localPoint.applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        placement.rotationY
+      );
       return localPoint.set(
         placement.x + localPoint.x,
         placement.y + localPoint.y,
@@ -3196,14 +3161,30 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return mesh;
     });
     const placeholderRails = {
-      top: new THREE.InstancedMesh(unitBox, placeholderFrameMaterial, urls.length),
+      top: new THREE.InstancedMesh(
+        unitBox,
+        placeholderFrameMaterial,
+        urls.length
+      ),
       bottom: new THREE.InstancedMesh(
         unitBox,
         placeholderFrameMaterial,
         urls.length
       ),
-      left: new THREE.InstancedMesh(unitBox, placeholderFrameMaterial, urls.length),
-      right: new THREE.InstancedMesh(unitBox, placeholderFrameMaterial, urls.length),
+      left: new THREE.InstancedMesh(
+        unitBox,
+        placeholderFrameMaterial,
+        urls.length
+      ),
+      right: new THREE.InstancedMesh(
+        unitBox,
+        placeholderFrameMaterial,
+        urls.length
+      ),
+    };
+    const placeholderPlaques = {
+      body: new THREE.InstancedMesh(unitBox, plaqueMaterial, urls.length),
+      text: new THREE.InstancedMesh(unitPlane, plaqueTextMaterial, urls.length),
     };
 
     Object.values(placeholderRails).forEach((mesh) => {
@@ -3212,6 +3193,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       mesh.receiveShadow = true;
       scene.add(mesh);
     });
+    placeholderPlaques.body.frustumCulled = true;
+    placeholderPlaques.body.castShadow = false;
+    placeholderPlaques.body.receiveShadow = true;
+    scene.add(placeholderPlaques.body);
+    placeholderPlaques.text.frustumCulled = true;
+    placeholderPlaques.text.castShadow = false;
+    placeholderPlaques.text.receiveShadow = false;
+    scene.add(placeholderPlaques.text);
 
     const setPlaceholderBoxMatrix = (
       mesh: THREE.InstancedMesh,
@@ -3270,6 +3259,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     ) => {
       const halfOuterWidth = layout.frameOuterWidth / 2;
       const halfOuterHeight = layout.frameOuterHeight / 2;
+      const plaqueWidth = Math.min(0.86, layout.frameOuterWidth * 0.34);
+      const plaqueHeight = 0.18;
+      const plaqueY = halfOuterHeight + 0.34;
 
       for (let index = 0; index < urls.length; index++) {
         const isHighDetail = index >= activeStart && index <= activeEnd;
@@ -3289,6 +3281,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           Object.values(placeholderRails).forEach((mesh) => {
             mesh.setMatrixAt(index, placeholderZeroMatrix);
           });
+          placeholderPlaques.body.setMatrixAt(index, placeholderZeroMatrix);
+          placeholderPlaques.text.setMatrixAt(index, placeholderZeroMatrix);
           continue;
         }
 
@@ -3336,6 +3330,28 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           layout.frameOuterHeight,
           placeholderFrameDepth
         );
+        setPlaceholderBoxMatrix(
+          placeholderPlaques.body,
+          index,
+          placement,
+          0,
+          plaqueY,
+          0.02,
+          plaqueWidth,
+          plaqueHeight,
+          0.035
+        );
+        setPlaceholderBoxMatrix(
+          placeholderPlaques.text,
+          index,
+          placement,
+          0,
+          plaqueY,
+          0.041,
+          plaqueWidth * 0.76,
+          plaqueHeight * 0.54,
+          1
+        );
       }
 
       placeholderArtMeshes.forEach((mesh) => {
@@ -3343,6 +3359,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         mesh.computeBoundingSphere();
       });
       Object.values(placeholderRails).forEach((mesh) => {
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.computeBoundingSphere();
+      });
+      Object.values(placeholderPlaques).forEach((mesh) => {
         mesh.instanceMatrix.needsUpdate = true;
         mesh.computeBoundingSphere();
       });
@@ -3707,8 +3727,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         material.emissiveIntensity = 0.64 * value;
       });
 
-      neonGlowMaterials.forEach((material) => {
-        material.opacity = 0.34 * glow;
+      neonLightRigs.forEach((rig, rigIndex) => {
+        rig.blue.forEach((light, lightIndex) => {
+          const shimmer =
+            0.94 + 0.06 * Math.sin(timeSeconds * 5.2 + rigIndex + lightIndex);
+          const baseIntensity =
+            typeof light.userData.baseIntensity === 'number'
+              ? light.userData.baseIntensity
+              : GALLERY_LIGHTING.neon.blueIntensity;
+          light.intensity = baseIntensity * glow * shimmer;
+        });
+        rig.pink.forEach((light, lightIndex) => {
+          const shimmer =
+            0.94 +
+            0.06 * Math.sin(timeSeconds * 5.8 + rigIndex + lightIndex * 0.7);
+          const baseIntensity =
+            typeof light.userData.baseIntensity === 'number'
+              ? light.userData.baseIntensity
+              : GALLERY_LIGHTING.neon.pinkIntensity;
+          light.intensity = baseIntensity * glow * shimmer;
+        });
       });
 
       if (bloomPass) {
@@ -3748,10 +3786,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       });
     };
 
-    const getGroupLightFactor = (
-      groupIndex: number,
-      now: number | null
-    ) => {
+    const getGroupLightFactor = (groupIndex: number, now: number | null) => {
       let factor = groupIndex === targetGroupIndex ? 1 : 0;
 
       if (cameraTransition && now !== null) {
@@ -3792,7 +3827,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const updatePaintingSpotlights = (now: number | null) => {
       activeFrames.forEach((record) => {
         const groupIndex = getFramePlacement(record.index).groupIndex;
-        setPaintingSpotlightFactor(record, getGroupLightFactor(groupIndex, now));
+        setPaintingSpotlightFactor(
+          record,
+          getGroupLightFactor(groupIndex, now)
+        );
       });
     };
 
@@ -3826,10 +3864,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         pointerX,
         -pointerY
       );
-      const position = fromPose.position.clone().lerp(
-        toPose.position,
-        easedProgress
-      );
+      const position = fromPose.position
+        .clone()
+        .lerp(toPose.position, easedProgress);
 
       const fromDirection = fromPose.target
         .clone()
@@ -3882,10 +3919,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             cameraTransition.duration +
             PAINTING_LIGHT_ON_MS;
 
-        if (
-          !cameraTransition.settled &&
-          transitionPose.cameraProgress >= 1
-        ) {
+        if (!cameraTransition.settled && transitionPose.cameraProgress >= 1) {
           cameraTransition.settled = true;
           currentGroupIndex = targetGroupIndex;
           updateVirtualFrames(targetGroupIndex);
@@ -3917,10 +3951,40 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     requestRenderLoop = () => {
-      if (!isMounted || animationFrame) return;
+      if (!isMounted || animationFrame || !shouldRunRenderLoop()) return;
 
       animationFrame = window.requestAnimationFrame(renderFrame);
     };
+
+    const cancelPendingRender = () => {
+      if (!animationFrame) return;
+
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+    };
+
+    const resumeRenderLoop = () => {
+      if (!shouldRunRenderLoop()) {
+        cancelPendingRender();
+        return;
+      }
+
+      requestRenderLoop();
+    };
+
+    const handleVisibilityChange = () => {
+      isDocumentVisible = document.visibilityState === 'visible';
+      resumeRenderLoop();
+    };
+
+    let viewportVisibilityObserver: IntersectionObserver | null = null;
+    if ('IntersectionObserver' in window) {
+      viewportVisibilityObserver = new IntersectionObserver(([entry]) => {
+        isViewportVisible = entry.isIntersecting;
+        resumeRenderLoop();
+      });
+      viewportVisibilityObserver.observe(viewport);
+    }
 
     targetGroupIndex = 0;
     setNavGroupIndex(0);
@@ -3935,6 +3999,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderScene();
     setIsReady(true);
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('resize', resize, { passive: true });
     window.addEventListener('orientationchange', resize, { passive: true });
     window.visualViewport?.addEventListener('resize', resize, {
@@ -3956,6 +4021,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     return () => {
       isMounted = false;
       window.cancelAnimationFrame(animationFrame);
+      viewportVisibilityObserver?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', resize);
       window.removeEventListener('orientationchange', resize);
       window.visualViewport?.removeEventListener('resize', resize);
