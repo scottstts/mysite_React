@@ -13,16 +13,36 @@ import '@/styles/animations.css';
 import '@/styles/glassCardEffect.css';
 import './App.css';
 
-// Lazy load tabs for better initial load performance
-const AboutTab = React.lazy(() => import('@/features/about/AboutTab'));
-const ProjectsTab = React.lazy(() => import('@/features/projects/ProjectsTab'));
-const AppsTab = React.lazy(() => import('@/features/apps/AppsTab'));
-const InspirationsTab = React.lazy(
-  () => import('@/features/inspirations/InspirationsTab')
-);
-const ArtInLifeTab = React.lazy(
-  () => import('@/features/art-in-life/ArtInLifeTab')
-);
+// Keep tab imports reusable so the active tab can be preloaded during the intro
+// without mounting/running the tab component yet.
+const tabImports = {
+  about: () => import('@/features/about/AboutTab'),
+  projects: () => import('@/features/projects/ProjectsTab'),
+  apps: () => import('@/features/apps/AppsTab'),
+  inspirations: () => import('@/features/inspirations/InspirationsTab'),
+  'art-in-life': () => import('@/features/art-in-life/ArtInLifeTab'),
+};
+
+// Lazy load tabs for better initial load performance.
+const AboutTab = React.lazy(tabImports.about);
+const ProjectsTab = React.lazy(tabImports.projects);
+const AppsTab = React.lazy(tabImports.apps);
+const InspirationsTab = React.lazy(tabImports.inspirations);
+const ArtInLifeTab = React.lazy(tabImports['art-in-life']);
+
+// Route-level preloaders. For Art in Life, also preload the nested gallery chunk
+// during the intro so the JS can download early without mounting the WebGL scene.
+const tabPreloads = {
+  about: tabImports.about,
+  projects: tabImports.projects,
+  apps: tabImports.apps,
+  inspirations: tabImports.inspirations,
+  'art-in-life': () =>
+    Promise.all([
+      tabImports['art-in-life'](),
+      import('@/features/art-in-life/ArtInLifeGallery'),
+    ]),
+};
 
 function App() {
   const location = useLocation();
@@ -54,6 +74,16 @@ function App() {
 
   const activeTab = getActiveTabFromPath(location.pathname);
   const isArtInLifeMode = activeTab === 'art-in-life';
+  const shouldUseArtInLifeLayout = isArtInLifeMode && contentVisible;
+  const shouldMountTabContent = contentVisible;
+  const shouldShowGlobalBackground = !isArtInLifeMode;
+
+  // Start downloading the active tab code as soon as the route is known,
+  // including while the intro video is still playing. This only imports modules;
+  // components are not mounted/run until shouldMountTabContent is true.
+  useEffect(() => {
+    void tabPreloads[activeTab]();
+  }, [activeTab]);
 
   // Dynamically update the document title when route changes
   useEffect(() => {
@@ -110,22 +140,27 @@ function App() {
   }, [introComplete]);
 
   useEffect(() => {
-    document.body.classList.toggle('art-in-life-mode', isArtInLifeMode);
+    document.body.classList.toggle(
+      'art-in-life-mode',
+      shouldUseArtInLifeLayout
+    );
 
     return () => {
       document.body.classList.remove('art-in-life-mode');
     };
-  }, [isArtInLifeMode]);
+  }, [shouldUseArtInLifeLayout]);
 
   return (
     <>
       {/* Background Effects */}
-      {!isArtInLifeMode && <BackgroundEffects introComplete={introComplete} />}
+      {shouldShowGlobalBackground && (
+        <BackgroundEffects introComplete={introComplete} />
+      )}
 
       {/* Main Content */}
       <main
         className={`site-main ${
-          isArtInLifeMode
+          shouldUseArtInLifeLayout
             ? 'site-main--gallery'
             : 'max-w-4xl mx-auto space-y-8 md:space-y-12 pt-8 md:pt-12 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8'
         } ${contentVisible ? 'visible' : ''}`}
@@ -141,7 +176,7 @@ function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className={
-              isArtInLifeMode
+              shouldUseArtInLifeLayout
                 ? 'react-tab-content react-tab-content--gallery'
                 : 'react-tab-content space-y-8'
             }
@@ -153,11 +188,15 @@ function App() {
                 </div>
               }
             >
-              {activeTab === 'about' && <AboutTab />}
-              {activeTab === 'projects' && <ProjectsTab />}
-              {activeTab === 'apps' && <AppsTab />}
-              {activeTab === 'inspirations' && <InspirationsTab />}
-              {activeTab === 'art-in-life' && <ArtInLifeTab />}
+              {shouldMountTabContent && activeTab === 'about' && <AboutTab />}
+              {shouldMountTabContent && activeTab === 'projects' && <ProjectsTab />}
+              {shouldMountTabContent && activeTab === 'apps' && <AppsTab />}
+              {shouldMountTabContent && activeTab === 'inspirations' && (
+                <InspirationsTab />
+              )}
+              {shouldMountTabContent && activeTab === 'art-in-life' && (
+                <ArtInLifeTab />
+              )}
             </Suspense>
           </motion.div>
         </AnimatePresence>
