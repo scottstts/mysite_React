@@ -113,6 +113,8 @@ type EffectComposerInstance =
   import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
 type UnrealBloomPassInstance =
   import('three/examples/jsm/postprocessing/UnrealBloomPass.js').UnrealBloomPass;
+type ShaderPassInstance =
+  import('three/examples/jsm/postprocessing/ShaderPass.js').ShaderPass;
 
 interface NeonMaterialBuckets {
   frontBlue: THREE.MeshStandardMaterial[];
@@ -143,6 +145,7 @@ const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
 const NEON_SIGN_WALL_OFFSET = 0.08;
+const BLOOM_SCENE_LAYER = 1;
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -172,7 +175,7 @@ const GALLERY_LIGHTING = {
   },
   chandelier: {
     color: 0xffc06d,
-    intensity: 50.0,
+    intensity: 70.0,
     distance: 18,
     decay: 1.75,
     yOffset: 1.05,
@@ -325,6 +328,7 @@ const createBakedNeonSign = (
 
     object.castShadow = false;
     object.receiveShadow = false;
+    object.layers.enable(BLOOM_SCENE_LAYER);
     registerNeonGeometry(object.geometry, geometries);
 
     const applyMaterial = (sourceMaterial: THREE.Material) => {
@@ -1527,18 +1531,30 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     webglHost.appendChild(renderer.domElement);
 
     let composer: EffectComposerInstance | null = null;
+    let bloomComposer: EffectComposerInstance | null = null;
     let bloomPass: UnrealBloomPassInstance | null = null;
+    let finalBloomPass: ShaderPassInstance | null = null;
+    let finalBloomMaterial: THREE.ShaderMaterial | null = null;
+    const bloomLayer = new THREE.Layers();
+    bloomLayer.set(BLOOM_SCENE_LAYER);
+    const darkBloomMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const darkenedBloomMaterials = new Map<
+      string,
+      THREE.Material | THREE.Material[]
+    >();
 
     const loadBloomComposer = async () => {
       const [
         { EffectComposer },
         { RenderPass },
         { UnrealBloomPass },
+        { ShaderPass },
         { OutputPass },
       ] = await Promise.all([
         import('three/examples/jsm/postprocessing/EffectComposer.js'),
         import('three/examples/jsm/postprocessing/RenderPass.js'),
         import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+        import('three/examples/jsm/postprocessing/ShaderPass.js'),
         import('three/examples/jsm/postprocessing/OutputPass.js'),
       ]);
 
@@ -1546,22 +1562,55 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       const { width, height } = getRenderSize();
       const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
-      const nextComposer = new EffectComposer(renderer);
-      nextComposer.setPixelRatio(pixelRatio);
-      nextComposer.setSize(width, height);
-      nextComposer.addPass(new RenderPass(scene, camera));
-
+      const nextBloomComposer = new EffectComposer(renderer);
+      nextBloomComposer.renderToScreen = false;
+      nextBloomComposer.setPixelRatio(pixelRatio);
+      nextBloomComposer.setSize(width, height);
+      nextBloomComposer.addPass(new RenderPass(scene, camera));
       const nextBloomPass = new UnrealBloomPass(
         new THREE.Vector2(width, height),
         0.15,
         0.08,
         0.8
       );
-      nextComposer.addPass(nextBloomPass);
+      nextBloomComposer.addPass(nextBloomPass);
+
+      const nextComposer = new EffectComposer(renderer);
+      nextComposer.setPixelRatio(pixelRatio);
+      nextComposer.setSize(width, height);
+      nextComposer.addPass(new RenderPass(scene, camera));
+      finalBloomMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          baseTexture: { value: null },
+          bloomTexture: { value: nextBloomComposer.renderTarget2.texture },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D baseTexture;
+          uniform sampler2D bloomTexture;
+          varying vec2 vUv;
+          void main() {
+            gl_FragColor = texture2D(baseTexture, vUv) + texture2D(bloomTexture, vUv);
+          }
+        `,
+      });
+      const nextFinalBloomPass = new ShaderPass(
+        finalBloomMaterial,
+        'baseTexture'
+      );
+      nextComposer.addPass(nextFinalBloomPass);
       nextComposer.addPass(new OutputPass());
 
       composer = nextComposer;
+      bloomComposer = nextBloomComposer;
       bloomPass = nextBloomPass;
+      finalBloomPass = nextFinalBloomPass;
       requestRenderLoop();
     };
 
@@ -2736,15 +2785,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       })
     );
     const fullChandelier = createReferenceChandelier();
-    fullChandelier.name = CHANDELIER_LOD_NAME;
-    fullChandelier.visible = false;
-    fullChandelier.scale.setScalar(chandelierScale);
-    fullChandelier.traverse((object) => {
-      if (!(object instanceof THREE.Mesh)) return;
-
-      object.visible = Boolean(object.userData.detailCull);
-    });
-    chandelierRoot.add(fullChandelier);
+    const createFullChandelierInstance = (
+      source: THREE.Group,
+      index: number
+    ) => {
+      const chandelier =
+        index === 0 ? source : (source.clone(true) as THREE.Group);
+      chandelier.name = `${CHANDELIER_LOD_NAME}-detail-${index}`;
+      chandelier.visible = false;
+      chandelier.scale.setScalar(chandelierScale);
+      chandelierRoot.add(chandelier);
+      return chandelier;
+    };
+    const fullChandeliers = [
+      createFullChandelierInstance(fullChandelier, 0),
+      createFullChandelierInstance(fullChandelier, 1),
+    ];
     chandelierAnchors.forEach((anchor) => {
       const light = new THREE.PointLight(
         GALLERY_LIGHTING.chandelier.color,
@@ -2810,12 +2866,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const createSimpleChandelierMesh = (
       geometry: THREE.BufferGeometry,
       material: THREE.Material,
-      count: number
+      count: number,
+      bloomOnly = false
     ) => {
       const mesh = new THREE.InstancedMesh(geometry, material, count);
       mesh.frustumCulled = true;
       mesh.castShadow = false;
       mesh.receiveShadow = false;
+      if (bloomOnly) {
+        mesh.layers.enable(BLOOM_SCENE_LAYER);
+        mesh.visible = false;
+      }
       chandelierRoot.add(mesh);
       return mesh;
     };
@@ -2857,8 +2918,57 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         chandelierCount * 6
       ),
     };
+    const bloomSimpleChandeliers = {
+      canopy: createSimpleChandelierMesh(
+        simpleChandelierCanopyGeometry,
+        chandelierDarkGoldMaterial,
+        chandelierCount,
+        true
+      ),
+      stem: createSimpleChandelierMesh(
+        simpleChandelierStemGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount,
+        true
+      ),
+      ring: createSimpleChandelierMesh(
+        simpleChandelierRingGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount,
+        true
+      ),
+      bulbs: createSimpleChandelierMesh(
+        simpleChandelierBulbGeometry,
+        chandelierBulbLitMaterial,
+        chandelierCount * 6,
+        true
+      ),
+      glow: createSimpleChandelierMesh(
+        simpleChandelierGlowGeometry,
+        chandelierSimpleFlameGlowMaterial,
+        chandelierCount * 6,
+        true
+      ),
+      crystals: createSimpleChandelierMesh(
+        simpleChandelierCrystalGeometry,
+        chandelierCrystalLiteMaterial,
+        chandelierCount * 8,
+        true
+      ),
+      arms: createSimpleChandelierMesh(
+        simpleChandelierArmGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount * 6,
+        true
+      ),
+    };
     const simpleChandelierMeshes = Object.values(simpleChandeliers);
-    let simpleChandelierMatricesReady = false;
+    const bloomSimpleChandelierMeshes = Object.values(bloomSimpleChandeliers);
+    const allSimpleChandelierMeshes = [
+      ...simpleChandelierMeshes,
+      ...bloomSimpleChandelierMeshes,
+    ];
+    let simpleChandelierDetailKey = '';
 
     const setSimpleChandelierMatrix = (
       mesh: THREE.InstancedMesh,
@@ -2874,14 +2984,81 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       mesh.setMatrixAt(instanceIndex, simpleChandelierDummy.matrix);
     };
 
-    const populateSimpleChandeliers = () => {
+    const setSimpleChandelierInstance = (
+      mesh: THREE.InstancedMesh,
+      instanceIndex: number,
+      position: THREE.Vector3,
+      rotation: THREE.Euler,
+      scale: THREE.Vector3,
+      visible: boolean
+    ) => {
+      setSimpleChandelierMatrix(
+        mesh,
+        instanceIndex,
+        position,
+        rotation,
+        visible ? scale : PLACEHOLDER_ZERO_SCALE
+      );
+    };
+
+    const setBloomChandelierMeshesVisible = (visible: boolean) => {
+      bloomSimpleChandelierMeshes.forEach((mesh) => {
+        mesh.visible = visible;
+      });
+    };
+
+    const getDetailedChandelierIndexes = (pose: CameraPose) => {
+      let startSideIndex = -1;
+      let startSideDistance = Number.POSITIVE_INFINITY;
+      let endSideIndex = -1;
+      let endSideDistance = Number.POSITIVE_INFINITY;
+
+      chandelierAnchors.forEach((anchor) => {
+        const deltaZ = anchor.position.z - pose.position.z;
+        const distance = Math.abs(deltaZ);
+
+        if (deltaZ >= 0) {
+          if (distance < startSideDistance) {
+            startSideDistance = distance;
+            startSideIndex = anchor.index;
+          }
+        } else if (distance < endSideDistance) {
+          endSideDistance = distance;
+          endSideIndex = anchor.index;
+        }
+      });
+
+      return Array.from(
+        new Set(
+          [startSideIndex, endSideIndex].filter((index) => index >= 0)
+        )
+      ).sort((a, b) => a - b);
+    };
+
+    const updateFullChandeliers = (detailIndexes: number[]) => {
+      fullChandeliers.forEach((chandelier, index) => {
+        const anchor = chandelierAnchors[detailIndexes[index]];
+
+        if (!anchor) {
+          chandelier.visible = false;
+          return;
+        }
+
+        chandelier.visible = true;
+        chandelier.position.copy(anchor.position);
+        chandelier.rotation.y = anchor.rotationY;
+      });
+    };
+
+    const populateSimpleChandeliers = (detailIndexes: Set<number>) => {
       chandelierAnchors.forEach((anchor) => {
         const rootY = anchor.position.y;
         const rootRotation = anchor.rotationY;
         const rootScale = chandelierScale;
         const rootPosition = anchor.position;
+        const showLodInstance = !detailIndexes.has(anchor.index);
 
-        setSimpleChandelierMatrix(
+        setSimpleChandelierInstance(
           simpleChandeliers.canopy,
           anchor.index,
           new THREE.Vector3(
@@ -2890,9 +3067,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             rootPosition.z
           ),
           new THREE.Euler(0, rootRotation, 0),
-          new THREE.Vector3(rootScale, rootScale, rootScale)
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
         );
-        setSimpleChandelierMatrix(
+        setSimpleChandelierInstance(
+          bloomSimpleChandeliers.canopy,
+          anchor.index,
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 3.6 * rootScale,
+            rootPosition.z
+          ),
+          new THREE.Euler(0, rootRotation, 0),
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
+        );
+        setSimpleChandelierInstance(
           simpleChandeliers.stem,
           anchor.index,
           new THREE.Vector3(
@@ -2901,9 +3091,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             rootPosition.z
           ),
           new THREE.Euler(0, rootRotation, 0),
-          new THREE.Vector3(rootScale, rootScale, rootScale)
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
         );
-        setSimpleChandelierMatrix(
+        setSimpleChandelierInstance(
+          bloomSimpleChandeliers.stem,
+          anchor.index,
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 2.28 * rootScale,
+            rootPosition.z
+          ),
+          new THREE.Euler(0, rootRotation, 0),
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
+        );
+        setSimpleChandelierInstance(
           simpleChandeliers.ring,
           anchor.index,
           new THREE.Vector3(
@@ -2912,7 +3115,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             rootPosition.z
           ),
           new THREE.Euler(Math.PI / 2, rootRotation, 0),
-          new THREE.Vector3(rootScale, rootScale, rootScale)
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
+        );
+        setSimpleChandelierInstance(
+          bloomSimpleChandeliers.ring,
+          anchor.index,
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 0.86 * rootScale,
+            rootPosition.z
+          ),
+          new THREE.Euler(Math.PI / 2, rootRotation, 0),
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          showLodInstance
         );
 
         for (let bulbIndex = 0; bulbIndex < 6; bulbIndex++) {
@@ -2926,7 +3142,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             rootPosition.z + Math.sin(angle) * radius
           );
 
-          setSimpleChandelierMatrix(
+          setSimpleChandelierInstance(
             simpleChandeliers.arms,
             instanceIndex,
             new THREE.Vector3(
@@ -2935,86 +3151,106 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
               rootPosition.z + Math.sin(angle) * armMidRadius
             ),
             new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
-            new THREE.Vector3(rootScale, rootScale, rootScale)
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            showLodInstance
           );
-          setSimpleChandelierMatrix(
+          setSimpleChandelierInstance(
+            bloomSimpleChandeliers.arms,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * armMidRadius,
+              rootY + 1.32 * rootScale,
+              rootPosition.z + Math.sin(angle) * armMidRadius
+            ),
+            new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            showLodInstance
+          );
+          setSimpleChandelierInstance(
             simpleChandeliers.bulbs,
             instanceIndex,
             bulbPosition,
             new THREE.Euler(0, rootRotation, 0),
-            new THREE.Vector3(rootScale, rootScale * 1.3, rootScale)
+            new THREE.Vector3(rootScale, rootScale * 1.3, rootScale),
+            showLodInstance
           );
-          setSimpleChandelierMatrix(
+          setSimpleChandelierInstance(
+            bloomSimpleChandeliers.bulbs,
+            instanceIndex,
+            bulbPosition,
+            new THREE.Euler(0, rootRotation, 0),
+            new THREE.Vector3(rootScale, rootScale * 1.3, rootScale),
+            showLodInstance
+          );
+          setSimpleChandelierInstance(
             simpleChandeliers.glow,
             instanceIndex,
             bulbPosition,
             new THREE.Euler(0, rootRotation, 0),
-            new THREE.Vector3(rootScale, rootScale * 1.45, rootScale)
+            new THREE.Vector3(rootScale, rootScale * 1.45, rootScale),
+            showLodInstance
+          );
+          setSimpleChandelierInstance(
+            bloomSimpleChandeliers.glow,
+            instanceIndex,
+            bulbPosition,
+            new THREE.Euler(0, rootRotation, 0),
+            new THREE.Vector3(rootScale, rootScale * 1.45, rootScale),
+            showLodInstance
           );
         }
 
         for (let crystalIndex = 0; crystalIndex < 8; crystalIndex++) {
           const angle = rootRotation + (crystalIndex / 8) * Math.PI * 2;
           const radius = (crystalIndex % 2 === 0 ? 0.72 : 0.52) * rootScale;
-          setSimpleChandelierMatrix(
+          const instanceIndex = anchor.index * 8 + crystalIndex;
+          const crystalPosition = new THREE.Vector3(
+            rootPosition.x + Math.cos(angle) * radius,
+            rootY + (0.26 - (crystalIndex % 3) * 0.08) * rootScale,
+            rootPosition.z + Math.sin(angle) * radius
+          );
+          const crystalRotation = new THREE.Euler(0.25, -angle, 0.1);
+          const crystalScale = new THREE.Vector3(
+            rootScale,
+            rootScale * 1.35,
+            rootScale
+          );
+
+          setSimpleChandelierInstance(
             simpleChandeliers.crystals,
-            anchor.index * 8 + crystalIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + (0.26 - (crystalIndex % 3) * 0.08) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            new THREE.Euler(0.25, -angle, 0.1),
-            new THREE.Vector3(rootScale, rootScale * 1.35, rootScale)
+            instanceIndex,
+            crystalPosition,
+            crystalRotation,
+            crystalScale,
+            showLodInstance
+          );
+          setSimpleChandelierInstance(
+            bloomSimpleChandeliers.crystals,
+            instanceIndex,
+            crystalPosition,
+            crystalRotation,
+            crystalScale,
+            showLodInstance
           );
         }
       });
 
-      simpleChandelierMeshes.forEach((mesh) => {
+      allSimpleChandelierMeshes.forEach((mesh) => {
         mesh.instanceMatrix.needsUpdate = true;
         mesh.computeBoundingSphere();
       });
-      simpleChandelierMatricesReady = true;
-    };
-
-    const setDetailedChandelierOpacity = (opacityFactor: number) => {
-      chandelierCrystalMaterial.opacity = 0.58 * opacityFactor;
-      chandelierWarmGlassMaterial.opacity = 0.55 * opacityFactor;
-      chandelierFlameGlowMaterial.opacity = 0.55 * opacityFactor;
     };
 
     const updateChandelierLod = (pose: CameraPose) => {
-      if (!simpleChandelierMatricesReady) {
-        populateSimpleChandeliers();
-      }
+      if (cameraTransition && simpleChandelierDetailKey !== '') return;
 
-      let nearestIndex = 0;
-      let nearestDistance = Number.POSITIVE_INFINITY;
+      const detailIndexes = getDetailedChandelierIndexes(pose);
+      const detailKey = detailIndexes.join(',');
+      if (detailKey === simpleChandelierDetailKey) return;
 
-      chandelierAnchors.forEach((anchor) => {
-        const distance = Math.abs(anchor.position.z - pose.position.z);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = anchor.index;
-        }
-      });
-
-      const nearestAnchor = chandelierAnchors[nearestIndex];
-      const detailOpacity =
-        1 -
-        smoothstep(
-          chandelierStep * 0.24,
-          chandelierStep * 0.44,
-          nearestDistance
-        );
-
-      fullChandelier.visible = detailOpacity > 0.015;
-      setDetailedChandelierOpacity(detailOpacity);
-
-      if (fullChandelier.visible) {
-        fullChandelier.position.copy(nearestAnchor.position);
-        fullChandelier.rotation.y = nearestAnchor.rotationY;
-      }
+      simpleChandelierDetailKey = detailKey;
+      updateFullChandeliers(detailIndexes);
+      populateSimpleChandeliers(new Set(detailIndexes));
     };
 
     const getGroupSide = (groupIndex: number): GalleryWallSide =>
@@ -3675,6 +3911,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         composer.setPixelRatio(pixelRatio);
         composer.setSize(width, height);
       }
+      if (bloomComposer) {
+        bloomComposer.setPixelRatio(pixelRatio);
+        bloomComposer.setSize(width, height);
+      }
       bloomPass?.resolution.set(width, height);
       cssRenderer.setSize(width, height);
       renderer.domElement.style.width = `${width}px`;
@@ -3781,8 +4021,35 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
     };
 
+    const darkenNonBloomed = (object: THREE.Object3D) => {
+      if (
+        object instanceof THREE.Mesh &&
+        !bloomLayer.test(object.layers) &&
+        object.material !== darkBloomMaterial
+      ) {
+        darkenedBloomMaterials.set(object.uuid, object.material);
+        object.material = darkBloomMaterial;
+      }
+    };
+
+    const restoreBloomMaterial = (object: THREE.Object3D) => {
+      const material = darkenedBloomMaterials.get(object.uuid);
+      if (!material || !(object instanceof THREE.Mesh)) return;
+
+      object.material = material;
+      darkenedBloomMaterials.delete(object.uuid);
+    };
+
     const renderScene = () => {
-      if (composer) {
+      if (composer && bloomComposer) {
+        setBloomChandelierMeshesVisible(true);
+        scene.traverse(darkenNonBloomed);
+        try {
+          bloomComposer.render();
+        } finally {
+          scene.traverse(restoreBloomMaterial);
+          setBloomChandelierMeshesVisible(false);
+        }
         composer.render();
       } else {
         renderer.render(scene, camera);
@@ -4076,6 +4343,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       materials.forEach(disposeMaterial);
       neonMaterials.forEach(disposeMaterial);
       bloomPass?.dispose();
+      finalBloomPass?.dispose();
+      finalBloomMaterial?.dispose();
+      darkBloomMaterial.dispose();
+      bloomComposer?.dispose();
       composer?.dispose();
       renderer.dispose();
       webglHost.remove();
