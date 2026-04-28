@@ -4,6 +4,7 @@ import {
   CSS3DObject,
   CSS3DRenderer,
 } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import { createInstagramEmbedHtml } from './artInLife.data';
 import styles from './ArtInLifeTab.module.css';
 import walnutFrameTextureUrl from '@/assets/textures/aged-walnut-frame.webp';
@@ -105,8 +106,8 @@ interface CameraTransition {
 }
 
 interface NeonLightRig {
-  blue: THREE.PointLight[];
-  pink: THREE.PointLight[];
+  blue: THREE.RectAreaLight[];
+  pink: THREE.RectAreaLight[];
 }
 
 type EffectComposerInstance =
@@ -183,10 +184,17 @@ const GALLERY_LIGHTING = {
   neon: {
     blueColor: 0x27c8ff,
     pinkColor: 0xff1788,
-    blueIntensity: 2.2,
-    pinkIntensity: 2.8,
-    distance: 10.5,
-    decay: 1.85,
+    // These RectAreaLights are intentionally much larger, weaker, and placed
+    // almost directly behind the neon mesh. Matching the sign bounds made the
+    // wall reveal two hard glowing rectangles; oversized overlapping emitters
+    // turn that into a broad color wash instead.
+    blueIntensity: 0.18,
+    pinkIntensity: 0.22,
+    areaLightZ: NEON_SIGN_WALL_OFFSET * 0.92,
+    blueAreaWidth: 23.5,
+    blueAreaHeight: 5.1,
+    pinkAreaWidth: 23.5,
+    pinkAreaHeight: 5.1,
   },
   plaqueGlint: {
     color: 0xffd391,
@@ -1529,6 +1537,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.domElement.style.height = `${initialRenderSize.height}px`;
     renderer.domElement.style.pointerEvents = 'none';
     webglHost.appendChild(renderer.domElement);
+    RectAreaLightUniformsLib.init();
 
     let composer: EffectComposerInstance | null = null;
     let bloomComposer: EffectComposerInstance | null = null;
@@ -2111,22 +2120,34 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     startBaseboardCap.receiveShadow = true;
     scene.add(startBaseboardCap);
 
-    const createNeonLight = (
+    const createNeonAreaLight = (
       color: number,
       intensity: number,
-      position: [number, number, number]
+      width: number,
+      height: number,
+      position: [number, number, number],
+      roomFacing: boolean
     ) => {
-      const light = new THREE.PointLight(
-        color,
-        intensity,
-        GALLERY_LIGHTING.neon.distance,
-        GALLERY_LIGHTING.neon.decay
-      );
+      const light = new THREE.RectAreaLight(color, intensity, width, height);
       light.position.set(...position);
+      if (roomFacing) {
+        light.rotation.y = Math.PI;
+      }
       light.userData.baseIntensity = intensity;
       light.castShadow = false;
       return light;
     };
+
+    const createDoubleSidedNeonAreaLights = (
+      color: number,
+      intensity: number,
+      width: number,
+      height: number,
+      position: [number, number, number]
+    ) => [
+      createNeonAreaLight(color, intensity, width, height, position, false),
+      createNeonAreaLight(color, intensity, width, height, position, true),
+    ];
 
     const createWallNeonSign = (
       neonSignTemplate: THREE.Object3D,
@@ -2146,31 +2167,21 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       sign.position.z += NEON_SIGN_WALL_OFFSET;
       anchor.add(sign);
 
-      const lightZ = NEON_SIGN_WALL_OFFSET + 0.42;
-      const blueLights = [
-        createNeonLight(
-          GALLERY_LIGHTING.neon.blueColor,
-          GALLERY_LIGHTING.neon.blueIntensity,
-          [-2.1, 1.5, lightZ]
-        ),
-        createNeonLight(
-          GALLERY_LIGHTING.neon.blueColor,
-          GALLERY_LIGHTING.neon.blueIntensity * 0.58,
-          [-0.7, 0.5, lightZ + 0.18]
-        ),
-      ];
-      const pinkLights = [
-        createNeonLight(
-          GALLERY_LIGHTING.neon.pinkColor,
-          GALLERY_LIGHTING.neon.pinkIntensity,
-          [1.35, 0.08, lightZ]
-        ),
-        createNeonLight(
-          GALLERY_LIGHTING.neon.pinkColor,
-          GALLERY_LIGHTING.neon.pinkIntensity * 0.64,
-          [2.38, -0.34, lightZ + 0.18]
-        ),
-      ];
+      const areaLightZ = GALLERY_LIGHTING.neon.areaLightZ;
+      const blueLights = createDoubleSidedNeonAreaLights(
+        GALLERY_LIGHTING.neon.blueColor,
+        GALLERY_LIGHTING.neon.blueIntensity,
+        GALLERY_LIGHTING.neon.blueAreaWidth,
+        GALLERY_LIGHTING.neon.blueAreaHeight,
+        [0, 1.28, areaLightZ]
+      );
+      const pinkLights = createDoubleSidedNeonAreaLights(
+        GALLERY_LIGHTING.neon.pinkColor,
+        GALLERY_LIGHTING.neon.pinkIntensity,
+        GALLERY_LIGHTING.neon.pinkAreaWidth,
+        GALLERY_LIGHTING.neon.pinkAreaHeight,
+        [0.25, -0.62, areaLightZ]
+      );
       anchor.add(...blueLights, ...pinkLights);
       neonLightRigs.push({ blue: blueLights, pink: pinkLights });
       scene.add(anchor);
@@ -3995,7 +4006,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       neonLightRigs.forEach((rig, rigIndex) => {
         rig.blue.forEach((light, lightIndex) => {
           const shimmer =
-            0.94 + 0.06 * Math.sin(timeSeconds * 5.2 + rigIndex + lightIndex);
+            0.94 +
+            0.06 * Math.sin(timeSeconds * 5.2 + rigIndex + lightIndex * 0.15);
           const baseIntensity =
             typeof light.userData.baseIntensity === 'number'
               ? light.userData.baseIntensity
@@ -4005,7 +4017,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         rig.pink.forEach((light, lightIndex) => {
           const shimmer =
             0.94 +
-            0.06 * Math.sin(timeSeconds * 5.8 + rigIndex + lightIndex * 0.7);
+            0.06 * Math.sin(timeSeconds * 5.8 + rigIndex + lightIndex * 0.15);
           const baseIntensity =
             typeof light.userData.baseIntensity === 'number'
               ? light.userData.baseIntensity
