@@ -1157,9 +1157,27 @@ const disposeMaterial = (material: THREE.Material | THREE.Material[]) => {
   materials.forEach((entry) => entry.dispose());
 };
 
+const configureGallerySpotlightShadow = (
+  spotlight: THREE.SpotLight,
+  isMobile: boolean
+) => {
+  spotlight.castShadow = true;
+  spotlight.shadow.mapSize.set(
+    isMobile ? 2048 : 4096,
+    isMobile ? 2048 : 4096
+  );
+  spotlight.shadow.camera.near = 1.6;
+  spotlight.shadow.camera.far = 18;
+  spotlight.shadow.bias = -0.00004;
+  spotlight.shadow.normalBias = 0.035;
+  spotlight.shadow.radius = isMobile ? 3 : 4;
+  spotlight.shadow.blurSamples = isMobile ? 8 : 12;
+};
+
 const createFrameGroup = ({
   index,
   x,
+  isMobile,
   layout,
   materials,
   unitBox,
@@ -1167,6 +1185,7 @@ const createFrameGroup = ({
 }: {
   index: number;
   x: number;
+  isMobile: boolean;
   layout: GalleryLayout;
   materials: {
     frame: THREE.Material[];
@@ -1288,7 +1307,7 @@ const createFrameGroup = ({
     GALLERY_LIGHTING.paintingSpot.targetY,
     GALLERY_LIGHTING.paintingSpot.targetZ
   );
-  spotlight.castShadow = false;
+  configureGallerySpotlightShadow(spotlight, isMobile);
   group.add(spotlight, spotlight.target);
 
   return group;
@@ -3106,7 +3125,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         layout.frameY - 0.1,
         groupZ
       );
-      light.castShadow = false;
+      configureGallerySpotlightShadow(light, isMobile);
       light.visible = false;
       scene.add(light, light.target);
       light.target.updateMatrixWorld();
@@ -3503,6 +3522,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const group = createFrameGroup({
         index,
         x: 0,
+        isMobile,
         layout,
         materials: {
           frame: [walnutMaterial, goldMaterial, ebonyMaterial],
@@ -3540,6 +3560,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const disposeFrameRecord = (record: FrameRecord) => {
       record.group.traverse((object) => {
+        if (object instanceof THREE.SpotLight) {
+          object.shadow.dispose();
+          return;
+        }
+
         if (!(object instanceof THREE.Mesh)) return;
         if (object.geometry === unitBox) return;
         if (object.geometry === unitPlane) return;
