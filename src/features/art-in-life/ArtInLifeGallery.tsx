@@ -1587,10 +1587,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     chandelierBloomLayer.set(CHANDELIER_BLOOM_SCENE_LAYER);
     let activeBloomLayer = bloomLayer;
     const darkBloomMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const darkenedBloomMaterials = new Map<
-      string,
-      THREE.Material | THREE.Material[]
-    >();
+    const darkenedBloomMeshes: Array<{
+      mesh: THREE.Mesh;
+      material: THREE.Material | THREE.Material[];
+    }> = [];
 
     const loadBloomComposer = async () => {
       const [
@@ -4220,44 +4220,48 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
     };
 
-    const darkenNonBloomed = (object: THREE.Object3D) => {
+    const darkenVisibleNonBloomed = (object: THREE.Object3D) => {
       if (
         object instanceof THREE.Mesh &&
         !activeBloomLayer.test(object.layers) &&
         object.material !== darkBloomMaterial
       ) {
-        darkenedBloomMaterials.set(object.uuid, object.material);
+        darkenedBloomMeshes.push({
+          mesh: object,
+          material: object.material,
+        });
         object.material = darkBloomMaterial;
       }
     };
 
-    const restoreBloomMaterial = (object: THREE.Object3D) => {
-      const material = darkenedBloomMaterials.get(object.uuid);
-      if (!material || !(object instanceof THREE.Mesh)) return;
+    const restoreDarkenedBloomMeshes = () => {
+      for (let index = 0; index < darkenedBloomMeshes.length; index++) {
+        const { mesh, material } = darkenedBloomMeshes[index];
+        mesh.material = material;
+      }
 
-      object.material = material;
-      darkenedBloomMaterials.delete(object.uuid);
+      darkenedBloomMeshes.length = 0;
     };
 
     const renderScene = (renderCss = false) => {
       if (composer && bloomComposer && chandelierBloomComposer) {
         setBloomChandelierMeshesVisible(false);
         activeBloomLayer = bloomLayer;
-        scene.traverse(darkenNonBloomed);
+        scene.traverseVisible(darkenVisibleNonBloomed);
         try {
           bloomComposer.render();
         } finally {
-          scene.traverse(restoreBloomMaterial);
+          restoreDarkenedBloomMeshes();
         }
 
         setBloomChandelierMeshesVisible(true);
         setBaseSimpleChandelierMeshesVisible(false);
         activeBloomLayer = chandelierBloomLayer;
-        scene.traverse(darkenNonBloomed);
+        scene.traverseVisible(darkenVisibleNonBloomed);
         try {
           chandelierBloomComposer.render();
         } finally {
-          scene.traverse(restoreBloomMaterial);
+          restoreDarkenedBloomMeshes();
           setBloomChandelierMeshesVisible(false);
           setBaseSimpleChandelierMeshesVisible(true);
           activeBloomLayer = bloomLayer;
