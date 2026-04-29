@@ -1751,10 +1751,18 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       y: Math.max(1, hallLength / 11),
     };
     const estimatedHallwayMeters = isMobile ? 3.6 : isTablet ? 4.2 : 4.6;
-    const floorTileWorldSize = layout.hallwayWidth / estimatedHallwayMeters;
+    const sceneUnitsPerMeter = layout.hallwayWidth / estimatedHallwayMeters;
+    const floorDrawWidth = layout.hallwayWidth + ceilingWallOverlap * 2;
+    const carpetTextureSizeMeters = 2;
     const floorTextureRepeat = {
-      x: estimatedHallwayMeters,
-      y: Math.max(1, hallLength / floorTileWorldSize),
+      x: Math.max(
+        1,
+        floorDrawWidth / sceneUnitsPerMeter / carpetTextureSizeMeters
+      ),
+      y: Math.max(
+        1,
+        hallLength / sceneUnitsPerMeter / carpetTextureSizeMeters
+      ),
     };
     const sideWallTexture = loadTexture(
       plasterTextureUrl,
@@ -1839,9 +1847,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const floorMaterial = new THREE.MeshStandardMaterial({
       map: floorTexture,
       bumpMap: floorTexture,
-      bumpScale: 0.005,
-      color: 0xf3ddbf,
-      roughness: 0.68,
+      bumpScale: 0.003,
+      color: 0xffffff,
+      roughness: 0.92,
       metalness: 0,
     });
     const walnutMaterial = new THREE.MeshPhysicalMaterial({
@@ -2119,7 +2127,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     scene.add(startWall);
 
     const floorGeometry = new THREE.PlaneGeometry(
-      layout.hallwayWidth + ceilingWallOverlap * 2,
+      floorDrawWidth,
       hallLength,
       28,
       floorSegments
