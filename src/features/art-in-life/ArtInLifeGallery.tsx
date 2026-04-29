@@ -47,6 +47,7 @@ interface FrameRecord {
   group: THREE.Group;
   cssObject: CSS3DObject;
   element: HTMLElement;
+  paintingSpotlight: THREE.SpotLight;
   embedMounted: boolean;
   embedRequested: boolean;
   lastTouched: number;
@@ -80,6 +81,14 @@ interface ScheduledWork {
 }
 
 type GalleryWallSide = 'left' | 'right';
+type FrameRailOrientation = 'top' | 'bottom' | 'left' | 'right';
+
+type FrameRailGeometries = Record<FrameRailOrientation, THREE.BufferGeometry>;
+
+interface FrameGroupResult {
+  group: THREE.Group;
+  paintingSpotlight: THREE.SpotLight;
+}
 
 interface FramePlacement {
   groupIndex: number;
@@ -146,7 +155,23 @@ const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
 const NEON_SIGN_WALL_OFFSET = 0.08;
-const BLOOM_SCENE_LAYER = 1;
+const NEON_BLOOM_SCENE_LAYER = 1;
+const CHANDELIER_BLOOM_SCENE_LAYER = 2;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const NEON_BLOOM_SETTINGS = {
+  strengthBase: 0.31,
+  strengthGlow: 0.04,
+  radiusBase: 0.26,
+  radiusGlow: 0.02,
+  threshold: 0.3,
+};
+const CHANDELIER_BLOOM_SETTINGS = {
+  strength: 0.78,
+  radius: 0.48,
+  threshold: 0.16,
+  glowOpacity: 0.82,
+  glowScale: 1.6,
+};
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -336,7 +361,7 @@ const createBakedNeonSign = (
 
     object.castShadow = false;
     object.receiveShadow = false;
-    object.layers.enable(BLOOM_SCENE_LAYER);
+    object.layers.enable(NEON_BLOOM_SCENE_LAYER);
     registerNeonGeometry(object.geometry, geometries);
 
     const applyMaterial = (sourceMaterial: THREE.Material) => {
@@ -955,7 +980,7 @@ const buildFrameProfile = (railWidth: number, samples = 92) =>
   });
 
 const getRailPoint = (
-  orientation: 'top' | 'bottom' | 'left' | 'right',
+  orientation: FrameRailOrientation,
   dimensions: {
     outerWidth: number;
     outerHeight: number;
@@ -1014,7 +1039,7 @@ const getRailPoint = (
 };
 
 const createSculptedRailGeometry = (
-  orientation: 'top' | 'bottom' | 'left' | 'right',
+  orientation: FrameRailOrientation,
   dimensions: {
     outerWidth: number;
     outerHeight: number;
@@ -1174,10 +1199,7 @@ const configureGallerySpotlightShadow = (
   isMobile: boolean
 ) => {
   spotlight.castShadow = true;
-  spotlight.shadow.mapSize.set(
-    isMobile ? 2048 : 4096,
-    isMobile ? 2048 : 4096
-  );
+  spotlight.shadow.mapSize.set(isMobile ? 2048 : 4096, isMobile ? 2048 : 4096);
   spotlight.shadow.camera.near = 1.6;
   spotlight.shadow.camera.far = 18;
   spotlight.shadow.bias = -0.00004;
@@ -1192,6 +1214,7 @@ const createFrameGroup = ({
   isMobile,
   layout,
   materials,
+  railGeometries,
   unitBox,
   unitPlane,
 }: {
@@ -1206,9 +1229,10 @@ const createFrameGroup = ({
     plaque: THREE.Material;
     plaqueText: THREE.Material;
   };
+  railGeometries: FrameRailGeometries;
   unitBox: THREE.BoxGeometry;
   unitPlane: THREE.PlaneGeometry;
-}): THREE.Group => {
+}): FrameGroupResult => {
   const group = new THREE.Group();
   const frameMaterial = materials.frame[index % materials.frame.length];
   const halfOuterHeight = layout.frameOuterHeight / 2;
@@ -1268,20 +1292,9 @@ const createFrameGroup = ({
   plaqueText.receiveShadow = false;
   group.add(plaqueText);
 
-  const frameDimensions = {
-    outerWidth: layout.frameOuterWidth,
-    outerHeight: layout.frameOuterHeight,
-    innerWidth: frameMetrics.innerWidth,
-    innerHeight: frameMetrics.innerHeight,
-    railWidthX: frameMetrics.railWidthX,
-    railWidthY: frameMetrics.railWidthY,
-    profileRailWidth: frameMetrics.profileRailWidth,
-    frameDepth: layout.frameDepth,
-  };
-
   (['top', 'bottom', 'left', 'right'] as const).forEach((orientation) => {
     const frameRail = new THREE.Mesh(
-      createSculptedRailGeometry(orientation, frameDimensions),
+      railGeometries[orientation],
       frameMaterial
     );
     frameRail.name = `sculpted-${orientation}-frame-rail`;
@@ -1322,7 +1335,7 @@ const createFrameGroup = ({
   configureGallerySpotlightShadow(spotlight, isMobile);
   group.add(spotlight, spotlight.target);
 
-  return group;
+  return { group, paintingSpotlight: spotlight };
 };
 
 const LazyFallbackEmbed = ({ url, index }: { url: string; index: number }) => {
@@ -1481,6 +1494,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const loadedTextures: THREE.Texture[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
     const unitPlane = new THREE.PlaneGeometry(1, 1);
+    const sharedFrameMetrics = getFrameMetrics(layout);
+    const sharedFrameDimensions = {
+      outerWidth: layout.frameOuterWidth,
+      outerHeight: layout.frameOuterHeight,
+      innerWidth: sharedFrameMetrics.innerWidth,
+      innerHeight: sharedFrameMetrics.innerHeight,
+      railWidthX: sharedFrameMetrics.railWidthX,
+      railWidthY: sharedFrameMetrics.railWidthY,
+      profileRailWidth: sharedFrameMetrics.profileRailWidth,
+      frameDepth: layout.frameDepth,
+    };
+    const sharedFrameRailGeometries: FrameRailGeometries = {
+      top: createSculptedRailGeometry('top', sharedFrameDimensions),
+      bottom: createSculptedRailGeometry('bottom', sharedFrameDimensions),
+      left: createSculptedRailGeometry('left', sharedFrameDimensions),
+      right: createSculptedRailGeometry('right', sharedFrameDimensions),
+    };
+    const sharedFrameRailGeometrySet = new Set(
+      Object.values(sharedFrameRailGeometries)
+    );
     const webglHost = document.createElement('div');
     webglHost.className = sceneClassNames.webglLayer;
     const cssHost = document.createElement('div');
@@ -1518,7 +1551,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true,
+      alpha: false,
       powerPreference: 'high-performance',
     });
     const initialPixelRatio = Math.min(
@@ -1532,6 +1565,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     renderer.toneMappingExposure = GALLERY_LIGHTING.exposure;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.VSMShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.width = `${initialRenderSize.width}px`;
     renderer.domElement.style.height = `${initialRenderSize.height}px`;
@@ -1541,11 +1576,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     let composer: EffectComposerInstance | null = null;
     let bloomComposer: EffectComposerInstance | null = null;
+    let chandelierBloomComposer: EffectComposerInstance | null = null;
     let bloomPass: UnrealBloomPassInstance | null = null;
+    let chandelierBloomPass: UnrealBloomPassInstance | null = null;
     let finalBloomPass: ShaderPassInstance | null = null;
     let finalBloomMaterial: THREE.ShaderMaterial | null = null;
     const bloomLayer = new THREE.Layers();
-    bloomLayer.set(BLOOM_SCENE_LAYER);
+    bloomLayer.set(NEON_BLOOM_SCENE_LAYER);
+    const chandelierBloomLayer = new THREE.Layers();
+    chandelierBloomLayer.set(CHANDELIER_BLOOM_SCENE_LAYER);
+    let activeBloomLayer = bloomLayer;
     const darkBloomMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const darkenedBloomMaterials = new Map<
       string,
@@ -1578,11 +1618,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       nextBloomComposer.addPass(new RenderPass(scene, camera));
       const nextBloomPass = new UnrealBloomPass(
         new THREE.Vector2(width, height),
-        0.15,
-        0.08,
-        0.8
+        NEON_BLOOM_SETTINGS.strengthBase + NEON_BLOOM_SETTINGS.strengthGlow,
+        NEON_BLOOM_SETTINGS.radiusBase + NEON_BLOOM_SETTINGS.radiusGlow,
+        NEON_BLOOM_SETTINGS.threshold
       );
       nextBloomComposer.addPass(nextBloomPass);
+
+      const nextChandelierBloomComposer = new EffectComposer(renderer);
+      nextChandelierBloomComposer.renderToScreen = false;
+      nextChandelierBloomComposer.setPixelRatio(pixelRatio);
+      nextChandelierBloomComposer.setSize(width, height);
+      nextChandelierBloomComposer.addPass(new RenderPass(scene, camera));
+      const nextChandelierBloomPass = new UnrealBloomPass(
+        new THREE.Vector2(width, height),
+        CHANDELIER_BLOOM_SETTINGS.strength,
+        CHANDELIER_BLOOM_SETTINGS.radius,
+        CHANDELIER_BLOOM_SETTINGS.threshold
+      );
+      nextChandelierBloomComposer.addPass(nextChandelierBloomPass);
 
       const nextComposer = new EffectComposer(renderer);
       nextComposer.setPixelRatio(pixelRatio);
@@ -1592,6 +1645,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         uniforms: {
           baseTexture: { value: null },
           bloomTexture: { value: nextBloomComposer.renderTarget2.texture },
+          chandelierBloomTexture: {
+            value: nextChandelierBloomComposer.renderTarget2.texture,
+          },
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1603,9 +1659,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         fragmentShader: `
           uniform sampler2D baseTexture;
           uniform sampler2D bloomTexture;
+          uniform sampler2D chandelierBloomTexture;
           varying vec2 vUv;
           void main() {
-            gl_FragColor = texture2D(baseTexture, vUv) + texture2D(bloomTexture, vUv);
+            gl_FragColor =
+              texture2D(baseTexture, vUv) +
+              texture2D(bloomTexture, vUv) +
+              texture2D(chandelierBloomTexture, vUv);
           }
         `,
       });
@@ -1618,7 +1678,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       composer = nextComposer;
       bloomComposer = nextBloomComposer;
+      chandelierBloomComposer = nextChandelierBloomComposer;
       bloomPass = nextBloomPass;
+      chandelierBloomPass = nextChandelierBloomPass;
       finalBloomPass = nextFinalBloomPass;
       requestRenderLoop();
     };
@@ -1636,13 +1698,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     cssRenderer.domElement.style.pointerEvents = 'none';
     cssHost.appendChild(cssRenderer.domElement);
 
+    let cssNeedsRender = true;
+    let cameraNeedsCssRender = true;
+    const invalidateShadows = () => {
+      renderer.shadowMap.needsUpdate = true;
+    };
+    const invalidateCssRender = () => {
+      cssNeedsRender = true;
+    };
+
     const textureAnisotropy = Math.min(
       renderer.capabilities.getMaxAnisotropy(),
       8
     );
     const loadTexture = (url: string, repeatX: number, repeatY: number) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) renderer.render(scene, camera);
+        if (isMounted) requestRenderLoop();
       });
       configureTexture(texture, repeatX, repeatY, textureAnisotropy);
       loadedTextures.push(texture);
@@ -1651,7 +1722,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const loadSingleSurfaceTexture = (url: string) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) renderer.render(scene, camera);
+        if (isMounted) requestRenderLoop();
       });
       configureSingleSurfaceTexture(texture, textureAnisotropy);
       loadedTextures.push(texture);
@@ -1660,7 +1731,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const loadBumpTexture = (url: string, repeatX: number, repeatY: number) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) renderer.render(scene, camera);
+        if (isMounted) requestRenderLoop();
       });
       configureTexture(texture, repeatX, repeatY, textureAnisotropy, false);
       loadedTextures.push(texture);
@@ -1924,6 +1995,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       blending: THREE.AdditiveBlending,
       toneMapped: false,
     });
+    const chandelierBloomGlowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffc36f,
+      transparent: true,
+      opacity: CHANDELIER_BLOOM_SETTINGS.glowOpacity,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
     const plaqueMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xb9822d,
       roughness: 0.34,
@@ -1965,6 +2044,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       chandelierFilamentMaterial,
       chandelierFlameGlowMaterial,
       chandelierSimpleFlameGlowMaterial,
+      chandelierBloomGlowMaterial,
       plaqueMaterial,
       plaqueTextMaterial,
     ];
@@ -2885,7 +2965,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       mesh.castShadow = false;
       mesh.receiveShadow = false;
       if (bloomOnly) {
-        mesh.layers.enable(BLOOM_SCENE_LAYER);
+        mesh.layers.enable(CHANDELIER_BLOOM_SCENE_LAYER);
         mesh.visible = false;
       }
       chandelierRoot.add(mesh);
@@ -2956,7 +3036,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       ),
       glow: createSimpleChandelierMesh(
         simpleChandelierGlowGeometry,
-        chandelierSimpleFlameGlowMaterial,
+        chandelierBloomGlowMaterial,
         chandelierCount * 6,
         true
       ),
@@ -3017,6 +3097,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         mesh.visible = visible;
       });
     };
+    const setBaseSimpleChandelierMeshesVisible = (visible: boolean) => {
+      simpleChandelierMeshes.forEach((mesh) => {
+        mesh.visible = visible;
+      });
+    };
 
     const getDetailedChandelierIndexes = (pose: CameraPose) => {
       let startSideIndex = -1;
@@ -3040,9 +3125,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       });
 
       return Array.from(
-        new Set(
-          [startSideIndex, endSideIndex].filter((index) => index >= 0)
-        )
+        new Set([startSideIndex, endSideIndex].filter((index) => index >= 0))
       ).sort((a, b) => a - b);
     };
 
@@ -3206,7 +3289,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             instanceIndex,
             bulbPosition,
             new THREE.Euler(0, rootRotation, 0),
-            new THREE.Vector3(rootScale, rootScale * 1.45, rootScale),
+            new THREE.Vector3(
+              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale,
+              rootScale * 1.45 * CHANDELIER_BLOOM_SETTINGS.glowScale,
+              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale
+            ),
             showLodInstance
           );
         }
@@ -3262,6 +3349,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       simpleChandelierDetailKey = detailKey;
       updateFullChandeliers(detailIndexes);
       populateSimpleChandeliers(new Set(detailIndexes));
+      invalidateShadows();
     };
 
     const getGroupSide = (groupIndex: number): GalleryWallSide =>
@@ -3302,25 +3390,31 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       };
     };
 
+    const createCameraPose = (): CameraPose => ({
+      position: new THREE.Vector3(),
+      target: new THREE.Vector3(),
+    });
+
     const getCameraPose = (
       groupIndex: number,
       horizontalLookOffset = 0,
-      verticalLookOffset = 0
+      verticalLookOffset = 0,
+      targetPose = createCameraPose()
     ): CameraPose => {
       const side = getGroupSide(groupIndex);
       const groupZ = getGroupZ(groupIndex);
       const wallInset = 0.16;
 
-      return {
-        position: new THREE.Vector3(0, layout.cameraY, groupZ),
-        target: new THREE.Vector3(
-          side === 'left'
-            ? -halfHallWidth + wallInset
-            : halfHallWidth - wallInset,
-          layout.frameY - 0.02 + verticalLookOffset,
-          groupZ + horizontalLookOffset
-        ),
-      };
+      targetPose.position.set(0, layout.cameraY, groupZ);
+      targetPose.target.set(
+        side === 'left'
+          ? -halfHallWidth + wallInset
+          : halfHallWidth - wallInset,
+        layout.frameY - 0.02 + verticalLookOffset,
+        groupZ + horizontalLookOffset
+      );
+
+      return targetPose;
     };
 
     const applyCameraPose = (pose: CameraPose) => {
@@ -3328,22 +3422,34 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       camera.lookAt(pose.target);
     };
 
+    const transformPointScratch = new THREE.Vector3();
     const transformLocalPoint = (
       placement: FramePlacement,
       x: number,
       y: number,
-      z: number
+      z: number,
+      target = transformPointScratch
     ) => {
-      const localPoint = new THREE.Vector3(x, y, z);
-      localPoint.applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        placement.rotationY
+      target.set(x, y, z);
+      target.applyAxisAngle(Y_AXIS, placement.rotationY);
+      return target.set(
+        placement.x + target.x,
+        placement.y + target.y,
+        placement.z + target.z
       );
-      return localPoint.set(
-        placement.x + localPoint.x,
-        placement.y + localPoint.y,
-        placement.z + localPoint.z
-      );
+    };
+    const renderPose = createCameraPose();
+    const transitionFromPose = createCameraPose();
+    const transitionToPose = createCameraPose();
+    const transitionResultPose = createCameraPose();
+    const transitionFromDirection = new THREE.Vector3();
+    const transitionToDirection = new THREE.Vector3();
+    const transitionHallwayDirection = new THREE.Vector3();
+    const transitionDirection = new THREE.Vector3();
+    const transitionPoseResult = {
+      pose: transitionResultPose,
+      cameraProgress: 0,
+      elapsed: 0,
     };
 
     const createGroupCeilingSpotlight = (groupIndex: number) => {
@@ -3389,6 +3495,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const neededGroups = new Set(
         groupIndexes.map((groupIndex) => clamp(groupIndex, 0, maxGroupIndex))
       );
+      let didChange = false;
 
       neededGroups.forEach((groupIndex) => {
         if (activeCeilingSpotlights.has(groupIndex)) return;
@@ -3397,6 +3504,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           groupIndex,
           createGroupCeilingSpotlight(groupIndex)
         );
+        didChange = true;
       });
 
       activeCeilingSpotlights.forEach((light, groupIndex) => {
@@ -3404,7 +3512,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         removeGroupCeilingSpotlight(light);
         activeCeilingSpotlights.delete(groupIndex);
+        didChange = true;
       });
+
+      if (didChange) {
+        invalidateShadows();
+      }
     };
 
     const placeholderRailThickness = Math.min(
@@ -3757,6 +3870,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       record.cssObject.position.copy(worldPosition);
       record.cssObject.rotation.set(0, placement.rotationY, 0);
       record.cssObject.scale.set(cssScale, cssScale, cssScale);
+      invalidateCssRender();
     };
 
     const handleCardScaleChange = () => {
@@ -3766,7 +3880,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const createFrameRecord = (index: number): FrameRecord => {
       const placement = getFramePlacement(index);
-      const group = createFrameGroup({
+      const { group, paintingSpotlight } = createFrameGroup({
         index,
         x: 0,
         isMobile,
@@ -3779,6 +3893,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           plaque: plaqueMaterial,
           plaqueText: plaqueTextMaterial,
         },
+        railGeometries: sharedFrameRailGeometries,
         unitBox,
         unitPlane,
       });
@@ -3795,6 +3910,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         group,
         cssObject,
         element,
+        paintingSpotlight,
         embedMounted: false,
         embedRequested: false,
         lastTouched: performance.now(),
@@ -3815,6 +3931,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         if (!(object instanceof THREE.Mesh)) return;
         if (object.geometry === unitBox) return;
         if (object.geometry === unitPlane) return;
+        if (sharedFrameRailGeometrySet.has(object.geometry)) return;
         object.geometry.dispose();
       });
       record.element.remove();
@@ -3824,6 +3941,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       unmountEmbed(record);
       scene.remove(record.group);
       cssScene.remove(record.cssObject);
+      invalidateCssRender();
       disposeFrameRecord(record);
     };
 
@@ -3843,17 +3961,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       activeFrameEnd = activeEnd;
       updatePlaceholderVisibility(activeStart, activeEnd);
       updateActiveCeilingSpotlights([groupIndex]);
+      let didFrameSetChange = false;
 
       activeFrames.forEach((record, index) => {
         if (index < activeStart || index > activeEnd) {
           destroyFrameRecord(record);
           activeFrames.delete(index);
+          didFrameSetChange = true;
         }
       });
 
       for (let index = activeStart; index <= activeEnd; index++) {
         if (!activeFrames.has(index)) {
           activeFrames.set(index, createFrameRecord(index));
+          didFrameSetChange = true;
         }
       }
 
@@ -3868,6 +3989,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           mountEmbed(record, false);
         }
       });
+
+      if (didFrameSetChange) {
+        invalidateShadows();
+        invalidateCssRender();
+      }
     };
 
     const updateTransitionFrames = (
@@ -3889,17 +4015,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       activeFrameEnd = activeEnd;
       updatePlaceholderVisibility(activeStart, activeEnd);
       updateActiveCeilingSpotlights([fromGroupIndex, toGroupIndex]);
+      let didFrameSetChange = false;
 
       activeFrames.forEach((record, index) => {
         if (index < activeStart || index > activeEnd) {
           destroyFrameRecord(record);
           activeFrames.delete(index);
+          didFrameSetChange = true;
         }
       });
 
       for (let index = activeStart; index <= activeEnd; index++) {
         if (!activeFrames.has(index)) {
           activeFrames.set(index, createFrameRecord(index));
+          didFrameSetChange = true;
         }
       }
 
@@ -3908,14 +4037,37 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           mountEmbed(record, true);
         }
       });
+
+      if (didFrameSetChange) {
+        invalidateShadows();
+        invalidateCssRender();
+      }
     };
 
-    const resize = () => {
+    let lastRenderWidth = initialRenderSize.width;
+    let lastRenderHeight = initialRenderSize.height;
+    let lastRenderPixelRatio = initialPixelRatio;
+    let resizeRaf = 0;
+
+    const applyResize = (force = false) => {
       const { width, height } = getRenderSize();
+      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+
+      if (
+        !force &&
+        width === lastRenderWidth &&
+        height === lastRenderHeight &&
+        pixelRatio === lastRenderPixelRatio
+      ) {
+        return;
+      }
+
+      lastRenderWidth = width;
+      lastRenderHeight = height;
+      lastRenderPixelRatio = pixelRatio;
       camera.aspect = width / height;
       camera.fov = layout.cameraFov;
       camera.updateProjectionMatrix();
-      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, true);
       if (composer) {
@@ -3926,13 +4078,30 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         bloomComposer.setPixelRatio(pixelRatio);
         bloomComposer.setSize(width, height);
       }
+      if (chandelierBloomComposer) {
+        chandelierBloomComposer.setPixelRatio(pixelRatio);
+        chandelierBloomComposer.setSize(width, height);
+      }
       bloomPass?.resolution.set(width, height);
+      chandelierBloomPass?.resolution.set(width, height);
       cssRenderer.setSize(width, height);
       renderer.domElement.style.width = `${width}px`;
       renderer.domElement.style.height = `${height}px`;
       cssRenderer.domElement.style.width = `${width}px`;
       cssRenderer.domElement.style.height = `${height}px`;
+      invalidateShadows();
+      invalidateCssRender();
+      cameraNeedsCssRender = true;
       requestRenderLoop();
+    };
+
+    const resize = () => {
+      if (resizeRaf) return;
+
+      resizeRaf = window.requestAnimationFrame(() => {
+        resizeRaf = 0;
+        applyResize();
+      });
     };
 
     const previousButton = previousButtonRef.current;
@@ -3970,8 +4139,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const handlePointerMove = (event: PointerEvent) => {
       if (isMobile) return;
 
-      pointerX = (event.clientX / window.innerWidth - 0.5) * 0.18;
-      pointerY = (event.clientY / window.innerHeight - 0.5) * 0.12;
+      const nextPointerX = (event.clientX / window.innerWidth - 0.5) * 0.18;
+      const nextPointerY = (event.clientY / window.innerHeight - 0.5) * 0.12;
+
+      if (nextPointerX === pointerX && nextPointerY === pointerY) {
+        return;
+      }
+
+      pointerX = nextPointerX;
+      pointerY = nextPointerY;
+      cameraNeedsCssRender = true;
       requestRenderLoop();
     };
 
@@ -4027,16 +4204,26 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       });
 
       if (bloomPass) {
-        bloomPass.strength = 0.11 + glow * 0.04;
-        bloomPass.radius = 0.06 + glow * 0.02;
-        bloomPass.threshold = 0.8;
+        bloomPass.strength =
+          NEON_BLOOM_SETTINGS.strengthBase +
+          glow * NEON_BLOOM_SETTINGS.strengthGlow;
+        bloomPass.radius =
+          NEON_BLOOM_SETTINGS.radiusBase +
+          glow * NEON_BLOOM_SETTINGS.radiusGlow;
+        bloomPass.threshold = NEON_BLOOM_SETTINGS.threshold;
+      }
+
+      if (chandelierBloomPass) {
+        chandelierBloomPass.strength = CHANDELIER_BLOOM_SETTINGS.strength;
+        chandelierBloomPass.radius = CHANDELIER_BLOOM_SETTINGS.radius;
+        chandelierBloomPass.threshold = CHANDELIER_BLOOM_SETTINGS.threshold;
       }
     };
 
     const darkenNonBloomed = (object: THREE.Object3D) => {
       if (
         object instanceof THREE.Mesh &&
-        !bloomLayer.test(object.layers) &&
+        !activeBloomLayer.test(object.layers) &&
         object.material !== darkBloomMaterial
       ) {
         darkenedBloomMaterials.set(object.uuid, object.material);
@@ -4052,42 +4239,59 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       darkenedBloomMaterials.delete(object.uuid);
     };
 
-    const renderScene = () => {
-      if (composer && bloomComposer) {
-        setBloomChandelierMeshesVisible(true);
+    const renderScene = (renderCss = false) => {
+      if (composer && bloomComposer && chandelierBloomComposer) {
+        setBloomChandelierMeshesVisible(false);
+        activeBloomLayer = bloomLayer;
         scene.traverse(darkenNonBloomed);
         try {
           bloomComposer.render();
         } finally {
           scene.traverse(restoreBloomMaterial);
-          setBloomChandelierMeshesVisible(false);
         }
+
+        setBloomChandelierMeshesVisible(true);
+        setBaseSimpleChandelierMeshesVisible(false);
+        activeBloomLayer = chandelierBloomLayer;
+        scene.traverse(darkenNonBloomed);
+        try {
+          chandelierBloomComposer.render();
+        } finally {
+          scene.traverse(restoreBloomMaterial);
+          setBloomChandelierMeshesVisible(false);
+          setBaseSimpleChandelierMeshesVisible(true);
+          activeBloomLayer = bloomLayer;
+        }
+
         composer.render();
       } else {
         renderer.render(scene, camera);
       }
-      cssRenderer.render(cssScene, camera);
+      if (renderCss) {
+        cssRenderer.render(cssScene, camera);
+        cssNeedsRender = false;
+        cameraNeedsCssRender = false;
+      }
     };
 
     const setPaintingSpotlightFactor = (
       record: FrameRecord,
       factor: number
     ) => {
-      record.group.traverse((object) => {
-        if (
-          !(object instanceof THREE.SpotLight) ||
-          object.name !== PAINTING_SPOTLIGHT_NAME
-        ) {
-          return;
-        }
+      const spotlight = record.paintingSpotlight;
+      const baseIntensity =
+        typeof spotlight.userData.baseIntensity === 'number'
+          ? spotlight.userData.baseIntensity
+          : GALLERY_LIGHTING.paintingSpot.intensity;
+      const isVisible = factor > 0.001;
 
-        const baseIntensity =
-          typeof object.userData.baseIntensity === 'number'
-            ? object.userData.baseIntensity
-            : GALLERY_LIGHTING.paintingSpot.intensity;
-        object.intensity = baseIntensity * factor;
-        object.visible = factor > 0.001;
-      });
+      spotlight.intensity = baseIntensity * factor;
+      if (spotlight.visible !== isVisible) {
+        spotlight.visible = isVisible;
+        if (isVisible) {
+          invalidateShadows();
+        }
+      }
     };
 
     const getGroupLightFactor = (groupIndex: number, now: number | null) => {
@@ -4124,8 +4328,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         typeof spotlight.userData.baseIntensity === 'number'
           ? spotlight.userData.baseIntensity
           : GALLERY_LIGHTING.ceilingSpot.intensity;
+      const isVisible = factor > 0.001;
+
       spotlight.intensity = baseIntensity * factor;
-      spotlight.visible = factor > 0.001;
+      if (spotlight.visible !== isVisible) {
+        spotlight.visible = isVisible;
+        if (isVisible) {
+          invalidateShadows();
+        }
+      }
     };
 
     const updatePaintingSpotlights = (now: number | null) => {
@@ -4161,52 +4372,56 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const fromPose = getCameraPose(
         transition.fromGroupIndex,
         pointerX,
-        -pointerY
+        -pointerY,
+        transitionFromPose
       );
       const toPose = getCameraPose(
         transition.toGroupIndex,
         pointerX,
-        -pointerY
+        -pointerY,
+        transitionToPose
       );
-      const position = fromPose.position
-        .clone()
+      const position = transitionResultPose.position
+        .copy(fromPose.position)
         .lerp(toPose.position, easedProgress);
 
-      const fromDirection = fromPose.target
-        .clone()
+      transitionFromDirection
+        .copy(fromPose.target)
         .sub(fromPose.position)
         .normalize();
-      const toDirection = toPose.target
-        .clone()
+      transitionToDirection
+        .copy(toPose.target)
         .sub(toPose.position)
         .normalize();
-      const hallwayDirection = new THREE.Vector3(
-        0,
-        (layout.frameY - layout.cameraY) / layout.transitionLookDistance,
-        transition.direction > 0 ? -1 : 1
-      ).normalize();
-      const direction =
-        cameraProgress < 0.5
-          ? fromDirection.lerp(
-              hallwayDirection,
-              easeInOutCubic(cameraProgress * 2)
-            )
-          : hallwayDirection.lerp(
-              toDirection,
-              easeInOutCubic((cameraProgress - 0.5) * 2)
-            );
-      direction.normalize();
+      transitionHallwayDirection
+        .set(
+          0,
+          (layout.frameY - layout.cameraY) / layout.transitionLookDistance,
+          transition.direction > 0 ? -1 : 1
+        )
+        .normalize();
 
-      return {
-        cameraProgress,
-        elapsed,
-        pose: {
-          position,
-          target: position
-            .clone()
-            .add(direction.multiplyScalar(layout.transitionLookDistance)),
-        },
-      };
+      if (cameraProgress < 0.5) {
+        transitionDirection
+          .copy(transitionFromDirection)
+          .lerp(transitionHallwayDirection, easeInOutCubic(cameraProgress * 2));
+      } else {
+        transitionDirection
+          .copy(transitionHallwayDirection)
+          .lerp(
+            transitionToDirection,
+            easeInOutCubic((cameraProgress - 0.5) * 2)
+          );
+      }
+      transitionDirection.normalize();
+      transitionResultPose.target
+        .copy(position)
+        .addScaledVector(transitionDirection, layout.transitionLookDistance);
+
+      transitionPoseResult.cameraProgress = cameraProgress;
+      transitionPoseResult.elapsed = elapsed;
+
+      return transitionPoseResult;
     };
 
     const renderFrame = (now: number) => {
@@ -4225,6 +4440,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         if (!cameraTransition.settled && transitionPose.cameraProgress >= 1) {
           cameraTransition.settled = true;
+          cameraNeedsCssRender = true;
           currentGroupIndex = targetGroupIndex;
           updateVirtualFrames(targetGroupIndex);
         }
@@ -4232,10 +4448,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         if (!isSettling) {
           cameraTransition = null;
           setIsNavThrottled(false);
-          pose = getCameraPose(targetGroupIndex, pointerX, -pointerY);
+          cameraNeedsCssRender = true;
+          pose = getCameraPose(
+            targetGroupIndex,
+            pointerX,
+            -pointerY,
+            renderPose
+          );
         }
       } else {
-        pose = getCameraPose(targetGroupIndex, pointerX, -pointerY);
+        pose = getCameraPose(targetGroupIndex, pointerX, -pointerY, renderPose);
       }
 
       applyCameraPose(pose);
@@ -4249,7 +4471,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       updateCeilingSpotlights(cameraTransition ? now : null);
       updateNeonSign();
 
-      renderScene();
+      renderScene(
+        cssNeedsRender ||
+          cameraNeedsCssRender ||
+          Boolean(cameraTransition && !cameraTransition.settled)
+      );
 
       requestRenderLoop();
     };
@@ -4292,15 +4518,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     targetGroupIndex = 0;
     setNavGroupIndex(0);
-    const initialPose = getCameraPose(targetGroupIndex);
+    const initialPose = getCameraPose(targetGroupIndex, 0, 0, renderPose);
     applyCameraPose(initialPose);
-    resize();
+    applyResize(true);
     updateVirtualFrames(targetGroupIndex);
     currentGroupIndex = targetGroupIndex;
     updateChandelierLod(initialPose);
     updatePaintingSpotlights(null);
     updateCeilingSpotlights(null);
-    renderScene();
+    renderScene(true);
     setIsReady(true);
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -4325,6 +4551,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     return () => {
       isMounted = false;
       window.cancelAnimationFrame(animationFrame);
+      if (resizeRaf) {
+        window.cancelAnimationFrame(resizeRaf);
+      }
       viewportVisibilityObserver?.disconnect();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', resize);
@@ -4348,6 +4577,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       chandelierGeometries.forEach((geometry) => geometry.dispose());
       neonGeometries.forEach((geometry) => geometry.dispose());
+      sharedFrameRailGeometrySet.forEach((geometry) => geometry.dispose());
       unitBox.dispose();
       unitPlane.dispose();
       environmentGeometries.forEach((geometry) => geometry.dispose());
@@ -4355,9 +4585,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       materials.forEach(disposeMaterial);
       neonMaterials.forEach(disposeMaterial);
       bloomPass?.dispose();
+      chandelierBloomPass?.dispose();
       finalBloomPass?.dispose();
       finalBloomMaterial?.dispose();
       darkBloomMaterial.dispose();
+      chandelierBloomComposer?.dispose();
       bloomComposer?.dispose();
       composer?.dispose();
       renderer.dispose();
