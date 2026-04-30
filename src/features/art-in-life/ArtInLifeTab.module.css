@@ -174,6 +174,7 @@
   position: absolute !important;
   inset: 0 !important;
   display: block !important;
+  pointer-events: auto !important;
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;

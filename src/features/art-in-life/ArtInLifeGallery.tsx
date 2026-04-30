@@ -631,6 +631,7 @@ const enhanceInstagramIframes = (container: HTMLElement, index: number) => {
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('allow', INSTAGRAM_IFRAME_ALLOW);
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    iframe.style.pointerEvents = 'auto';
   });
 };
 
@@ -3765,6 +3766,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       element.style.width = `${EMBED_WIDTH_PX}px`;
       element.style.height = `${EMBED_HEIGHT_PX}px`;
       element.style.opacity = '0';
+      element.style.pointerEvents = 'auto';
       return element;
     };
 
@@ -3835,11 +3837,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
               record.index
             );
             record.embedMounted = true;
+            invalidateCssRender();
+            requestRenderLoop();
           })
           .catch(() => {
             record.embedRequested = false;
             record.element.innerHTML = '';
             record.element.style.opacity = '0';
+            invalidateCssRender();
+            requestRenderLoop();
           });
       };
 
@@ -4161,6 +4167,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const neonStartedAt = performance.now();
+    const shouldAnimateSettledNeon = () =>
+      targetGroupIndex === 0 || targetGroupIndex === maxGroupIndex;
 
     const updateNeonSign = () => {
       const timeSeconds = (performance.now() - neonStartedAt) / 1000;
@@ -4489,7 +4497,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           Boolean(cameraTransition && !cameraTransition.settled)
       );
 
-      requestRenderLoop();
+      if (cameraTransition || shouldAnimateSettledNeon()) {
+        requestRenderLoop();
+      }
     };
 
     requestRenderLoop = () => {
