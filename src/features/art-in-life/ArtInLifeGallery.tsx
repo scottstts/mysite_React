@@ -1753,7 +1753,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const estimatedHallwayMeters = isMobile ? 3.6 : isTablet ? 4.2 : 4.6;
     const sceneUnitsPerMeter = layout.hallwayWidth / estimatedHallwayMeters;
     const floorDrawWidth = layout.hallwayWidth + ceilingWallOverlap * 2;
-    const carpetTextureSizeMeters = 2;
+    const carpetTextureSizeMeters = 0.5;
     const floorTextureRepeat = {
       x: Math.max(
         1,
