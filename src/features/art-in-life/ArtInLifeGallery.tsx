@@ -105,6 +105,8 @@ interface CameraPose {
   target: THREE.Vector3;
 }
 
+type CameraTransitionMode = 'step' | 'cruise';
+
 interface CameraTransition {
   fromGroupIndex: number;
   toGroupIndex: number;
@@ -112,6 +114,9 @@ interface CameraTransition {
   duration: number;
   settled: boolean;
   direction: 1 | -1;
+  mode: CameraTransitionMode;
+  turnDuration: number;
+  turnTravelDistance: number;
 }
 
 interface NeonLightRig {
@@ -154,6 +159,9 @@ const CEILING_SPOTLIGHT_NAME = 'gallery-group-ceiling-spotlight';
 const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
+const LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND = 34;
+const LONG_JUMP_TURN_DURATION_RATIO = 0.46;
+const LONG_JUMP_TURN_TRAVEL_MAX_RATIO = 0.24;
 const NEON_SIGN_WALL_OFFSET = 0.08;
 const NEON_BLOOM_SCENE_LAYER = 1;
 const CHANDELIER_BLOOM_SCENE_LAYER = 2;
@@ -249,6 +257,10 @@ const smoothstep = (edge0: number, edge1: number, value: number): number => {
 
 const easeInOutCubic = (value: number): number =>
   value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
+
+const easeInQuad = (value: number): number => value * value;
+
+const easeOutQuad = (value: number): number => 1 - (1 - value) * (1 - value);
 
 interface BakedNeonMaterialProfile {
   bucket: keyof NeonMaterialBuckets;
@@ -427,6 +439,18 @@ const useMediaQuery = (query: string): boolean => {
   }, [query]);
 
   return matches;
+};
+
+const isDesktopSafari = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+
+  const userAgent = navigator.userAgent;
+  const isSafari =
+    /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(userAgent);
+  const isMacDesktop = /Mac/i.test(navigator.platform);
+  const isTouchMac = navigator.maxTouchPoints > 1;
+
+  return isSafari && isMacDesktop && !isTouchMac;
 };
 
 const getLayout = (isMobile: boolean, isTablet: boolean): GalleryLayout => {
@@ -1412,11 +1436,19 @@ const FallbackGallery = ({ urls }: ArtInLifeGalleryProps) => (
   </div>
 );
 
+const DesktopSafariNotice = () => (
+  <div className={styles.sceneFallback} role="status">
+    For a better experience, visit on a Chromium browser.
+  </div>
+);
+
 const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const firstButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousButtonRef = useRef<HTMLButtonElement | null>(null);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lastButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const [navGroupIndex, setNavGroupIndex] = useState(0);
@@ -1424,6 +1456,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const isTablet = useMediaQuery(TABLET_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  const shouldShowDesktopSafariNotice = isDesktopSafari();
   const layout = useMemo(
     () => getLayout(isMobile, isTablet),
     [isMobile, isTablet]
@@ -1453,6 +1486,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   );
 
   useEffect(() => {
+    if (shouldShowDesktopSafariNotice) {
+      setUseFallback(false);
+      setIsReady(true);
+      return;
+    }
+
     if (reducedMotion || !supportsWebGL()) {
       setUseFallback(true);
       setIsReady(true);
@@ -3766,7 +3805,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       element.style.width = `${EMBED_WIDTH_PX}px`;
       element.style.height = `${EMBED_HEIGHT_PX}px`;
       element.style.opacity = '0';
-      element.style.pointerEvents = 'auto';
+      element.style.pointerEvents = 'none';
       return element;
     };
 
@@ -3777,6 +3816,47 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         </div>
       </div>
     `;
+
+    const isCruiseDestinationHidden = (
+      record: FrameRecord,
+      now: number | null
+    ) => {
+      if (!cameraTransition || cameraTransition.mode !== 'cruise') {
+        return false;
+      }
+
+      const groupIndex = getFramePlacement(record.index).groupIndex;
+      if (groupIndex !== cameraTransition.toGroupIndex) return false;
+
+      const motionElapsed =
+        now === null
+          ? 0
+          : clamp(
+              now - cameraTransition.startedAt - PAINTING_LIGHT_OFF_MS,
+              0,
+              cameraTransition.duration
+            );
+      const finalTurnStart = Math.max(
+        0,
+        cameraTransition.duration - cameraTransition.turnDuration
+      );
+
+      return motionElapsed < finalTurnStart;
+    };
+
+    const updateEmbedRecordVisibility = (
+      record: FrameRecord,
+      now: number | null
+    ) => {
+      const isVisible =
+        record.embedMounted && !isCruiseDestinationHidden(record, now);
+      record.element.style.opacity = isVisible ? '1' : '0';
+      record.element.style.pointerEvents = isVisible ? 'auto' : 'none';
+    };
+
+    const updateEmbedVisibility = (now: number | null) => {
+      activeFrames.forEach((record) => updateEmbedRecordVisibility(record, now));
+    };
 
     const mountEmbed = (record: FrameRecord, urgent = false) => {
       if (record.embedMounted) return;
@@ -3824,12 +3904,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
               stagedElement.remove();
               record.embedRequested = false;
               record.element.innerHTML = '';
-              record.element.style.opacity = '0';
+              updateEmbedRecordVisibility(record, null);
               return;
             }
 
             record.element.replaceChildren(...stagedElement.childNodes);
-            record.element.style.opacity = '1';
             stagedElement.remove();
             record.iframeObserver?.disconnect();
             record.iframeObserver = watchInstagramIframes(
@@ -3837,13 +3916,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
               record.index
             );
             record.embedMounted = true;
+            updateEmbedRecordVisibility(
+              record,
+              cameraTransition ? performance.now() : null
+            );
             invalidateCssRender();
             requestRenderLoop();
           })
           .catch(() => {
             record.embedRequested = false;
             record.element.innerHTML = '';
-            record.element.style.opacity = '0';
+            updateEmbedRecordVisibility(record, null);
             invalidateCssRender();
             requestRenderLoop();
           });
@@ -3863,7 +3946,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       record.iframeObserver = undefined;
       record.embedMounted = false;
       record.embedRequested = false;
-      record.element.style.opacity = '0';
+      updateEmbedRecordVisibility(record, null);
       record.element.innerHTML = '';
     };
 
@@ -4118,10 +4201,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       });
     };
 
+    const firstButton = firstButtonRef.current;
     const previousButton = previousButtonRef.current;
     const nextButton = nextButtonRef.current;
+    const lastButton = lastButtonRef.current;
 
-    const goToGroup = (groupIndex: number) => {
+    const goToGroup = (
+      groupIndex: number,
+      requestedMode: CameraTransitionMode = 'step'
+    ) => {
       if (cameraTransition) return;
 
       const nextGroupIndex = clamp(groupIndex, 0, maxGroupIndex);
@@ -4129,23 +4217,60 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       const fromGroupIndex = targetGroupIndex;
       const direction = nextGroupIndex > targetGroupIndex ? 1 : -1;
+      const groupDistance = Math.abs(nextGroupIndex - fromGroupIndex);
+      const mode =
+        requestedMode === 'cruise' && groupDistance > 1 ? 'cruise' : 'step';
+      const travelDistance = Math.abs(
+        getGroupZ(nextGroupIndex) - getGroupZ(fromGroupIndex)
+      );
+      const baseTurnDuration =
+        layout.transitionDuration * LONG_JUMP_TURN_DURATION_RATIO;
+      const maxTurnTravelDistance =
+        travelDistance * LONG_JUMP_TURN_TRAVEL_MAX_RATIO;
+      const idealTurnTravelDistance =
+        (LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND *
+          (baseTurnDuration / 1000)) /
+        2;
+      const turnTravelDistance =
+        mode === 'cruise'
+          ? Math.min(maxTurnTravelDistance, idealTurnTravelDistance)
+          : 0;
+      const turnDuration = mode === 'cruise' ? baseTurnDuration : 0;
+      const cruiseDistance = Math.max(
+        0,
+        travelDistance - turnTravelDistance * 2
+      );
+      const cruiseDuration =
+        mode === 'cruise'
+          ? (cruiseDistance / LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND) * 1000
+          : 0;
+      const duration =
+        mode === 'cruise'
+          ? turnDuration * 2 + cruiseDuration
+          : layout.transitionDuration;
       cameraTransition = {
         fromGroupIndex,
         toGroupIndex: nextGroupIndex,
         startedAt: performance.now(),
-        duration: layout.transitionDuration,
+        duration,
         settled: false,
         direction,
+        mode,
+        turnDuration,
+        turnTravelDistance,
       };
       targetGroupIndex = nextGroupIndex;
       setNavGroupIndex(nextGroupIndex);
       setIsNavThrottled(true);
       updateTransitionFrames(fromGroupIndex, nextGroupIndex);
+      updateEmbedVisibility(performance.now());
       requestRenderLoop();
     };
 
+    const goFirst = () => goToGroup(0, 'cruise');
     const goPrevious = () => goToGroup(targetGroupIndex - 1);
     const goNext = () => goToGroup(targetGroupIndex + 1);
+    const goLast = () => goToGroup(maxGroupIndex, 'cruise');
 
     let pointerX = 0;
     let pointerY = 0;
@@ -4388,7 +4513,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         0,
         1
       );
-      const easedProgress = easeInOutCubic(cameraProgress);
       const fromPose = getCameraPose(
         transition.fromGroupIndex,
         pointerX,
@@ -4401,9 +4525,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         -pointerY,
         transitionToPose
       );
-      const position = transitionResultPose.position
-        .copy(fromPose.position)
-        .lerp(toPose.position, easedProgress);
+      const position = transitionResultPose.position;
 
       transitionFromDirection
         .copy(fromPose.target)
@@ -4421,17 +4543,103 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         )
         .normalize();
 
-      if (cameraProgress < 0.5) {
-        transitionDirection
-          .copy(transitionFromDirection)
-          .lerp(transitionHallwayDirection, easeInOutCubic(cameraProgress * 2));
-      } else {
-        transitionDirection
-          .copy(transitionHallwayDirection)
-          .lerp(
-            transitionToDirection,
-            easeInOutCubic((cameraProgress - 0.5) * 2)
+      if (transition.mode === 'cruise') {
+        const motionElapsed = clamp(
+          elapsed - PAINTING_LIGHT_OFF_MS,
+          0,
+          transition.duration
+        );
+        const turnDuration = transition.turnDuration;
+        const cruiseDuration = Math.max(
+          0,
+          transition.duration - turnDuration * 2
+        );
+        const totalTravelDistance = Math.abs(
+          toPose.position.z - fromPose.position.z
+        );
+        const cruiseDistance = Math.max(
+          0,
+          totalTravelDistance - transition.turnTravelDistance * 2
+        );
+        const zDirection = transition.direction > 0 ? -1 : 1;
+
+        if (motionElapsed < turnDuration) {
+          const turnProgress =
+            turnDuration > 0 ? motionElapsed / turnDuration : 1;
+          position.set(
+            fromPose.position.x,
+            fromPose.position.y,
+            fromPose.position.z +
+              zDirection *
+                transition.turnTravelDistance *
+                easeInQuad(turnProgress)
           );
+          transitionDirection
+            .copy(transitionFromDirection)
+            .lerp(transitionHallwayDirection, easeInOutCubic(turnProgress));
+        } else if (motionElapsed < turnDuration + cruiseDuration) {
+          const cruiseProgress =
+            cruiseDuration > 0
+              ? (motionElapsed - turnDuration) / cruiseDuration
+              : 1;
+          position.set(
+            fromPose.position.x,
+            fromPose.position.y,
+            fromPose.position.z +
+              zDirection *
+                (transition.turnTravelDistance +
+                  cruiseDistance * cruiseProgress)
+          );
+          transitionDirection.copy(transitionHallwayDirection);
+        } else {
+          const turnProgress =
+            turnDuration > 0
+              ? clamp(
+                  (motionElapsed - turnDuration - cruiseDuration) /
+                    turnDuration,
+                  0,
+                  1
+                )
+              : 1;
+          position.set(
+            fromPose.position.x,
+            fromPose.position.y,
+            fromPose.position.z +
+              zDirection *
+                (transition.turnTravelDistance +
+                  cruiseDistance +
+                  transition.turnTravelDistance * easeOutQuad(turnProgress))
+          );
+          transitionDirection
+            .copy(transitionHallwayDirection)
+            .lerp(transitionToDirection, easeInOutCubic(turnProgress));
+        }
+      } else {
+        const easedProgress = easeInOutCubic(cameraProgress);
+        position.copy(fromPose.position).lerp(toPose.position, easedProgress);
+
+        if (cameraProgress < 0.5) {
+          transitionDirection
+            .copy(transitionFromDirection)
+            .lerp(
+              transitionHallwayDirection,
+              easeInOutCubic(cameraProgress * 2)
+            );
+        } else {
+          transitionDirection
+            .copy(transitionHallwayDirection)
+            .lerp(
+              transitionToDirection,
+              easeInOutCubic((cameraProgress - 0.5) * 2)
+            );
+        }
+      }
+
+      if (cameraProgress >= 1) {
+        position.copy(toPose.position);
+        transitionDirection
+          .copy(toPose.target)
+          .sub(toPose.position);
       }
       transitionDirection.normalize();
       transitionResultPose.target
@@ -4490,6 +4698,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       updatePaintingSpotlights(cameraTransition ? now : null);
       updateCeilingSpotlights(cameraTransition ? now : null);
       updateNeonSign();
+      updateEmbedVisibility(cameraTransition ? now : null);
 
       renderScene(
         cssNeedsRender ||
@@ -4548,6 +4757,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     updateChandelierLod(initialPose);
     updatePaintingSpotlights(null);
     updateCeilingSpotlights(null);
+    updateEmbedVisibility(null);
     renderScene(true);
     setIsReady(true);
 
@@ -4567,8 +4777,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       'art-in-life-card-scale-change',
       handleCardScaleChange
     );
+    firstButton?.addEventListener('click', goFirst);
     previousButton?.addEventListener('click', goPrevious);
     nextButton?.addEventListener('click', goNext);
+    lastButton?.addEventListener('click', goLast);
 
     return () => {
       isMounted = false;
@@ -4587,8 +4799,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         'art-in-life-card-scale-change',
         handleCardScaleChange
       );
+      firstButton?.removeEventListener('click', goFirst);
       previousButton?.removeEventListener('click', goPrevious);
       nextButton?.removeEventListener('click', goNext);
+      lastButton?.removeEventListener('click', goLast);
 
       activeFrames.forEach(destroyFrameRecord);
       activeFrames.clear();
@@ -4619,7 +4833,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       cssHost.remove();
       stagingHost.remove();
     };
-  }, [groupCount, isMobile, layout, reducedMotion, sceneClassNames, urls]);
+  }, [
+    groupCount,
+    isMobile,
+    layout,
+    reducedMotion,
+    sceneClassNames,
+    shouldShowDesktopSafariNotice,
+    urls,
+  ]);
+
+  if (shouldShowDesktopSafariNotice) {
+    return <DesktopSafariNotice />;
+  }
 
   if (useFallback) {
     return <FallbackGallery urls={urls} />;
@@ -4628,6 +4854,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const controlButtonClassName = `${styles.galleryControlButton} ${
     isNavThrottled ? styles.galleryControlButtonThrottled : ''
   }`;
+  const firstButtonClassName = `${controlButtonClassName} ${styles.galleryControlButtonBackward}`;
+  const previousButtonClassName = `${controlButtonClassName} ${styles.galleryControlButtonBackward}`;
+  const nextButtonClassName = `${controlButtonClassName} ${styles.galleryControlButtonForward}`;
+  const lastButtonClassName = `${controlButtonClassName} ${styles.galleryControlButtonForward}`;
+  const doubleIconClassName = `${styles.galleryControlIcon} ${styles.galleryControlIconDouble}`;
 
   return (
     <div ref={stageRef} className={styles.galleryStage}>
@@ -4649,9 +4880,20 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         aria-busy={isNavThrottled}
       >
         <button
+          ref={firstButtonRef}
+          type="button"
+          className={firstButtonClassName}
+          aria-label="First paintings"
+          disabled={isNavThrottled || navGroupIndex <= 0}
+        >
+          <span className={doubleIconClassName} aria-hidden="true">
+            ‹‹
+          </span>
+        </button>
+        <button
           ref={previousButtonRef}
           type="button"
-          className={controlButtonClassName}
+          className={previousButtonClassName}
           aria-label="Previous paintings"
           disabled={isNavThrottled || navGroupIndex <= 0}
         >
@@ -4662,12 +4904,23 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         <button
           ref={nextButtonRef}
           type="button"
-          className={controlButtonClassName}
+          className={nextButtonClassName}
           aria-label="Next paintings"
           disabled={isNavThrottled || navGroupIndex >= groupCount - 1}
         >
           <span className={styles.galleryControlIcon} aria-hidden="true">
             ›
+          </span>
+        </button>
+        <button
+          ref={lastButtonRef}
+          type="button"
+          className={lastButtonClassName}
+          aria-label="Last paintings"
+          disabled={isNavThrottled || navGroupIndex >= groupCount - 1}
+        >
+          <span className={doubleIconClassName} aria-hidden="true">
+            ››
           </span>
         </button>
       </div>

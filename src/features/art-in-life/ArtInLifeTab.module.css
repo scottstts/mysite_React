@@ -241,7 +241,6 @@
   opacity: 0.28;
 }
 
-
 .galleryControlButtonThrottled,
 .galleryControlButtonThrottled:disabled {
   border-color: rgba(178, 178, 178, 0.42);
@@ -262,11 +261,16 @@
   transform: translateY(-2px);
 }
 
-.galleryControlButton:first-child .galleryControlIcon {
+.galleryControlIconDouble {
+  font-size: 1.62rem;
+  letter-spacing: 0;
+}
+
+.galleryControlButtonBackward .galleryControlIcon {
   transform: translate(-1px, -2px);
 }
 
-.galleryControlButton:last-child .galleryControlIcon {
+.galleryControlButtonForward .galleryControlIcon {
   transform: translate(1px, -2px);
 }
 
