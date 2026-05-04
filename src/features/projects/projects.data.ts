@@ -49,7 +49,7 @@ Later I reviewed everything I learned from the mini-GPT dev and I pre-trained a 
 
 Building 3D models can be extremely time-consuming, EXTREMELY! But I enjoyed every minute of it. Seeing what you are building becoming just a bit more perfect is satisfying to say the least. During my learning in a few months, I made some beautiful rendered scenes and animations into final videos, and I would lay down sound tracks for them to make them even more cinematic. Considering I did all these on my old gaming laptop with an outdated GPU (even at the time), I am really happy I was able to make these! I selected some of them which I really like and threaded them into a video cut.<br><br>
 
-I also started to learn some game dev with Unity. I made a few simple but interesting games (I put two of them—SkyPool & Turbo Drift—on Google Drive with a public link. They are built so you can download it and play directly, although only built for MacOS: <a href='https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing' target="_blank" class="text-blue-200 underline">Link Here</a>).`,
+I also started to learn some game dev with Unity. I made a few simple but interesting games (I put two of them—SkyPool and Turbo Drift—on Google Drive with a public link. They are built so you can download it and play directly, although only built for MacOS: <a href='https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing' target="_blank" class="text-blue-200 underline">Link Here</a>).`,
     images: ['blender.jpeg', 'SkyPool.jpeg', 'Turbo_Drift.jpeg'],
     videos: [
       {

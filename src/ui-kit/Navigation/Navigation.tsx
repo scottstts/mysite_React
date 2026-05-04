@@ -6,7 +6,7 @@ interface NavigationProps {
 }
 
 const tabs: NavigationTab[] = [
-  { id: 'about', label: 'Me & Beliefs', path: '/about' },
+  { id: 'about', label: 'About Me', path: '/about' },
   { id: 'projects', label: 'Learning Journey', path: '/projects' },
   { id: 'apps', label: 'Apps', path: '/apps' },
   { id: 'inspirations', label: 'Inspirations', path: '/inspirations' },

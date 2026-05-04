@@ -62,7 +62,7 @@ const AppsTab = () => {
 
               {/* Description */}
               <p className="text-white text-base md:text-lg mb-8 leading-relaxed text-left">
-                <span className="font-semibold text-yellow-200">
+                <span className="glass-card-tagline font-semibold text-yellow-200">
                   {app.tagline}
                 </span>
                 <br />

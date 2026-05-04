@@ -35,7 +35,23 @@
 }
 
 .glass-card p {
+  font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
   margin-bottom: 0;
+}
+
+.glass-card p
+  :not(.glass-card-tagline):not(.eater-regular):not(.fa):not(.fa-solid):not(
+    .fa-regular
+  ):not(.fa-brands) {
+  font-family: inherit;
+}
+
+.glass-card .glass-card-tagline {
+  font-family: 'Fraunces', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.glass-card p .eater-regular {
+  font-family: 'Eater', serif;
 }
 
 .glass-card p:last-child {
