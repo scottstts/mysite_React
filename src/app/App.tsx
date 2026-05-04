@@ -220,7 +220,8 @@ function App() {
           </a>
           <br />
           <a
-            href="/llms.txt"
+            href="https://scottsun.io/llms.txt"
+            target="_blank"
             className="static-footer-link inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-300 mt-2"
           >
             <i className="fa-solid fa-robot text-xs" aria-hidden="true"></i>
