@@ -203,7 +203,7 @@ const AboutTab = () => {
                   className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-orange-900/30 hover:border-[#d06749]"
                 >
                   <span
-                    className="inline-flex items-center justify-center rounded-md group-hover:opacity-80 text-2xl md:text-3xl leading-none"
+                    className="inline-flex items-center justify-center rounded-sm group-hover:opacity-80 text-2xl md:text-3xl leading-none"
                     style={{
                       backgroundImage: 'url(/static_assets/mars_texture.jpeg)',
                       backgroundSize: 'cover',
@@ -258,7 +258,7 @@ const AboutTab = () => {
                   href="https://www.instagram.com/scottstts/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-blue-900/30 hover:border-blue-300"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-pink-900/30 hover:border-pink-300"
                 >
                   <i
                     className="fa-brands fa-square-instagram text-2xl md:text-3xl text-pink-300 group-hover:text-pink-200"
