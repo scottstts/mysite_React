@@ -67,7 +67,7 @@ const ProjectsTab = () => {
             )}
           />
           <img
-            src="/static_assets/naval_tweet.jpeg"
+            src="/content_imgs/naval_tweet.jpeg"
             loading="lazy"
             alt="naval_tweet"
             className="rounded-xl w-full object-cover mt-8"

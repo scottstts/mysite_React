@@ -39,7 +39,7 @@ const ImageSlider = ({
   const originalSlides: Slide[] = [
     ...images.map((image, index) => ({
       type: 'image' as const,
-      src: `/static_assets/${image}`,
+      src: `/content_imgs/${image}`,
       alt: `Screenshot ${index + 1}`,
       id: `image-${index}`,
     })),

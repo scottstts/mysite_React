@@ -216,7 +216,7 @@ function App() {
             className="static-footer-link inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-300"
           >
             <i className="fa-solid fa-code text-xs" aria-hidden="true"></i>
-            <span className="text-sm font-medium">Source Repo</span>
+            <span className="text-sm font-medium">Source</span>
           </a>
           <br />
           <a

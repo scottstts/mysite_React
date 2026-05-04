@@ -39,7 +39,7 @@ const InspirationsTab = () => {
 
                 {/* Image - matching original structure exactly */}
                 <img
-                  src={`/static_assets/${inspiration.image}`}
+                  src={`/content_imgs/${inspiration.image}`}
                   loading="lazy"
                   alt={inspiration.name.toLowerCase()}
                   className="rounded-xl w-full object-cover"

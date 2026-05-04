@@ -290,4 +290,4 @@ There is a profound wisdom from him and his philosophy that I find extremely enc
 ## Source
 
 - Website: https://scottsun.io
-- Source Repo: https://github.com/scottstts/mysite_React
+- Source: https://github.com/scottstts/mysite_React
