@@ -252,6 +252,22 @@ const AboutTab = () => {
                     scottstts
                   </span>
                 </a>
+
+                {/* IG Link */}
+                <a
+                  href="https://www.instagram.com/scottstts/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-3 p-3 rounded-xl border border-transparent transition-all duration-200 hover:bg-blue-900/30 hover:border-blue-300"
+                >
+                  <i
+                    className="fa-brands fa-square-instagram text-2xl md:text-3xl text-pink-300 group-hover:text-pink-200"
+                    aria-hidden="true"
+                  ></i>
+                  <span className="text-xl text-pink-300 group-hover:text-pink-200">
+                    @scottstts
+                  </span>
+                </a>
               </div>
 
               <div className="flex justify-center md:justify-end items-start flex-shrink-0 md:pl-6">
