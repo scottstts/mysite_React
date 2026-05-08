@@ -252,11 +252,46 @@ const GALLERY_LIGHTING = {
 const MOBILE_QUERY = '(max-width: 767px)';
 const TABLET_QUERY = '(max-width: 1180px)';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const MOBILE_RENDER_PIXEL_BUDGET = 1_000_000;
+const DESKTOP_RENDER_PIXEL_BUDGET = 1_650_000;
+const MOBILE_MAX_DPR = 1.25;
+const DESKTOP_MAX_DPR = 1.5;
+const MIN_RENDER_DPR = 1;
 
 let instagramScriptPromise: Promise<void> | null = null;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
+
+const isMobileDprTarget = (usesMobileLayout: boolean): boolean => {
+  if (usesMobileLayout || typeof navigator === 'undefined') {
+    return usesMobileLayout;
+  }
+
+  const userAgent = navigator.userAgent;
+  const isMobileUserAgent = /iPhone|iPad|iPod|Android/i.test(userAgent);
+  const isTouchMac =
+    /Mac/i.test(navigator.platform) && navigator.maxTouchPoints > 1;
+
+  return isMobileUserAgent || isTouchMac;
+};
+
+const getCappedDpr = (
+  width: number,
+  height: number,
+  usesMobileDpr: boolean
+): number => {
+  const maxPixels = usesMobileDpr
+    ? MOBILE_RENDER_PIXEL_BUDGET
+    : DESKTOP_RENDER_PIXEL_BUDGET;
+  const maxDpr = usesMobileDpr ? MOBILE_MAX_DPR : DESKTOP_MAX_DPR;
+  const cssPixelCount = Math.max(1, width * height);
+  const budgetDpr = Math.sqrt(maxPixels / cssPixelCount);
+  const deviceDpr =
+    typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+
+  return Math.max(MIN_RENDER_DPR, Math.min(deviceDpr, maxDpr, budgetDpr));
+};
 
 const lerp = (start: number, end: number, amount: number): number =>
   start + (end - start) * amount;
@@ -1702,6 +1737,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       return { width, height };
     };
+    const usesMobileDpr = isMobileDprTarget(isMobile);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeee6d9);
@@ -1721,9 +1757,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    const initialPixelRatio = Math.min(
-      window.devicePixelRatio,
-      isMobile ? 1.5 : 2
+    const initialPixelRatio = getCappedDpr(
+      initialRenderSize.width,
+      initialRenderSize.height,
+      usesMobileDpr
     );
     renderer.setPixelRatio(initialPixelRatio);
     renderer.setSize(initialRenderSize.width, initialRenderSize.height, true);
@@ -1777,7 +1814,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       if (!isMounted) return;
 
       const { width, height } = getRenderSize();
-      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+      const pixelRatio = getCappedDpr(width, height, usesMobileDpr);
       const nextBloomComposer = new EffectComposer(renderer);
       nextBloomComposer.renderToScreen = false;
       nextBloomComposer.setPixelRatio(pixelRatio);
@@ -4628,7 +4665,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const applyResize = (force = false) => {
       const { width, height } = getRenderSize();
-      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+      const pixelRatio = getCappedDpr(width, height, usesMobileDpr);
 
       if (
         !force &&
