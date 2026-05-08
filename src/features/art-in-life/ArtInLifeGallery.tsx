@@ -50,9 +50,18 @@ interface FrameRecord {
   paintingSpotlight: THREE.SpotLight;
   embedMounted: boolean;
   embedRequested: boolean;
+  embedRequestId: number;
+  cacheKey?: string;
   lastTouched: number;
-  schedule?: ScheduledWork;
-  iframeObserver?: MutationObserver;
+}
+
+interface CachedInstagramEmbed {
+  key: string;
+  index: number;
+  url: string;
+  element: HTMLElement;
+  observer: MutationObserver;
+  attachedRecordIndex: number | null;
 }
 
 interface SceneClassNames {
@@ -73,11 +82,6 @@ interface SceneClassNames {
   skeletonDot: string;
   skeletonCaptionLine: string;
   skeletonCaptionShort: string;
-}
-
-interface ScheduledWork {
-  type: 'idle' | 'timeout';
-  id: number;
 }
 
 type GalleryWallSide = 'left' | 'right';
@@ -147,6 +151,9 @@ declare global {
 const EMBED_WIDTH_PX = 326;
 const EMBED_HEIGHT_PX = 492;
 const EMBED_ASPECT_RATIO = EMBED_WIDTH_PX / EMBED_HEIGHT_PX;
+const MAX_CACHED_INSTAGRAM_IFRAMES = 30;
+const INSTAGRAM_EMBED_LOAD_TIMEOUT_MS = 8000;
+const INSTAGRAM_EMBED_SETTLE_MS = 900;
 const FRAME_RAIL_Z_OFFSET = 0.055;
 const FRAME_INNER_RIM_T = 0;
 const FRAME_CARD_SIZE_SCALE = 1;
@@ -573,7 +580,15 @@ const loadInstagramEmbedScript = (): Promise<void> => {
 
     if (existingScript) {
       existingScript.addEventListener('load', () => resolve(), { once: true });
-      existingScript.addEventListener('error', reject, { once: true });
+      existingScript.addEventListener(
+        'error',
+        (event) => {
+          instagramScriptPromise = null;
+          existingScript.remove();
+          reject(event);
+        },
+        { once: true }
+      );
       return;
     }
 
@@ -585,8 +600,23 @@ const loadInstagramEmbedScript = (): Promise<void> => {
     script.crossOrigin = 'anonymous';
     script.src = 'https://www.instagram.com/embed.js';
     script.dataset.instagramEmbedSdk = 'true';
-    script.addEventListener('load', () => resolve(), { once: true });
-    script.addEventListener('error', reject, { once: true });
+    script.addEventListener(
+      'load',
+      () => {
+        script.dataset.instagramEmbedSdkLoaded = 'true';
+        resolve();
+      },
+      { once: true }
+    );
+    script.addEventListener(
+      'error',
+      (event) => {
+        instagramScriptPromise = null;
+        script.remove();
+        reject(event);
+      },
+      { once: true }
+    );
     document.body.appendChild(script);
   });
 
@@ -609,40 +639,163 @@ const requestInstagramEmbedProcess = (element: Element): Promise<void> =>
     });
   });
 
-const waitForInstagramIframe = (
-  container: HTMLElement,
-  timeout = 2600
-): Promise<boolean> => {
-  if (container.querySelector('iframe[src*="instagram.com"]')) {
-    return Promise.resolve(true);
+const normalizeInstagramUrl = (url: string): string =>
+  url.replace(/&amp;/g, '&');
+
+const getInstagramEmbedCacheKey = (url: string): string => {
+  try {
+    const parsedUrl = new URL(normalizeInstagramUrl(url));
+    const pathname = parsedUrl.pathname.endsWith('/')
+      ? parsedUrl.pathname
+      : `${parsedUrl.pathname}/`;
+
+    return `${parsedUrl.origin}${pathname}`;
+  } catch {
+    return url;
+  }
+};
+
+const getInstagramPostPath = (url: string): string | null => {
+  try {
+    const parsedUrl = new URL(normalizeInstagramUrl(url));
+    const postMatch = parsedUrl.pathname.match(/^\/(p|reel|tv)\/([^/]+)/);
+
+    return postMatch ? `/${postMatch[1]}/${postMatch[2]}` : null;
+  } catch {
+    return null;
+  }
+};
+
+const isInstagramEmbedIframeHealthy = (
+  iframe: HTMLIFrameElement,
+  sourceUrl: string
+): boolean => {
+  if (!iframe.isConnected || iframe.src.startsWith('chrome-error://')) {
+    return false;
   }
 
+  let iframeUrl: URL;
+  try {
+    iframeUrl = new URL(iframe.src);
+  } catch {
+    return false;
+  }
+
+  const hostname = iframeUrl.hostname.toLowerCase();
+  if (hostname !== 'instagram.com' && hostname !== 'www.instagram.com') {
+    return false;
+  }
+
+  if (
+    iframeUrl.pathname === '/' ||
+    iframeUrl.pathname.startsWith('/accounts/login')
+  ) {
+    return false;
+  }
+
+  const sourcePostPath = getInstagramPostPath(sourceUrl);
+  if (sourcePostPath && !iframeUrl.pathname.includes(sourcePostPath)) {
+    return false;
+  }
+
+  if (!iframeUrl.pathname.includes('/embed')) {
+    return false;
+  }
+
+  const rect = iframe.getBoundingClientRect();
+  return rect.width >= 100 && rect.height >= 100;
+};
+
+const isInstagramMessageOrigin = (origin: string): boolean =>
+  origin === 'https://www.instagram.com' || origin === 'https://instagram.com';
+
+const waitForHealthyInstagramEmbed = (
+  container: HTMLElement,
+  sourceUrl: string,
+  timeout = INSTAGRAM_EMBED_LOAD_TIMEOUT_MS
+): Promise<HTMLElement | null> => {
   return new Promise((resolve) => {
     let settled = false;
+    let receivedEmbedMessage = false;
+    let settleTimeoutId = 0;
+    let pollIntervalId = 0;
+    let timeoutId = 0;
 
-    const finish = (hasIframe: boolean) => {
+    const findInstagramIframe = (): HTMLIFrameElement | null =>
+      container.querySelector<HTMLIFrameElement>(
+        'iframe[src*="instagram.com"]'
+      );
+
+    const findHealthyRoot = (): HTMLElement | null => {
+      const iframe = findInstagramIframe();
+      if (!iframe || !isInstagramEmbedIframeHealthy(iframe, sourceUrl)) {
+        return null;
+      }
+
+      if (!receivedEmbedMessage) {
+        return null;
+      }
+
+      const root = container.firstElementChild;
+      return root instanceof HTMLElement ? root : container;
+    };
+
+    const finish = (root: HTMLElement | null) => {
       if (settled) return;
 
       settled = true;
+      window.clearTimeout(settleTimeoutId);
       window.clearTimeout(timeoutId);
+      window.clearInterval(pollIntervalId);
+      window.removeEventListener('message', handleMessage);
       observer.disconnect();
-      resolve(hasIframe);
+      resolve(root);
+    };
+
+    const scheduleSettleCheck = () => {
+      if (settled || settleTimeoutId) return;
+
+      settleTimeoutId = window.setTimeout(() => {
+        settleTimeoutId = 0;
+        finish(findHealthyRoot());
+      }, INSTAGRAM_EMBED_SETTLE_MS);
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (!isInstagramMessageOrigin(event.origin)) return;
+
+      const iframe = findInstagramIframe();
+      if (!iframe || event.source !== iframe.contentWindow) return;
+
+      receivedEmbedMessage = true;
+      if (findHealthyRoot()) {
+        scheduleSettleCheck();
+      }
     };
 
     const observer = new MutationObserver(() => {
-      if (container.querySelector('iframe[src*="instagram.com"]')) {
-        finish(true);
+      if (findHealthyRoot()) {
+        scheduleSettleCheck();
       }
     });
-    const timeoutId = window.setTimeout(
-      () =>
-        finish(
-          Boolean(container.querySelector('iframe[src*="instagram.com"]'))
-        ),
-      timeout
-    );
+    window.addEventListener('message', handleMessage);
+    timeoutId = window.setTimeout(() => finish(findHealthyRoot()), timeout);
+    pollIntervalId = window.setInterval(() => {
+      if (findHealthyRoot()) {
+        scheduleSettleCheck();
+      }
+    }, 250);
 
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, {
+      attributes: true,
+      attributeFilter: ['src', 'style', 'class'],
+      childList: true,
+      subtree: true,
+    });
+
+    if (findHealthyRoot()) {
+      scheduleSettleCheck();
+    }
   });
 };
 
@@ -675,42 +828,6 @@ const watchInstagramIframes = (
   observer.observe(container, { childList: true, subtree: true });
 
   return observer;
-};
-
-const scheduleWhenIdle = (callback: () => void): ScheduledWork => {
-  const idleWindow = window as Window & {
-    requestIdleCallback?: (
-      callback: IdleRequestCallback,
-      options?: IdleRequestOptions
-    ) => number;
-  };
-
-  if (idleWindow.requestIdleCallback) {
-    return {
-      type: 'idle',
-      id: idleWindow.requestIdleCallback(callback, { timeout: 1500 }),
-    };
-  }
-
-  return {
-    type: 'timeout',
-    id: window.setTimeout(callback, 520),
-  };
-};
-
-const cancelScheduledWork = (work?: ScheduledWork) => {
-  if (!work) return;
-
-  const idleWindow = window as Window & {
-    cancelIdleCallback?: (id: number) => void;
-  };
-
-  if (work.type === 'idle' && idleWindow.cancelIdleCallback) {
-    idleWindow.cancelIdleCallback(work.id);
-    return;
-  }
-
-  window.clearTimeout(work.id);
 };
 
 const createSkeletonHtml = (classNames: SceneClassNames): string => `
@@ -1520,6 +1637,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let isViewportVisible = true;
     const shouldRunRenderLoop = () => isDocumentVisible && isViewportVisible;
     const activeFrames = new Map<number, FrameRecord>();
+    const embedCache = new Map<string, CachedInstagramEmbed>();
+    const embedCacheOrder: string[] = [];
+    const queuedEmbedLoads: Array<() => Promise<void>> = [];
+    const maxConcurrentEmbedLoads = isMobile ? 1 : 2;
+    let activeEmbedLoadCount = 0;
+    let embedRequestSequence = 0;
     const activeCeilingSpotlights = new Map<number, THREE.SpotLight>();
     const maxGroupIndex = Math.max(0, groupCount - 1);
     const groupSpan = Math.max(0, (layout.groupSize - 1) * layout.spacing);
@@ -1562,11 +1685,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     webglHost.className = sceneClassNames.webglLayer;
     const cssHost = document.createElement('div');
     cssHost.className = sceneClassNames.cssLayer;
-    const stagingHost = document.createElement('div');
-    stagingHost.setAttribute('aria-hidden', 'true');
-    stagingHost.style.cssText = `position:fixed;left:-10000px;top:0;width:${EMBED_WIDTH_PX}px;min-height:${EMBED_HEIGHT_PX}px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;contain:layout paint style;`;
+    const embedCacheHost = document.createElement('div');
+    embedCacheHost.setAttribute('aria-hidden', 'true');
+    embedCacheHost.style.cssText = `position:fixed;left:-10000px;top:0;width:${EMBED_WIDTH_PX}px;min-height:${EMBED_HEIGHT_PX}px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;`;
     viewport.append(webglHost, cssHost);
-    document.body.appendChild(stagingHost);
+    document.body.appendChild(embedCacheHost);
 
     const getRenderSize = () => {
       const rect = viewport.getBoundingClientRect();
@@ -4055,137 +4178,249 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       </div>
     `;
 
-    const isCruiseDestinationHidden = (
-      record: FrameRecord,
-      now: number | null
-    ) => {
-      if (!cameraTransition || cameraTransition.mode !== 'cruise') {
-        return false;
-      }
-
-      const groupIndex = getFramePlacement(record.index).groupIndex;
-      if (groupIndex !== cameraTransition.toGroupIndex) return false;
-
-      const motionElapsed =
-        now === null
-          ? 0
-          : clamp(
-              now - cameraTransition.startedAt - PAINTING_LIGHT_OFF_MS,
-              0,
-              cameraTransition.duration
-            );
-      const finalTurnStart = Math.max(
-        0,
-        cameraTransition.duration - cameraTransition.turnDuration
-      );
-
-      return motionElapsed < finalTurnStart;
-    };
-
     const updateEmbedRecordVisibility = (
       record: FrameRecord,
-      now: number | null
+      _now: number | null
     ) => {
-      const isVisible =
-        record.embedMounted && !isCruiseDestinationHidden(record, now);
+      const isVisible = record.embedMounted;
       record.element.style.opacity = isVisible ? '1' : '0';
       record.element.style.pointerEvents = isVisible ? 'auto' : 'none';
     };
 
     const updateEmbedVisibility = (now: number | null) => {
-      activeFrames.forEach((record) => updateEmbedRecordVisibility(record, now));
+      activeFrames.forEach((record) =>
+        updateEmbedRecordVisibility(record, now)
+      );
     };
 
-    const mountEmbed = (record: FrameRecord, urgent = false) => {
-      if (record.embedMounted) return;
+    const runQueuedEmbedLoads = () => {
+      if (!isMounted) return;
 
-      if (record.embedRequested) {
-        if (!urgent || !record.schedule) return;
+      while (
+        activeEmbedLoadCount < maxConcurrentEmbedLoads &&
+        queuedEmbedLoads.length > 0
+      ) {
+        const loadEmbed = queuedEmbedLoads.shift();
+        if (!loadEmbed) return;
 
-        cancelScheduledWork(record.schedule);
-        record.schedule = undefined;
-        record.embedRequested = false;
+        activeEmbedLoadCount += 1;
+        loadEmbed()
+          .catch(() => {
+            // Individual card failures are handled in the task itself.
+          })
+          .finally(() => {
+            activeEmbedLoadCount = Math.max(0, activeEmbedLoadCount - 1);
+            runQueuedEmbedLoads();
+          });
+      }
+    };
+
+    const enqueueEmbedLoad = (loadEmbed: () => Promise<void>) => {
+      queuedEmbedLoads.push(loadEmbed);
+      runQueuedEmbedLoads();
+    };
+
+    const removeEmbedCacheOrderKey = (cacheKey: string) => {
+      const orderIndex = embedCacheOrder.indexOf(cacheKey);
+      if (orderIndex >= 0) {
+        embedCacheOrder.splice(orderIndex, 1);
+      }
+    };
+
+    const evictCachedEmbed = (cacheKey: string) => {
+      const entry = embedCache.get(cacheKey);
+      if (!entry) return;
+
+      if (entry.attachedRecordIndex !== null) {
+        const attachedRecord = activeFrames.get(entry.attachedRecordIndex);
+        if (attachedRecord?.cacheKey === cacheKey) {
+          attachedRecord.embedMounted = false;
+          attachedRecord.embedRequested = false;
+          attachedRecord.embedRequestId = 0;
+          attachedRecord.cacheKey = undefined;
+          attachedRecord.element.innerHTML = '';
+          updateEmbedRecordVisibility(attachedRecord, null);
+        }
+      }
+
+      entry.observer.disconnect();
+      entry.element.remove();
+      embedCache.delete(cacheKey);
+      removeEmbedCacheOrderKey(cacheKey);
+    };
+
+    const enforceEmbedCacheLimit = () => {
+      while (embedCacheOrder.length > MAX_CACHED_INSTAGRAM_IFRAMES) {
+        const evictableKey =
+          embedCacheOrder.find((cacheKey) => {
+            const entry = embedCache.get(cacheKey);
+            return entry?.attachedRecordIndex === null;
+          }) ?? embedCacheOrder[0];
+
+        evictCachedEmbed(evictableKey);
+      }
+    };
+
+    const isRecordEmbedRequestCurrent = (
+      record: FrameRecord,
+      requestId: number
+    ) =>
+      isMounted &&
+      activeFrames.get(record.index) === record &&
+      record.embedRequestId === requestId;
+
+    const detachEmbedFromRecord = (record: FrameRecord) => {
+      record.embedRequested = false;
+      record.embedRequestId = 0;
+
+      if (record.cacheKey) {
+        const entry = embedCache.get(record.cacheKey);
+        if (
+          entry &&
+          entry.attachedRecordIndex === record.index &&
+          entry.element.parentElement === record.element
+        ) {
+          embedCacheHost.appendChild(entry.element);
+          entry.attachedRecordIndex = null;
+        }
+      } else {
+        record.element.innerHTML = '';
+      }
+
+      record.embedMounted = false;
+      record.cacheKey = undefined;
+      updateEmbedRecordVisibility(record, null);
+    };
+
+    const attachCachedEmbedToRecord = (
+      record: FrameRecord,
+      entry: CachedInstagramEmbed
+    ) => {
+      if (record.cacheKey === entry.key && record.embedMounted) {
+        updateEmbedRecordVisibility(
+          record,
+          cameraTransition ? performance.now() : null
+        );
+        return;
+      }
+
+      if (record.cacheKey && record.cacheKey !== entry.key) {
+        detachEmbedFromRecord(record);
+      }
+
+      if (
+        entry.attachedRecordIndex !== null &&
+        entry.attachedRecordIndex !== record.index
+      ) {
+        const previousRecord = activeFrames.get(entry.attachedRecordIndex);
+        if (previousRecord?.cacheKey === entry.key) {
+          previousRecord.embedMounted = false;
+          previousRecord.cacheKey = undefined;
+          updateEmbedRecordVisibility(previousRecord, null);
+        }
+      }
+
+      record.element.replaceChildren(entry.element);
+      entry.attachedRecordIndex = record.index;
+      record.cacheKey = entry.key;
+      record.embedMounted = true;
+      record.embedRequested = false;
+      record.embedRequestId = 0;
+      enhanceInstagramIframes(record.element, record.index);
+      updateEmbedRecordVisibility(
+        record,
+        cameraTransition ? performance.now() : null
+      );
+      invalidateCssRender();
+      requestRenderLoop();
+    };
+
+    const requestEmbedForRecord = (record: FrameRecord) => {
+      if (record.embedMounted || record.embedRequested) return;
+
+      const url = urls[record.index];
+      const cacheKey = getInstagramEmbedCacheKey(url);
+      const cachedEmbed = embedCache.get(cacheKey);
+      if (cachedEmbed) {
+        attachCachedEmbedToRecord(record, cachedEmbed);
+        return;
       }
 
       record.embedRequested = true;
-      const loadEmbed = () => {
-        record.schedule = undefined;
+      record.embedRequestId = ++embedRequestSequence;
+      const requestId = record.embedRequestId;
 
-        if (!activeFrames.has(record.index)) {
+      enqueueEmbedLoad(async () => {
+        if (!isRecordEmbedRequestCurrent(record, requestId)) return;
+
+        try {
+          await loadInstagramEmbedScript();
+          if (!isRecordEmbedRequestCurrent(record, requestId)) return;
+
+          record.element.innerHTML = createMountedEmbedHtml(url);
+          updateEmbedRecordVisibility(record, null);
+          invalidateCssRender();
+          requestRenderLoop();
+
+          await requestInstagramEmbedProcess(record.element);
+          const loadedEmbedRoot = await waitForHealthyInstagramEmbed(
+            record.element,
+            url
+          );
+
+          if (!isRecordEmbedRequestCurrent(record, requestId)) return;
+
+          if (!loadedEmbedRoot) {
+            throw new Error('Instagram embed failed health check.');
+          }
+
+          const existingCachedEmbed = embedCache.get(cacheKey);
+          if (existingCachedEmbed) {
+            loadedEmbedRoot.remove();
+            attachCachedEmbedToRecord(record, existingCachedEmbed);
+            return;
+          }
+
+          const observer = watchInstagramIframes(loadedEmbedRoot, record.index);
+          const cacheEntry: CachedInstagramEmbed = {
+            key: cacheKey,
+            index: record.index,
+            url,
+            element: loadedEmbedRoot,
+            observer,
+            attachedRecordIndex: record.index,
+          };
+
+          embedCache.set(cacheKey, cacheEntry);
+          embedCacheOrder.push(cacheKey);
+          record.cacheKey = cacheKey;
+          record.embedMounted = true;
           record.embedRequested = false;
-          return;
+          record.embedRequestId = 0;
+          updateEmbedRecordVisibility(
+            record,
+            cameraTransition ? performance.now() : null
+          );
+          enforceEmbedCacheLimit();
+          invalidateCssRender();
+          requestRenderLoop();
+        } catch {
+          if (!isRecordEmbedRequestCurrent(record, requestId)) return;
+
+          record.embedMounted = false;
+          record.embedRequested = false;
+          record.embedRequestId = 0;
+          record.cacheKey = undefined;
+          record.element.innerHTML = '';
+          updateEmbedRecordVisibility(record, null);
+          invalidateCssRender();
+          requestRenderLoop();
         }
-
-        loadInstagramEmbedScript()
-          .then(async () => {
-            if (!activeFrames.has(record.index)) {
-              record.embedRequested = false;
-              return;
-            }
-
-            const stagedElement = createEmbedElement(record.index);
-            stagedElement.innerHTML = createMountedEmbedHtml(
-              urls[record.index]
-            );
-            stagingHost.appendChild(stagedElement);
-
-            await requestInstagramEmbedProcess(stagedElement);
-            const hasIframe = await waitForInstagramIframe(stagedElement);
-
-            if (!activeFrames.has(record.index)) {
-              stagedElement.remove();
-              record.embedRequested = false;
-              return;
-            }
-
-            if (!hasIframe) {
-              stagedElement.remove();
-              record.embedRequested = false;
-              record.element.innerHTML = '';
-              updateEmbedRecordVisibility(record, null);
-              return;
-            }
-
-            record.element.replaceChildren(...stagedElement.childNodes);
-            stagedElement.remove();
-            record.iframeObserver?.disconnect();
-            record.iframeObserver = watchInstagramIframes(
-              record.element,
-              record.index
-            );
-            record.embedMounted = true;
-            updateEmbedRecordVisibility(
-              record,
-              cameraTransition ? performance.now() : null
-            );
-            invalidateCssRender();
-            requestRenderLoop();
-          })
-          .catch(() => {
-            record.embedRequested = false;
-            record.element.innerHTML = '';
-            updateEmbedRecordVisibility(record, null);
-            invalidateCssRender();
-            requestRenderLoop();
-          });
-      };
-
-      if (urgent) {
-        loadEmbed();
-      } else {
-        record.schedule = scheduleWhenIdle(loadEmbed);
-      }
+      });
     };
 
     const unmountEmbed = (record: FrameRecord) => {
-      cancelScheduledWork(record.schedule);
-      record.schedule = undefined;
-      record.iframeObserver?.disconnect();
-      record.iframeObserver = undefined;
-      record.embedMounted = false;
-      record.embedRequested = false;
-      updateEmbedRecordVisibility(record, null);
-      record.element.innerHTML = '';
+      detachEmbedFromRecord(record);
     };
 
     const updateCardTransform = (record: FrameRecord) => {
@@ -4248,6 +4483,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         paintingSpotlight,
         embedMounted: false,
         embedRequested: false,
+        embedRequestId: 0,
         lastTouched: performance.now(),
       };
 
@@ -4315,14 +4551,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       activeFrames.forEach((record, index) => {
         if (index >= embedStart && index <= embedEnd) {
-          mountEmbed(record, true);
+          requestEmbedForRecord(record);
+          return;
         }
-      });
 
-      activeFrames.forEach((record, index) => {
-        if (index < embedStart || index > embedEnd) {
-          mountEmbed(record, false);
-        }
+        detachEmbedFromRecord(record);
       });
 
       if (didFrameSetChange) {
@@ -4368,8 +4601,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
 
       activeFrames.forEach((record, index) => {
+        const recordGroupIndex = getFramePlacement(index).groupIndex;
+        if (
+          recordGroupIndex !== fromGroupIndex &&
+          recordGroupIndex !== toGroupIndex
+        ) {
+          detachEmbedFromRecord(record);
+          return;
+        }
+
         if (index >= embedStart && index <= embedEnd) {
-          mountEmbed(record, true);
+          requestEmbedForRecord(record);
         }
       });
 
@@ -5042,8 +5284,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       nextButton?.removeEventListener('click', goNext);
       lastButton?.removeEventListener('click', goLast);
 
+      queuedEmbedLoads.length = 0;
       activeFrames.forEach(destroyFrameRecord);
       activeFrames.clear();
+      [...embedCache.keys()].forEach(evictCachedEmbed);
       activeCeilingSpotlights.forEach(removeGroupCeilingSpotlight);
       activeCeilingSpotlights.clear();
       neonAnchors.forEach((anchor) => scene.remove(anchor));
@@ -5069,7 +5313,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       renderer.dispose();
       webglHost.remove();
       cssHost.remove();
-      stagingHost.remove();
+      embedCacheHost.remove();
     };
   }, [
     groupCount,
