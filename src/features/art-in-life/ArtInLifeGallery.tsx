@@ -191,6 +191,7 @@ const CHANDELIER_LOD_LOWER_ARM_COUNT = 10;
 const CHANDELIER_LOD_UPPER_ARM_COUNT = 5;
 const CHANDELIER_LOD_CRYSTAL_COUNT = 16;
 const CHANDELIER_LOD_BEAD_COUNT = 24;
+const CHANDELIER_LOD_DROP_LINE_HEIGHT = 0.52;
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -3153,17 +3154,70 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       false
     );
     const simpleChandelierBeadGeometry = new THREE.SphereGeometry(0.043, 8, 6);
-    const simpleChandelierArmGeometry = new THREE.CylinderGeometry(
-      0.018,
-      0.018,
-      1.62,
-      8
+    const simpleChandelierArmGeometry = new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.72, 0.18),
+        new THREE.Vector3(0, 0.34, 0.38),
+        new THREE.Vector3(0, -0.08, 0.42),
+        new THREE.Vector3(0, -0.52, 0.18),
+        new THREE.Vector3(0, -0.86, -0.06),
+      ]),
+      28,
+      0.022,
+      6,
+      false
     );
-    const simpleChandelierUpperArmGeometry = new THREE.CylinderGeometry(
-      0.014,
-      0.014,
-      0.92,
-      8
+    const simpleChandelierUpperArmGeometry = new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.46, 0.28),
+        new THREE.Vector3(0, 0.12, 0.18),
+        new THREE.Vector3(0, -0.18, 0.06),
+        new THREE.Vector3(0, -0.44, -0.16),
+      ]),
+      20,
+      0.017,
+      6,
+      false
+    );
+    const simpleChandelierCupGeometry = new THREE.CylinderGeometry(
+      0.19,
+      0.29,
+      0.18,
+      16
+    );
+    const simpleChandelierCupRingGeometry = new THREE.TorusGeometry(
+      0.26,
+      0.026,
+      8,
+      32
+    );
+    const simpleChandelierSleeveGeometry = new THREE.CylinderGeometry(
+      0.12,
+      0.12,
+      0.42,
+      12
+    );
+    const simpleChandelierUpperCupGeometry = new THREE.CylinderGeometry(
+      0.1,
+      0.16,
+      0.12,
+      12
+    );
+    const simpleChandelierDropLineGeometry = new THREE.CylinderGeometry(
+      0.006,
+      0.006,
+      CHANDELIER_LOD_DROP_LINE_HEIGHT,
+      5
+    );
+    const simpleChandelierCenterDropGeometry = new THREE.CylinderGeometry(
+      0.008,
+      0.008,
+      0.7,
+      6
+    );
+    const simpleChandelierCenterCrystalGeometry = new THREE.OctahedronGeometry(
+      0.17,
+      0
     );
     [
       simpleChandelierCanopyGeometry,
@@ -3181,6 +3235,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       simpleChandelierBeadGeometry,
       simpleChandelierArmGeometry,
       simpleChandelierUpperArmGeometry,
+      simpleChandelierCupGeometry,
+      simpleChandelierCupRingGeometry,
+      simpleChandelierSleeveGeometry,
+      simpleChandelierUpperCupGeometry,
+      simpleChandelierDropLineGeometry,
+      simpleChandelierCenterDropGeometry,
+      simpleChandelierCenterCrystalGeometry,
     ].forEach((geometry) => chandelierGeometries.add(geometry));
 
     const createSimpleChandelierMesh = (
@@ -3261,6 +3322,41 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         simpleChandelierGlowGeometry,
         chandelierSimpleFlameGlowMaterial,
         chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
+      ),
+      cups: createSimpleChandelierMesh(
+        simpleChandelierCupGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
+      ),
+      cupRings: createSimpleChandelierMesh(
+        simpleChandelierCupRingGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
+      ),
+      sleeves: createSimpleChandelierMesh(
+        simpleChandelierSleeveGeometry,
+        chandelierCandleSleeveMaterial,
+        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
+      ),
+      upperCups: createSimpleChandelierMesh(
+        simpleChandelierUpperCupGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
+      ),
+      dropLines: createSimpleChandelierMesh(
+        simpleChandelierDropLineGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT
+      ),
+      centerDrops: createSimpleChandelierMesh(
+        simpleChandelierCenterDropGeometry,
+        chandelierAgedGoldMaterial,
+        chandelierCount
+      ),
+      centerCrystals: createSimpleChandelierMesh(
+        simpleChandelierCenterCrystalGeometry,
+        chandelierCrystalLiteMaterial,
+        chandelierCount
       ),
       crystals: createSimpleChandelierMesh(
         simpleChandelierCrystalGeometry,
@@ -3584,6 +3680,34 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           ringEuler,
           new THREE.Vector3(rootScale, rootScale, rootScale)
         );
+        setSimpleChandelierInstance(
+          simpleChandeliers.centerDrops,
+          anchor.index,
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY + 0.075 * rootScale,
+            rootPosition.z
+          ),
+          rootEuler,
+          new THREE.Vector3(rootScale, rootScale, rootScale),
+          true
+        );
+        setSimpleChandelierInstance(
+          simpleChandeliers.centerCrystals,
+          anchor.index,
+          new THREE.Vector3(
+            rootPosition.x,
+            rootY - 0.38 * rootScale,
+            rootPosition.z
+          ),
+          new THREE.Euler(0.18, rootRotation, 0.06),
+          new THREE.Vector3(
+            rootScale * 1.05,
+            rootScale * 1.55,
+            rootScale * 1.05
+          ),
+          true
+        );
 
         for (
           let bulbIndex = 0;
@@ -3616,6 +3740,42 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             ),
             new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
             new THREE.Vector3(rootScale, rootScale, rootScale)
+          );
+          setSimpleChandelierInstance(
+            simpleChandeliers.cups,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + (localY + 0.21) * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            rootEuler,
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            true
+          );
+          setSimpleChandelierInstance(
+            simpleChandeliers.cupRings,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + (localY + 0.32) * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            ringEuler,
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            true
+          );
+          setSimpleChandelierInstance(
+            simpleChandeliers.sleeves,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + (localY + 0.62) * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            rootEuler,
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            true
           );
           setLodPair(
             simpleChandeliers.bulbs,
@@ -3670,6 +3830,18 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             ),
             new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
             new THREE.Vector3(rootScale, rootScale, rootScale)
+          );
+          setSimpleChandelierInstance(
+            simpleChandeliers.upperCups,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + 2.43 * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            rootEuler,
+            new THREE.Vector3(rootScale, rootScale, rootScale),
+            true
           );
           setLodPair(
             simpleChandeliers.upperBulbs,
@@ -3733,11 +3905,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             rootRotation +
             (crystalIndex / CHANDELIER_LOD_CRYSTAL_COUNT) * Math.PI * 2;
           const radius = (crystalIndex % 2 === 0 ? 0.83 : 0.68) * rootScale;
+          const localCrystalY = 0.08 - (crystalIndex % 3) * 0.1;
+          const dropTopY = 0.61;
+          const dropHeight = Math.max(0.12, dropTopY - localCrystalY);
           const instanceIndex =
             anchor.index * CHANDELIER_LOD_CRYSTAL_COUNT + crystalIndex;
           const crystalPosition = new THREE.Vector3(
             rootPosition.x + Math.cos(angle) * radius,
-            rootY + (0.08 - (crystalIndex % 3) * 0.1) * rootScale,
+            rootY + localCrystalY * rootScale,
             rootPosition.z + Math.sin(angle) * radius
           );
           const crystalRotation = new THREE.Euler(0.25, -angle, 0.08);
@@ -3748,6 +3923,22 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           );
           const showPearCrystal = crystalIndex % 3 !== 0;
 
+          setSimpleChandelierInstance(
+            simpleChandeliers.dropLines,
+            instanceIndex,
+            new THREE.Vector3(
+              rootPosition.x + Math.cos(angle) * radius,
+              rootY + ((dropTopY + localCrystalY) / 2) * rootScale,
+              rootPosition.z + Math.sin(angle) * radius
+            ),
+            rootEuler,
+            new THREE.Vector3(
+              rootScale,
+              rootScale * (dropHeight / CHANDELIER_LOD_DROP_LINE_HEIGHT),
+              rootScale
+            ),
+            true
+          );
           setSimpleChandelierInstance(
             simpleChandeliers.crystals,
             instanceIndex,
