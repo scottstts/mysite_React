@@ -35,7 +35,7 @@
 }
 
 .glass-card p {
-  font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Roboto Slab', Georgia, serif;
   margin-bottom: 0;
 }
 
@@ -47,7 +47,7 @@
 }
 
 .glass-card .glass-card-tagline {
-  font-family: 'Fraunces', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Roboto Slab', Georgia, serif;
 }
 
 .glass-card p .eater-regular {

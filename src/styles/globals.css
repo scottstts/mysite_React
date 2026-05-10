@@ -16,11 +16,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   font-family:
-    'Fraunces',
-    'Segoe UI',
-    system-ui,
-    -apple-system,
-    sans-serif;
+    'Roboto Slab',
+    Georgia,
+    serif;
   color: var(--text-primary);
   --mouse-x: 0deg;
   --mouse-y: 0deg;
