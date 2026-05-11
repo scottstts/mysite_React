@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import Stars from './Stars';
 
 const BG_VIDEO_SRC = '/static_assets/bg_video.webm';
 
@@ -13,7 +12,6 @@ const BackgroundEffects = ({ introComplete }: BackgroundEffectsProps) => {
     () => document.visibilityState !== 'hidden'
   );
   const [isBackgroundMounted, setIsBackgroundMounted] = useState(false);
-  const [isBackgroundPlaying, setIsBackgroundPlaying] = useState(false);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -55,30 +53,23 @@ const BackgroundEffects = ({ introComplete }: BackgroundEffectsProps) => {
     }
   }, [isBackgroundMounted, isPageVisible]);
 
+  if (!isBackgroundMounted) {
+    return null;
+  }
+
   return (
-    <>
-      {isBackgroundMounted && (
-        <video
-          ref={videoRef}
-          className="bg-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          onPlaying={() => setIsBackgroundPlaying(true)}
-          onPause={() => setIsBackgroundPlaying(false)}
-          onWaiting={() => setIsBackgroundPlaying(false)}
-        >
-          <source src={BG_VIDEO_SRC} type="video/webm" />
-        </video>
-      )}
-      <Stars
-        shouldMount={isBackgroundMounted}
-        isActive={isBackgroundPlaying && isPageVisible}
-      />
-    </>
+    <video
+      ref={videoRef}
+      className="bg-video"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      aria-hidden="true"
+    >
+      <source src={BG_VIDEO_SRC} type="video/webm" />
+    </video>
   );
 };
 

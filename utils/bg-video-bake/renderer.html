@@ -36,8 +36,6 @@
       const LOOP_SECONDS = 151 / FPS;
       const SECTOR_ANGLE = (Math.PI * 2) / SECTOR_COUNT;
       const SECTOR_DIRECTION = -1;
-      const TWO_PI = Math.PI * 2;
-      const LOOP_PHASE_EASE = 0.38;
       const DISK_MAJOR_AXIS_RADIANS = (22 * Math.PI) / 180;
       const DISK_AXIS_Z = 0.22;
       const diskAxisLength = Math.hypot(1, DISK_AXIS_Z);
@@ -227,12 +225,6 @@
         return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
       };
 
-      const createRotationZMatrix = (angle) => {
-        const c = Math.cos(angle);
-        const s = Math.sin(angle);
-        return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-      };
-
       const createAxisAngleMatrix = ([x, y, z], angle) => {
         const c = Math.cos(angle);
         const s = Math.sin(angle);
@@ -395,12 +387,9 @@
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
       const viewMatrix = createTranslationMatrix(0, 0, -1);
-      const groupRotationZ = createRotationZMatrix(Math.PI / 4);
 
       window.renderFrame = (frameIndex, totalFrames) => {
-        const basePhase = frameIndex / totalFrames;
-        const sectorPhase =
-          basePhase - (LOOP_PHASE_EASE * Math.sin(TWO_PI * basePhase)) / TWO_PI;
+        const sectorPhase = frameIndex / totalFrames;
         const sectorRotation = createAxisAngleMatrix(
           DISK_ROTATION_AXIS,
           SECTOR_DIRECTION * sectorPhase * SECTOR_ANGLE
