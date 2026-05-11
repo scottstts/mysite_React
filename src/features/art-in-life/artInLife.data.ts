@@ -1,4 +1,7 @@
 const urls = [
+  'https://www.instagram.com/p/DYMitn0il-a/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYKarArqIn0/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DX_7eQAijq1/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXoqBOXCuWw/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXZURs6ihJ6/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DXEKmcwipRF/?utm_source=ig_embed&amp;utm_campaign=loading',

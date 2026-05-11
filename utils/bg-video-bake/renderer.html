@@ -1,0 +1,432 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <style>
+      html,
+      body {
+        width: 3840px;
+        height: 2160px;
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      canvas {
+        display: block;
+        width: 3840px;
+        height: 2160px;
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stars" width="3840" height="2160"></canvas>
+    <script>
+      const WIDTH = 3840;
+      const HEIGHT = 2160;
+      const SECTOR_COUNT = 6;
+      const BASE_PETAL_COUNT = 134;
+      const PETAL_COUNT = BASE_PETAL_COUNT * SECTOR_COUNT;
+      const FPS = 30;
+      const LOOP_SECONDS = 151 / FPS;
+      const SECTOR_ANGLE = (Math.PI * 2) / SECTOR_COUNT;
+      const SECTOR_DIRECTION = -1;
+      const TWO_PI = Math.PI * 2;
+      const LOOP_PHASE_EASE = 0.38;
+      const DISK_MAJOR_AXIS_RADIANS = (22 * Math.PI) / 180;
+      const DISK_AXIS_Z = 0.22;
+      const diskAxisLength = Math.hypot(1, DISK_AXIS_Z);
+      const DISK_ROTATION_AXIS = [
+        Math.sin(DISK_MAJOR_AXIS_RADIANS) / diskAxisLength,
+        -Math.cos(DISK_MAJOR_AXIS_RADIANS) / diskAxisLength,
+        DISK_AXIS_Z / diskAxisLength,
+      ];
+
+      const vertexShaderSource = `
+        attribute vec3 aPosition;
+        attribute float aSeed;
+        attribute float aAngleOffset;
+        uniform mat4 uProjectionMatrix;
+        uniform mat4 uModelViewMatrix;
+        uniform float uPointSize;
+        uniform float uPixelRatio;
+        varying float vSeed;
+        varying float vAngleOffset;
+
+        void main() {
+          vec4 mvPosition = uModelViewMatrix * vec4(aPosition, 1.0);
+          gl_Position = uProjectionMatrix * mvPosition;
+          vSeed = aSeed;
+          vAngleOffset = aAngleOffset;
+
+          float scale = 450.0 * uPixelRatio;
+          float sizeVariation = 0.6 + 0.8 * fract(aSeed * 7.31);
+          gl_PointSize = uPointSize * sizeVariation * (scale / -mvPosition.z);
+        }
+      `;
+
+      const fragmentShaderSource = `
+        precision mediump float;
+        uniform float uSectorPhase;
+        varying float vSeed;
+        varying float vAngleOffset;
+
+        void main() {
+          vec2 uv = gl_PointCoord - vec2(0.5);
+
+          float baseAngle = fract(vSeed * 47.13) * 6.2831;
+          float drift = vAngleOffset - uSectorPhase * 1.0471975512;
+          float angle = baseAngle + drift;
+          float ca = cos(angle);
+          float sa = sin(angle);
+          vec2 ruv = vec2(ca * uv.x - sa * uv.y, sa * uv.x + ca * uv.y);
+
+          float skew = 0.2 * (fract(vSeed * 11.3) - 0.5);
+          ruv.x += skew * ruv.y;
+
+          float shapeSelect = fract(vSeed * 29.7);
+          float petal = 0.0;
+          float d = 0.0;
+          vec2 p;
+
+          if (shapeSelect < 0.3) {
+            p = vec2(ruv.x * 2.2, ruv.y * 2.0 - 0.02);
+            float wm = 1.0 - 0.4 * smoothstep(-0.4, 0.5, p.y);
+            float dx = p.x / wm;
+            d = dx * dx + p.y * p.y;
+            petal = 1.0 - smoothstep(0.18, 0.26, d);
+            float notch = smoothstep(0.0, 0.04, abs(p.x)) + smoothstep(0.35, 0.5, p.y);
+            petal *= clamp(notch, 0.0, 1.0);
+
+          } else if (shapeSelect < 0.55) {
+            p = vec2(ruv.x * 3.5, ruv.y * 1.6 - 0.03);
+            float wm = 1.0 - 0.7 * smoothstep(-0.5, 0.4, p.y);
+            float dx = p.x / wm;
+            d = dx * dx + p.y * p.y;
+            petal = 1.0 - smoothstep(0.14, 0.20, d);
+
+          } else if (shapeSelect < 0.8) {
+            p = vec2(ruv.x * 2.6, ruv.y * 1.8 - 0.04);
+            float wm = 1.0 - 0.55 * smoothstep(-0.5, 0.45, p.y);
+            float dx = p.x / wm;
+            d = dx * dx + p.y * p.y;
+            petal = 1.0 - smoothstep(0.16, 0.23, d);
+            float notch = smoothstep(0.0, 0.06, abs(p.x)) + smoothstep(0.25, 0.42, p.y);
+            petal *= clamp(notch, 0.0, 1.0);
+
+          } else {
+            vec2 curled = ruv;
+            curled.x += 0.04 * sin(ruv.y * 8.0);
+            p = vec2(curled.x * 2.8, curled.y * 1.9 - 0.03);
+            float wm = 1.0 - 0.5 * smoothstep(-0.45, 0.5, p.y);
+            float dx = p.x / wm;
+            d = dx * dx + p.y * p.y;
+            petal = 1.0 - smoothstep(0.15, 0.22, d);
+            float notch = smoothstep(0.0, 0.035, abs(p.x)) + smoothstep(0.32, 0.48, p.y);
+            petal *= clamp(notch, 0.0, 1.0);
+          }
+
+          float vein = exp(-abs(p.x) * 25.0) * 0.2 * petal;
+
+          float alpha = petal * 0.85;
+          if (alpha < 0.02) discard;
+
+          vec3 hotPink = vec3(1.0, 0.25, 0.55);
+          vec3 magenta = vec3(0.95, 0.30, 0.65);
+          vec3 rosePink = vec3(1.0, 0.42, 0.62);
+          vec3 sakuraPink = vec3(1.0, 0.55, 0.72);
+          vec3 brightBlush = vec3(1.0, 0.65, 0.78);
+
+          float colorPick = fract(vSeed * 13.37);
+          vec3 petalColor;
+          if (colorPick < 0.25) {
+            petalColor = mix(hotPink, rosePink, fract(vSeed * 3.7));
+          } else if (colorPick < 0.5) {
+            petalColor = mix(magenta, sakuraPink, fract(vSeed * 5.1));
+          } else if (colorPick < 0.75) {
+            petalColor = mix(rosePink, brightBlush, fract(vSeed * 9.3));
+          } else {
+            petalColor = mix(sakuraPink, rosePink, fract(vSeed * 7.7));
+          }
+
+          float edgeFade = smoothstep(0.04, 0.2, d);
+          petalColor = mix(petalColor + 0.08, petalColor * 0.88, edgeFade * 0.5);
+          petalColor += vec3(vein);
+
+          gl_FragColor = vec4(petalColor, alpha);
+        }
+      `;
+
+      const mulberry32 = (seed) => {
+        let value = seed >>> 0;
+
+        return () => {
+          value += 0x6d2b79f5;
+          let t = value;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      };
+
+      const createPerspectiveMatrix = (fovDegrees, aspect, near, far) => {
+        const fovRad = (fovDegrees * Math.PI) / 180;
+        const f = 1.0 / Math.tan(fovRad / 2);
+        const rangeInv = 1.0 / (near - far);
+
+        return new Float32Array([
+          f / aspect,
+          0,
+          0,
+          0,
+          0,
+          f,
+          0,
+          0,
+          0,
+          0,
+          (near + far) * rangeInv,
+          -1,
+          0,
+          0,
+          near * far * rangeInv * 2,
+          0,
+        ]);
+      };
+
+      const multiplyMatrices = (a, b) => {
+        const result = new Float32Array(16);
+
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 4; col++) {
+            let sum = 0;
+            for (let k = 0; k < 4; k++) {
+              sum += a[row + k * 4] * b[k + col * 4];
+            }
+            result[row + col * 4] = sum;
+          }
+        }
+
+        return result;
+      };
+
+      const createRotationXMatrix = (angle) => {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]);
+      };
+
+      const createRotationYMatrix = (angle) => {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
+      };
+
+      const createRotationZMatrix = (angle) => {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+      };
+
+      const createAxisAngleMatrix = ([x, y, z], angle) => {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        const t = 1 - c;
+
+        const r00 = c + x * x * t;
+        const r01 = x * y * t - z * s;
+        const r02 = x * z * t + y * s;
+        const r10 = y * x * t + z * s;
+        const r11 = c + y * y * t;
+        const r12 = y * z * t - x * s;
+        const r20 = z * x * t - y * s;
+        const r21 = z * y * t + x * s;
+        const r22 = c + z * z * t;
+
+        return new Float32Array([
+          r00,
+          r10,
+          r20,
+          0,
+          r01,
+          r11,
+          r21,
+          0,
+          r02,
+          r12,
+          r22,
+          0,
+          0,
+          0,
+          0,
+          1,
+        ]);
+      };
+
+      const transformPoint = (matrix, x, y, z) => [
+        matrix[0] * x + matrix[4] * y + matrix[8] * z,
+        matrix[1] * x + matrix[5] * y + matrix[9] * z,
+        matrix[2] * x + matrix[6] * y + matrix[10] * z,
+      ];
+
+      const createTranslationMatrix = (x, y, z) =>
+        new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]);
+
+      const compileShader = (gl, source, type) => {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(shader) || 'Shader compile failed');
+        }
+
+        return shader;
+      };
+
+      const createProgram = (gl, vertexSource, fragmentSource) => {
+        const vertexShader = compileShader(gl, vertexSource, gl.VERTEX_SHADER);
+        const fragmentShader = compileShader(gl, fragmentSource, gl.FRAGMENT_SHADER);
+        const program = gl.createProgram();
+
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+          throw new Error(gl.getProgramInfoLog(program) || 'Program link failed');
+        }
+
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        return program;
+      };
+
+      const random = mulberry32(20260511);
+      const positions = new Float32Array(PETAL_COUNT * 3);
+      const seeds = new Float32Array(PETAL_COUNT);
+      const angleOffsets = new Float32Array(PETAL_COUNT);
+
+      for (let baseIndex = 0; baseIndex < BASE_PETAL_COUNT; baseIndex++) {
+        const u = random();
+        const v = random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const r = 1.2 * Math.cbrt(random());
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        const seed = random();
+
+        for (let sector = 0; sector < SECTOR_COUNT; sector++) {
+          const angle = SECTOR_DIRECTION * sector * SECTOR_ANGLE;
+          const sectorMatrix = createAxisAngleMatrix(DISK_ROTATION_AXIS, angle);
+          const sectorPosition = transformPoint(sectorMatrix, x, y, z);
+          const index = baseIndex * SECTOR_COUNT + sector;
+          const offset = index * 3;
+
+          positions[offset] = sectorPosition[0];
+          positions[offset + 1] = sectorPosition[1];
+          positions[offset + 2] = sectorPosition[2];
+          seeds[index] = seed;
+          angleOffsets[index] = angle;
+        }
+      }
+
+      const canvas = document.getElementById('stars');
+      const gl = canvas.getContext('webgl', {
+        antialias: false,
+        alpha: true,
+        premultipliedAlpha: false,
+        preserveDrawingBuffer: true,
+        powerPreference: 'high-performance',
+        stencil: false,
+        depth: false,
+      });
+
+      if (!gl) {
+        throw new Error('WebGL is unavailable');
+      }
+
+      const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+      gl.useProgram(program);
+
+      const aPosition = gl.getAttribLocation(program, 'aPosition');
+      const aSeed = gl.getAttribLocation(program, 'aSeed');
+      const aAngleOffset = gl.getAttribLocation(program, 'aAngleOffset');
+      const uProjectionMatrix = gl.getUniformLocation(program, 'uProjectionMatrix');
+      const uModelViewMatrix = gl.getUniformLocation(program, 'uModelViewMatrix');
+      const uPointSize = gl.getUniformLocation(program, 'uPointSize');
+      const uPixelRatio = gl.getUniformLocation(program, 'uPixelRatio');
+      const uSectorPhase = gl.getUniformLocation(program, 'uSectorPhase');
+
+      const positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(aPosition);
+      gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+
+      const seedBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(aSeed);
+      gl.vertexAttribPointer(aSeed, 1, gl.FLOAT, false, 0, 0);
+
+      const angleOffsetBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, angleOffsetBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, angleOffsets, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(aAngleOffset);
+      gl.vertexAttribPointer(aAngleOffset, 1, gl.FLOAT, false, 0, 0);
+
+      gl.viewport(0, 0, WIDTH, HEIGHT);
+      gl.uniformMatrix4fv(
+        uProjectionMatrix,
+        false,
+        createPerspectiveMatrix(75, WIDTH / HEIGHT, 0.1, 1000)
+      );
+      gl.uniform1f(uPointSize, 0.0375);
+      gl.uniform1f(uPixelRatio, 1);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      const viewMatrix = createTranslationMatrix(0, 0, -1);
+      const groupRotationZ = createRotationZMatrix(Math.PI / 4);
+
+      window.renderFrame = (frameIndex, totalFrames) => {
+        const basePhase = frameIndex / totalFrames;
+        const sectorPhase =
+          basePhase - (LOOP_PHASE_EASE * Math.sin(TWO_PI * basePhase)) / TWO_PI;
+        const sectorRotation = createAxisAngleMatrix(
+          DISK_ROTATION_AXIS,
+          SECTOR_DIRECTION * sectorPhase * SECTOR_ANGLE
+        );
+
+        let modelViewMatrix = multiplyMatrices(viewMatrix, sectorRotation);
+
+        gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+        gl.uniform1f(uSectorPhase, sectorPhase);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, PETAL_COUNT);
+        gl.finish();
+
+        return {
+          frameIndex,
+          totalFrames,
+          sectorPhase,
+          duration: LOOP_SECONDS,
+          width: WIDTH,
+          height: HEIGHT,
+          petalCount: PETAL_COUNT,
+        };
+      };
+
+      window.renderFrame(0, 151);
+    </script>
+  </body>
+</html>
