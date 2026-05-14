@@ -57,7 +57,7 @@ function App() {
   // Determine active tab from route
   const getActiveTabFromPath = (pathname: string): TabId => {
     switch (pathname) {
-      case '/projects':
+      case '/journey':
         return 'projects';
       case '/apps':
         return 'apps';
@@ -89,7 +89,7 @@ function App() {
   useEffect(() => {
     const titles: Record<TabId, string> = {
       about: 'About - Scott Sun',
-      projects: 'Projects - Scott Sun',
+      projects: 'Learning Journey - Scott Sun',
       apps: 'Apps - Scott Sun',
       inspirations: 'Inspirations - Scott Sun',
       'art-in-life': 'Art in Life - Scott Sun',

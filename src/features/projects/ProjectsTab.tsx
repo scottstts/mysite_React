@@ -8,7 +8,7 @@ const ProjectsTab = () => {
   return (
     <>
       <Helmet>
-        <title>Projects - Scott Sun</title>
+        <title>Learning Journey - Scott Sun</title>
         <meta
           name="description"
           content="Scott Sun's learning journey and projects - from programming to deep learning, AI, Blender, Unity, and app development."

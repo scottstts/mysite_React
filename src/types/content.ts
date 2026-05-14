@@ -49,4 +49,5 @@ export interface NavigationTab {
   id: TabId;
   label: string;
   path: string;
+  iconClass: string;
 }

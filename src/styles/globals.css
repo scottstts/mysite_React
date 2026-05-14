@@ -125,36 +125,52 @@ main.visible {
 }
 
 /* Enhanced navigation with more sophisticated styling */
-nav {
+.site-navigation {
   display: flex;
   flex-wrap: nowrap;
+  align-items: center;
   justify-content: center;
-  gap: 2.5rem;
-  width: 100%;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: 100%;
   margin-bottom: 3rem;
-  padding: 1.5rem 1rem 0;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0.5rem;
   position: relative;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-/* Add a subtle glow line under the navigation */
-nav::after {
-  content: '';
+.site-navigation::after {
+  display: none;
+}
+
+.tab-active-indicator {
   position: absolute;
-  bottom: -10px;
-  left: 50%;
-  width: 50%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.95),
-    transparent
-  );
-  transform: translateX(-50%);
-  opacity: 0.5;
+  top: 0.5rem;
+  left: 0;
+  z-index: 1;
+  height: calc(100% - 1rem);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.875rem;
+  box-shadow:
+    0 0 20px rgba(168, 127, 255, 0.4),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease;
+}
+
+.tab-active-indicator.is-ready {
+  opacity: 1;
 }
 
 body.art-in-life-mode .site-navigation--gallery {
@@ -290,31 +306,77 @@ body.art-in-life-mode .site-navigation--gallery::after {
 /* More sophisticated tab buttons */
 .tab-button {
   position: relative;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  background: rgba(8, 12, 24, 0.55);
-  color: var(--text-primary);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.1s ease;
+  background: transparent;
+  color: #8a8f98;
   white-space: nowrap;
   width: auto;
   flex: 0 0 auto;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.875rem;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow:
-    0 12px 35px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  letter-spacing: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
-.tab-button:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.08);
+.tab-button-icon {
+  display: none;
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  box-shadow:
-    0 14px 40px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 1.125rem;
+  line-height: 1;
+  text-align: center;
+  width: 1em;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.tab-button-label {
+  display: inline;
+}
+
+.site-navigation:not(.site-navigation--gallery) .tab-button {
+  gap: 0.625rem;
+}
+
+.site-navigation:not(.site-navigation--gallery) .tab-button-icon {
+  display: inline-block;
+}
+
+.site-navigation:not(.site-navigation--gallery) .tab-button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #d1d5db;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+.site-navigation:not(.site-navigation--gallery) .tab-button:active {
+  transform: scale(0.96);
+}
+
+.site-navigation:not(.site-navigation--gallery) .tab-button.active {
+  color: white;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.site-navigation:not(.site-navigation--gallery)
+  .tab-button.active
+  .tab-button-icon {
+  transform: scale(1.1);
 }
 
 body.art-in-life-mode .site-navigation--gallery .tab-button {
@@ -347,17 +409,30 @@ body.art-in-life-mode .site-navigation--gallery .tab-button:hover:not(.active) {
 }
 
 @media (max-width: 1024px) {
-  nav {
-    flex-direction: column;
+  .site-navigation:not(.site-navigation--gallery) {
+    flex-direction: row;
     align-items: center;
-    width: 100%;
-    gap: 1rem;
+    justify-content: center;
+    width: max-content;
+    gap: clamp(0.45rem, 2.5vw, 0.75rem);
   }
 
-  .tab-button {
-    width: 100%;
+  .site-navigation:not(.site-navigation--gallery) .tab-button {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
     text-align: center;
-    padding: 0.75rem;
+    font-size: 1.05rem;
+    gap: 0;
+  }
+
+  .site-navigation:not(.site-navigation--gallery) .tab-button-icon {
+    display: block;
+  }
+
+  .site-navigation:not(.site-navigation--gallery) .tab-button-label {
+    display: none;
   }
 }
 
@@ -400,29 +475,18 @@ body.art-in-life-mode .site-navigation--gallery .tab-button:hover:not(.active) {
   }
 }
 
-/* Enhanced underline effect for tab buttons */
-.tab-button::after {
+/* Gallery navigation keeps its separate underline treatment */
+body.art-in-life-mode .site-navigation--gallery .tab-button::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: -0.22rem;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: white;
+  height: 1px;
+  background: rgba(20, 16, 12, 0.78);
   transform: scaleX(0);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.tab-button.active {
-  color: white;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  background: rgba(255, 255, 255, 0.14);
-  border: 1.5px solid rgba(255, 255, 255, 0.8);
-  box-shadow:
-    0 16px 45px rgba(0, 0, 0, 0.45),
-    0 0 0 2px rgba(255, 255, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: none;
 }
 
 body.art-in-life-mode .site-navigation--gallery .tab-button.active {
@@ -437,17 +501,6 @@ body.art-in-life-mode .site-navigation--gallery .tab-button.active {
 body.art-in-life-mode .site-navigation--gallery .tab-button:focus,
 body.art-in-life-mode .site-navigation--gallery .tab-button:focus-visible {
   outline: 0;
-  box-shadow: none;
-}
-
-.tab-button.active::after {
-  transform: scaleX(1);
-}
-
-body.art-in-life-mode .site-navigation--gallery .tab-button::after {
-  bottom: -0.22rem;
-  height: 1px;
-  background: rgba(20, 16, 12, 0.78);
   box-shadow: none;
 }
 
