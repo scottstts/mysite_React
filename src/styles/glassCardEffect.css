@@ -25,8 +25,6 @@
     transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
     box-shadow 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
     border-color 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-  --mouse-x: 0px;
-  --mouse-y: 0px;
 }
 
 .glass-card > * {
@@ -85,7 +83,9 @@
   );
   opacity: 0;
   transform: rotate(-45deg);
-  transition: all 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
   filter: blur(18px);
   pointer-events: none;
   z-index: 0;
@@ -116,33 +116,18 @@
   opacity: 1;
 }
 
-/* Comprehensive video and slider exclusions */
+/* Keep video and slider wrappers fixed during card hover */
 .glass-card .video-container,
 .glass-card .video-container *,
 .glass-card .slider-container,
-.glass-card iframe,
-.glass-card [class*='slider'],
-.glass-card [id*='youtube'],
-.glass-card [src*='youtube'] {
+.glass-card iframe {
   transform: none !important;
   transition: none !important;
-}
-
-.glass-card:hover .video-container,
-.glass-card:hover .video-container *,
-.glass-card:hover .video-container iframe,
-.glass-card:hover .slider-container,
-.glass-card:hover iframe,
-.glass-card:hover [class*='slider'],
-.glass-card:hover [id*='youtube'],
-.glass-card:hover [src*='youtube'] {
-  transform: none !important;
 }
 
 /* Add subtle parallax effect to images on hover - EXCLUDE slider and video elements */
 .glass-card img {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
   border-radius: 0.75rem;
 }
 
