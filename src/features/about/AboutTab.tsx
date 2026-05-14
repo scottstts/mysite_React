@@ -271,7 +271,10 @@ const AboutTab = () => {
               </div>
 
               <div className="flex justify-center md:justify-end items-start flex-shrink-0 md:pl-6">
-                <div className="cybr-glitch-img" ref={glitchContainerRef}>
+                <div
+                  className="cybr-glitch-img cybr-glitch-img--circle-fade"
+                  ref={glitchContainerRef}
+                >
                   <img
                     src={IM_ON_ILLUSTRATION}
                     alt="Logo"
