@@ -2,6 +2,23 @@ import type { App } from '@/types/content';
 
 export const apps: App[] = [
   {
+    id: 'manifest3d',
+    title: 'Manifest3D',
+    tagline: 'A mini procedural 3D asset factory.',
+    description: `Manifest3D is a mini procedural 3D asset factory that runs in your browser, inspired by project <a href='https://articraft3d.github.io/' target="_blank" class="text-blue-200 underline">Articraft</a>.<br><br>
+    
+    Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.<br><br>
+    
+    In the Manifest3D app, provide a text prompt with optional reference image attachement, and watch the agent build out the 3D asset with mechanical components.`,
+    images: [
+      'manifest3d1.png',
+      'manifest3d2.png',
+      'manifest3d3.png'
+    ],
+    link: 'https://manifest3d.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'jarvis',
     title: 'Jarvis',
     tagline: 'Your AI assistant should be classy.',
