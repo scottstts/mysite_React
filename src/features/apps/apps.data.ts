@@ -10,10 +10,11 @@ export const apps: App[] = [
     Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.<br><br>
     
     In the Manifest3D app, provide a text prompt with optional reference image attachement, and watch the agent build out the 3D asset with mechanical components.`,
-    images: [
-      'manifest3d1.png',
-      'manifest3d2.png',
-      'manifest3d3.png'
+    videos: [
+      {
+        videoId: '55fMqoxTJCk',
+        title: 'Manifest3D',
+      },
     ],
     link: 'https://manifest3d.scottsun.io',
     showLink: true,
