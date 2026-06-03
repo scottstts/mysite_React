@@ -4,22 +4,32 @@ import process from 'node:process';
 
 /**
  * Lightweight markdown-to-semantic-HTML for crawler fallback.
- * Converts headings, lists, hrs, links, bold, and paragraphs.
+ * Converts headings, lists, hrs, blockquotes, bold, italic, links,
+ * markdown images, and YouTube/video links.
+ *
+ * Note: markdown images are emitted as crawlable media links instead of
+ * real <img> tags so this hidden fallback does not trigger duplicate
+ * image downloads before React mounts.
  */
 function markdownToHtml(md) {
   const lines = md.split('\n');
   const out = [];
   let inList = false;
 
+  const closeList = () => {
+    if (inList) {
+      out.push('</ul>');
+      inList = false;
+    }
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const trimmed = line.trim();
 
     // Horizontal rules
-    if (/^---+$/.test(line.trim())) {
-      if (inList) {
-        out.push('</ul>');
-        inList = false;
-      }
+    if (/^---+$/.test(trimmed)) {
+      closeList();
       out.push('<hr>');
       continue;
     }
@@ -27,10 +37,7 @@ function markdownToHtml(md) {
     // Headings
     const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
-      if (inList) {
-        out.push('</ul>');
-        inList = false;
-      }
+      closeList();
       const level = headingMatch[1].length;
       out.push(`<h${level}>${inline(headingMatch[2])}</h${level}>`);
       continue;
@@ -38,11 +45,16 @@ function markdownToHtml(md) {
 
     // Blockquote
     if (line.startsWith('> ')) {
-      if (inList) {
-        out.push('</ul>');
-        inList = false;
-      }
+      closeList();
       out.push(`<blockquote>${inline(line.slice(2))}</blockquote>`);
+      continue;
+    }
+
+    // Standalone markdown image: ![alt](url)
+    const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imageMatch) {
+      closeList();
+      out.push(mediaLink(imageMatch[1], imageMatch[2], 'image', true));
       continue;
     }
 
@@ -57,35 +69,73 @@ function markdownToHtml(md) {
     }
 
     // Empty line
-    if (line.trim() === '') {
-      if (inList) {
-        out.push('</ul>');
-        inList = false;
-      }
+    if (trimmed === '') {
+      closeList();
       continue;
     }
 
     // Paragraph
-    if (inList) {
-      out.push('</ul>');
-      inList = false;
-    }
+    closeList();
     out.push(`<p>${inline(line)}</p>`);
   }
 
-  if (inList) out.push('</ul>');
+  closeList();
   return out.join('\n');
 }
 
-/** Convert inline markdown: bold, italic, links */
-function inline(text) {
-  return text
+function escapeHtml(value) {
+  return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value)
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeHref(href) {
+  const trimmed = String(href).trim();
+  if (/^(https?:|mailto:|\/)/i.test(trimmed)) return trimmed;
+  return '#';
+}
+
+function linkToHtml(label, href) {
+  const safe = safeHref(href);
+  const isVideo = /(?:youtube\.com\/watch\?v=|youtu\.be\/)/i.test(safe);
+  const mediaAttr = isVideo ? ' data-media-type="video"' : '';
+  return `<a href="${escapeAttr(safe)}"${mediaAttr}>${escapeHtml(label)}</a>`;
+}
+
+function mediaLink(label, href, type, block = false) {
+  const safe = safeHref(href);
+  const text = type === 'image' ? `Image: ${label || safe}` : label || safe;
+  const html = `<a href="${escapeAttr(safe)}" data-media-type="${escapeAttr(type)}">${escapeHtml(text)}</a>`;
+  return block ? `<figure>${html}</figure>` : html;
+}
+
+/** Convert inline markdown: images, links, bold, italic */
+function inline(text) {
+  const tokens = [];
+  const stash = (html) => {
+    tokens.push(html);
+    return `\u0000${tokens.length - 1}\u0000`;
+  };
+
+  const withTokens = String(text)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, href) =>
+      stash(mediaLink(alt, href, 'image'))
+    )
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) =>
+      stash(linkToHtml(label, href))
+    );
+
+  return escapeHtml(withTokens)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    .replace(/\u0000(\d+)\u0000/g, (_match, index) => tokens[Number(index)]);
 }
 
 /**
@@ -117,10 +167,15 @@ export default function crawlable() {
         '</article>',
       ].join('\n');
 
-      return html.replace(
-        '<div id="root"></div>',
-        `<div id="root">${fallback}</div>`
-      );
+      const rootPattern = /(<div\b[^>]*\bid=["']root["'][^>]*>)(\s*)<\/div>/;
+      if (!rootPattern.test(html)) {
+        console.warn('[crawlable] Could not find empty #root div, skipping.');
+        return html;
+      }
+
+      return html.replace(rootPattern, (_match, openTag) => {
+        return `${openTag}${fallback}</div>`;
+      });
     },
   };
 }

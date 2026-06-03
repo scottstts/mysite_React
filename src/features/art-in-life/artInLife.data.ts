@@ -1,4 +1,10 @@
 const urls = [
+  'https://www.instagram.com/p/DYw7fTSKOqY/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYpxAziKMFD/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYl7knbKjfY/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYjYvqfq4_S/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYg9FR_q7AK/?utm_source=ig_embed&amp;utm_campaign=loading',
+  'https://www.instagram.com/p/DYW4BSKqZlT/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DYMitn0il-a/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DYKarArqIn0/?utm_source=ig_embed&amp;utm_campaign=loading',
   'https://www.instagram.com/p/DX_7eQAijq1/?utm_source=ig_embed&amp;utm_campaign=loading',
