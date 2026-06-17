@@ -37,6 +37,17 @@ There are great personal AI assistants out there I have no doubt, but for me it 
     showLink: true,
   },
   {
+    id: 'typegraph',
+    title: 'TypeGraph',
+    tagline: 'Pull type out of TypeScript and put on a graph.',
+    description: `I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this. <br><br>
+
+    Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.`,
+    images: ['typegraph.jpeg'],
+    link: 'https://tg.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'interstellar3',
     title: 'Interstellar.three.js',
     tagline: 'My favorite film, my rendition.',
