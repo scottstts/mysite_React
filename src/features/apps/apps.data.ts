@@ -42,8 +42,10 @@ There are great personal AI assistants out there I have no doubt, but for me it 
     tagline: 'Pull type out of TypeScript and put on a graph.',
     description: `I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this. <br><br>
 
-    Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.`,
-    images: ['typegraph.jpeg'],
+    Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.<br><br>
+
+    <span class="font-semibold">npm i -g @scottstts/typegraph</span>`,
+    images: ['typegraph1.jpeg', 'typegraph2.jpeg'],
     link: 'https://tg.scottsun.io',
     showLink: true,
   },
