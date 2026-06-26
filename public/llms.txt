@@ -75,19 +75,23 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 
 - Link: https://github.com/scottstts/JARVIS.py
 
-### TypeGraph
+### Three.js Awesome Graphics Agent Skills
 
-**Tagline:** Pull type out of TypeScript and put on a graph.
+**Tagline:** Your agent just got schooled on awesome 3D web graphics.
 
 **Images:**
 
-![TypeGraph — typegraph](https://scottsun.io/content_imgs/typegraph.jpeg)
+![Threejs-Skills — threejs-skills](https://scottsun.io/content_imgs/threejs-skills.jpeg)
 
-I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this.
+This is not an app, but I am very proud of it. It is an Agent Skills pack for creating awesome 3D graphics in games and scenes.
 
-Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.
+I love building beautiful and epic scenes with three.js but one thing I have learned repeatedly is agents SUCK at producing sophisticated graphics, at least not out of the box. So I scoured X and found some of the best looking open source three.js projects, and distilled them into this skill pack.
 
-- Link: https://tg.scottsun.io
+Fundamentally, you cannot just provide a summary of what good graphics are like and expect the agent to produce them. The agent needs to see the exact implementation. That's what this skill pack aims to provide, the vocabulary of good and sophisticated graphics implementation. It's a skill pack with an attached example library to teach the agent not just what to do but also exactly how to do it.
+
+I will continue updating it as I see more awesome three.js projects. Install it and give your agent instant web 3D graphics superpower:
+
+`npx threejs-awesome-graphics-agent-skills install --agent codex`
 
 ### Interstellar.three.js
 
@@ -114,6 +118,23 @@ So I recreated the entire film using three.js scene builds and animations. I did
 I built this Starship Simulator game in Three.js. Enjoy a journey with the Starship into the space.
 
 - Link: https://stellar.scottsun.io
+
+### TypeGraph
+
+**Tagline:** Pull type out of TypeScript and put on a graph.
+
+**Images:**
+
+![TypeGraph — typegraph1](https://scottsun.io/content_imgs/typegraph1.jpeg)
+![TypeGraph — typegraph2](https://scottsun.io/content_imgs/typegraph2.jpeg)
+
+I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this.
+
+Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.
+
+`npm i -g @scottstts/typegraph`
+
+- Link: https://tg.scottsun.io
 
 ### IngreLab
 
