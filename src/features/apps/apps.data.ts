@@ -48,7 +48,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 
     I will continue updating it as I see more awesome three.js projects. Install it and give your agent instant web 3D graphics superpower:<br><br>
 
-    <span class="font-semibold">npx threejs-awesome-graphics-agent-skills install --agent codex</span>`,
+    <span class="cmd-text">npx threejs-awesome-graphics-agent-skills install --agent codex</span>`,
     images: ['threejs-skills.jpeg'],
     link: 'https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills',
     showLink: true,
@@ -91,7 +91,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 
     Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.<br><br>
 
-    <span class="font-semibold">npm i -g @scottstts/typegraph</span>`,
+    <span class="cmd-text">npm i -g @scottstts/typegraph</span>`,
     images: ['typegraph1.jpeg', 'typegraph2.jpeg'],
     link: 'https://tg.scottsun.io',
     showLink: true,

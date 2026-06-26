@@ -38,9 +38,9 @@
 }
 
 .glass-card p
-  :not(.glass-card-tagline):not(.eater-regular):not(.fa):not(.fa-solid):not(
-    .fa-regular
-  ):not(.fa-brands) {
+  :not(.glass-card-tagline):not(.cmd-text):not(.eater-regular):not(.fa):not(
+    .fa-solid
+  ):not(.fa-regular):not(.fa-brands) {
   font-family: inherit;
 }
 
