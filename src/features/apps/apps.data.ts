@@ -37,16 +37,20 @@ There are great personal AI assistants out there I have no doubt, but for me it 
     showLink: true,
   },
   {
-    id: 'typegraph',
-    title: 'TypeGraph',
-    tagline: 'Pull type out of TypeScript and put on a graph.',
-    description: `I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this. <br><br>
+    id: 'threejs-awesome-graphics-agent-skills',
+    title: 'Three.js Awesome Graphics Agent Skills',
+    tagline: 'Your agent just got schooled on awesome 3D web graphics.',
+    description: `This is not an app, but I am very proud of it. It is an Agent Skills pack for creating awesome 3D graphics in games and scenes.<br><br>
 
-    Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.<br><br>
+    I love building beautiful and epic scenes with three.js but one thing I have learned repeatedly is agents SUCK at producing sophisticated graphics, at least not out of the box. So I scoured X and found some of the best looking open source three.js projects, and distilled them into this skill pack.<br><br>
 
-    <span class="font-semibold">npm i -g @scottstts/typegraph</span>`,
-    images: ['typegraph1.jpeg', 'typegraph2.jpeg'],
-    link: 'https://tg.scottsun.io',
+    Fundamentally, you cannot just provide a summary of what good graphics are like and expect the agent to produce them. The agent needs to see the exact implementation. That's what this skill pack aims to provide, the vocabulary of good and sophisticated graphics implementation. It's a skill pack with an attached example library to teach the agent not just what to do but also exactly how to do it.<br><br>
+
+    I will continue updating it as I see more awesome three.js projects. Install it and give your agent instant web 3D graphics superpower:<br><br>
+
+    <span class="font-semibold">npx threejs-awesome-graphics-agent-skills install --agent codex</span>`,
+    images: ['threejs-skills.jpeg'],
+    link: 'https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills',
     showLink: true,
   },
   {
@@ -77,6 +81,19 @@ There are great personal AI assistants out there I have no doubt, but for me it 
       },
     ],
     link: 'https://stellar.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'typegraph',
+    title: 'TypeGraph',
+    tagline: 'Pull type out of TypeScript and put on a graph.',
+    description: `I scratched my head when I tried to navigate a large TS project trying to understand the data structure and logic flow. It is really hard to wrap my head around all the nested and entangled types and interfaces. So I quickly built TypeGraph to help me with this. <br><br>
+
+    Run locally as a CLI on local or public remote TS repos, or use the web version for remote only. The entire lineages of project-owned type/interface definitions all laid out on a canvas for exploration and inspection.<br><br>
+
+    <span class="font-semibold">npm i -g @scottstts/typegraph</span>`,
+    images: ['typegraph1.jpeg', 'typegraph2.jpeg'],
+    link: 'https://tg.scottsun.io',
     showLink: true,
   },
   {
