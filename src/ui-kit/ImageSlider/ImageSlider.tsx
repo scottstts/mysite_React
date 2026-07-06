@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VideoSlideData } from '@/types/content';
 
+/* global YouTubePlayer, YouTubePlayerEvent -- ambient types from vite-env.d.ts; core no-undef cannot see them */
+
 interface ImageSliderProps {
   images?: string[];
   videos?: VideoSlideData[];

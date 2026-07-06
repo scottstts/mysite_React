@@ -189,7 +189,9 @@ function App() {
               }
             >
               {shouldMountTabContent && activeTab === 'about' && <AboutTab />}
-              {shouldMountTabContent && activeTab === 'projects' && <ProjectsTab />}
+              {shouldMountTabContent && activeTab === 'projects' && (
+                <ProjectsTab />
+              )}
               {shouldMountTabContent && activeTab === 'apps' && <AppsTab />}
               {shouldMountTabContent && activeTab === 'inspirations' && (
                 <InspirationsTab />

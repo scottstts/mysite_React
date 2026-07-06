@@ -9,7 +9,7 @@ declare module '*.css';
 
 interface InstagramApi {
   Embeds: {
-    process: (element?: Element | Document) => void;
+    process: (_element?: Element | Document) => void;
   };
 }
 
@@ -24,14 +24,14 @@ interface YouTubePlayerEvent {
 
 interface YouTubePlayerOptions {
   events?: {
-    onStateChange?: (event: YouTubePlayerEvent) => void;
+    onStateChange?: (_event: YouTubePlayerEvent) => void;
   };
 }
 
 interface YouTubeApi {
   Player: new (
-    elementId: string,
-    options?: YouTubePlayerOptions
+    _elementId: string,
+    _options?: YouTubePlayerOptions
   ) => YouTubePlayer;
 }
 

@@ -5,12 +5,14 @@ import {
   CSS3DRenderer,
 } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createInstagramEmbedHtml } from './artInLife.data';
 import styles from './ArtInLifeTab.module.css';
 import walnutFrameTextureUrl from '@/assets/textures/aged-walnut-frame.webp';
 import goldFrameTextureUrl from '@/assets/textures/antique-gold-frame.webp';
 import ebonyFrameTextureUrl from '@/assets/textures/dark-ebony-frame.webp';
-import floorTextureUrl from '@/assets/textures/gallery-floor.webp';
+import floorBaseTextureUrl from '@/assets/textures/gallery-floor-base.jpg';
+import floorNormalTextureUrl from '@/assets/textures/gallery-floor-normal.webp';
 import matBoardTextureUrl from '@/assets/textures/gallery-mat-board.webp';
 import plasterBumpTextureUrl from '@/assets/textures/gallery-plaster-bump.webp';
 import plasterTextureUrl from '@/assets/textures/gallery-plaster.webp';
@@ -48,6 +50,9 @@ interface FrameRecord {
   cssObject: CSS3DObject;
   element: HTMLElement;
   paintingSpotlight: THREE.SpotLight;
+  // Per-record clones of the frame + plaque materials whose environment
+  // glints follow this frame's light factor (dark stretch -> no glints).
+  envGlintMaterials: THREE.MeshPhysicalMaterial[];
   embedMounted: boolean;
   embedRequested: boolean;
   embedRequestId: number;
@@ -128,6 +133,17 @@ interface NeonLightRig {
   pink: THREE.RectAreaLight[];
 }
 
+type IntroPhase = 'pending' | 'hold' | 'travel' | 'reveal' | 'done';
+
+interface IntroSequenceState {
+  phase: IntroPhase;
+  startedAt: number;
+  travelStartedAt: number;
+  revealStartedAt: number;
+  signReadyAt: number;
+  hasSignMoment: boolean;
+}
+
 type EffectComposerInstance =
   import('three/examples/jsm/postprocessing/EffectComposer.js').EffectComposer;
 type UnrealBloomPassInstance =
@@ -187,11 +203,69 @@ const CHANDELIER_BLOOM_SETTINGS = {
   glowOpacity: 0.82,
   glowScale: 1.6,
 };
-const CHANDELIER_LOD_LOWER_ARM_COUNT = 10;
-const CHANDELIER_LOD_UPPER_ARM_COUNT = 5;
-const CHANDELIER_LOD_CRYSTAL_COUNT = 16;
-const CHANDELIER_LOD_BEAD_COUNT = 24;
-const CHANDELIER_LOD_DROP_LINE_HEIGHT = 0.52;
+// Full chandeliers are merged into a handful of draw calls, so the curve
+// tessellation of the hand-built reference model can drop well below its
+// authoring density without a visible difference at gallery scale.
+const CHANDELIER_SEGMENT_FACTOR = 0.5;
+const FOG_SETTINGS = {
+  // Clear indoor air: distance should only darken and soften, never read as
+  // a visible medium. The color sits just above black (a hint of the hall's
+  // warmth) and the density is low enough that even a long hall keeps its
+  // contrast instead of dissolving into haze.
+  color: 0x2b251f,
+  density: 0.003,
+  // Beyond this transmittance the fog has swallowed geometry enough that the
+  // far plane can be pulled in without visible pop-in.
+  cullTransmittance: 0.03,
+};
+const FLOOR_REFLECTION_SETTINGS = {
+  textureScale: 0.35,
+  minSize: 192,
+  maxSize: 1024,
+  strength: 0.5,
+  baseStrength: 0.05,
+  fresnelPower: 3.4,
+  normalDistort: 0.06,
+  // While the camera is settled and only the neon flicker animates, the
+  // mirror pass re-renders on this throttle instead of every frame.
+  idleIntervalMs: 140,
+};
+const FINAL_GRADE_SETTINGS = {
+  vignetteStrength: 0.17,
+  vignetteInner: 0.52,
+  vignetteOuter: 1.36,
+  grainAmount: 0.0045,
+  warmTint: [1.024, 1.0, 0.968] as const,
+};
+const INTRO_SETTINGS = {
+  holdMs: 1450,
+  travelMs: 2900,
+  pushDistance: 0.5,
+  signLookHeightOffset: 0.35,
+  maxSignWaitMs: 2200,
+  signSettleMs: 750,
+  lightStaggerMs: 240,
+  ceilingLeadMs: 220,
+  pointerBlendMs: 420,
+  // Once shaders are warmed, group 0's lights idle at this imperceptible
+  // factor instead of visible=false, so the reveal never changes the light
+  // count (which would force synchronous shader recompiles mid-animation).
+  warmLightFactor: 0.002,
+  // How long after issuing the warmup compiles to flip the lights on and
+  // bake shadows -- enough for parallel driver compilation to finish, still
+  // comfortably inside the intro's hold phase.
+  warmupSettleMs: 1100,
+};
+const WALK_BOB_SETTINGS = {
+  frequencyHz: 1.7,
+  rollFrequencyHz: 0.85,
+  amplitude: 0.022,
+  rollAmplitude: 0.0032,
+  targetFollow: 0.35,
+};
+const STEP_ARRIVAL_OVERSHOOT = 0.014;
+// The marble tile texture covers a real-world 2.5m x 2.5m area per repeat.
+const FLOOR_TEXTURE_SIZE_METERS = 2.5;
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -308,6 +382,9 @@ const easeInOutCubic = (value: number): number =>
 const easeInQuad = (value: number): number => value * value;
 
 const easeOutQuad = (value: number): number => 1 - (1 - value) * (1 - value);
+
+const chSeg = (count: number, min: number): number =>
+  Math.max(min, Math.round(count * CHANDELIER_SEGMENT_FACTOR));
 
 interface BakedNeonMaterialProfile {
   bucket: keyof NeonMaterialBuckets;
@@ -492,8 +569,9 @@ const isDesktopSafari = (): boolean => {
   if (typeof navigator === 'undefined') return false;
 
   const userAgent = navigator.userAgent;
-  const isSafari =
-    /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(userAgent);
+  const isSafari = /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(
+    userAgent
+  );
   const isMacDesktop = /Mac/i.test(navigator.platform);
   const isTouchMac = navigator.maxTouchPoints > 1;
 
@@ -866,28 +944,6 @@ const watchInstagramIframes = (
   return observer;
 };
 
-const createSkeletonHtml = (classNames: SceneClassNames): string => `
-  <div class="${classNames.embedSkeleton}" aria-hidden="true">
-    <div class="${classNames.skeletonHeader}">
-      <span class="${classNames.skeletonAvatar}"></span>
-      <span class="${classNames.skeletonLines}">
-        <span class="${classNames.skeletonLine}"></span>
-        <span class="${classNames.skeletonLineShort}"></span>
-      </span>
-    </div>
-    <div class="${classNames.skeletonImage}"></div>
-    <div class="${classNames.skeletonFooter}">
-      <span class="${classNames.skeletonActions}">
-        <span class="${classNames.skeletonDot}"></span>
-        <span class="${classNames.skeletonDot}"></span>
-        <span class="${classNames.skeletonDot}"></span>
-      </span>
-      <span class="${classNames.skeletonCaptionLine}"></span>
-      <span class="${classNames.skeletonCaptionShort}"></span>
-    </div>
-  </div>
-`;
-
 const createFallbackEmbedHtml = (url: string): string =>
   `<a href="${url}" target="_blank" rel="noopener noreferrer">Open Instagram post</a>`;
 
@@ -1233,10 +1289,6 @@ const createSculptedRailGeometry = (
     frameDepth: number;
   }
 ) => {
-  const railWidth =
-    orientation === 'top' || orientation === 'bottom'
-      ? dimensions.railWidthY
-      : dimensions.railWidthX;
   const profile = buildFrameProfile(dimensions.profileRailWidth);
   const lengthSegments =
     orientation === 'top' || orientation === 'bottom' ? 132 : 156;
@@ -1381,12 +1433,14 @@ const configureGallerySpotlightShadow = (
   isMobile: boolean
 ) => {
   spotlight.castShadow = true;
-  spotlight.shadow.mapSize.set(isMobile ? 2048 : 4096, isMobile ? 2048 : 4096);
+  // 2048 with a wider VSM blur is visually close to the old 4096 desktop map
+  // at a quarter of the blur/update cost.
+  spotlight.shadow.mapSize.set(2048, 2048);
   spotlight.shadow.camera.near = 1.6;
   spotlight.shadow.camera.far = 18;
   spotlight.shadow.bias = -0.00004;
   spotlight.shadow.normalBias = 0.035;
-  spotlight.shadow.radius = isMobile ? 3 : 4;
+  spotlight.shadow.radius = isMobile ? 3 : 5;
   spotlight.shadow.blurSamples = isMobile ? 8 : 12;
 };
 
@@ -1606,6 +1660,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const previousButtonRef = useRef<HTMLButtonElement | null>(null);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
   const lastButtonRef = useRef<HTMLButtonElement | null>(null);
+  const hasPlayedIntroRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const [navGroupIndex, setNavGroupIndex] = useState(0);
@@ -1666,8 +1721,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let targetGroupIndex = 0;
     let currentGroupIndex = -1;
     let cameraTransition: CameraTransition | null = null;
-    let activeFrameStart = 0;
-    let activeFrameEnd = -1;
     let requestRenderLoop = () => {};
     let isDocumentVisible = document.visibilityState === 'visible';
     let isViewportVisible = true;
@@ -1688,6 +1741,28 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const hallLength = hallStartZ - hallEndZ;
     const hallCenterZ = (hallStartZ + hallEndZ) / 2;
     const halfHallWidth = layout.hallwayWidth / 2;
+    // One-time entrance dolly. When the entrance wall is far enough away the
+    // camera opens on the neon sign and turns into the hall; in tighter
+    // layouts it opens already facing down the hall and just walks in.
+    const introSignDistance = Math.min(
+      9.5,
+      Math.max(7.5, layout.hallwayWidth * 0.5)
+    );
+    const introHasSignMoment = hallStartZ - introSignDistance >= 0.8;
+    const introStartZ = introHasSignMoment
+      ? hallStartZ - introSignDistance
+      : Math.min(4.2, Math.max(1.6, hallStartZ - 0.8));
+    const intro: IntroSequenceState = {
+      phase: hasPlayedIntroRef.current ? 'done' : 'pending',
+      startedAt: 0,
+      travelStartedAt: 0,
+      revealStartedAt: 0,
+      signReadyAt: -1,
+      hasSignMoment: introHasSignMoment,
+    };
+    let introLightsWarmed = false;
+    let warmupTimeoutId = 0;
+    let cameraRoll = 0;
     const wallCeilingOverlap = 0.35;
     const ceilingWallOverlap = 0.45;
     const roomHeight = layout.ceilingY - layout.floorY;
@@ -1742,6 +1817,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeee6d9);
+    // Gentle aerial perspective: adjacent groups stay crisp while the far end
+    // of the hall softens tonally instead of reading as smoke.
+    scene.fog = new THREE.FogExp2(FOG_SETTINGS.color, FOG_SETTINGS.density);
+    // Past this distance fog transmittance is low enough that clipping is
+    // invisible, so extremely long halls stop paying for far geometry.
+    const fogCullDistance =
+      Math.log(1 / FOG_SETTINGS.cullTransmittance) / FOG_SETTINGS.density;
 
     const cssScene = new THREE.Scene();
     const initialRenderSize = getRenderSize();
@@ -1749,7 +1831,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       layout.cameraFov,
       initialRenderSize.width / initialRenderSize.height,
       0.1,
-      Math.max(120, hallLength + 90)
+      Math.min(Math.max(120, hallLength + 90), fogCullDistance)
     );
     camera.position.set(0, layout.cameraY, 0);
 
@@ -1779,6 +1861,217 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     webglHost.appendChild(renderer.domElement);
     RectAreaLightUniformsLib.init();
 
+    // Environment map for specular reflections ONLY. The content is a rough
+    // proxy of the hall itself -- dim warm plaster, a run of warm chandelier
+    // points overhead, a hint of neon at the far ends -- so glossy surfaces
+    // mirror something plausible. It is applied per-material (never as
+    // scene.environment) and its diffuse irradiance is stripped in the
+    // shader, so it adds zero ambient light: the scene stays lit purely by
+    // its own fixtures.
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const environmentScene = new THREE.Scene();
+    const environmentResources = new Set<{ dispose(): void }>();
+    const addEnvironmentMesh = (
+      geometry: THREE.BufferGeometry,
+      material: THREE.MeshBasicMaterial,
+      position: [number, number, number],
+      rotationY = 0
+    ) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(...position);
+      mesh.rotation.y = rotationY;
+      environmentScene.add(mesh);
+      environmentResources.add(geometry);
+      environmentResources.add(material);
+    };
+
+    addEnvironmentMesh(
+      new THREE.BoxGeometry(18, 9, 40),
+      new THREE.MeshBasicMaterial({ color: 0x3a322a, side: THREE.BackSide }),
+      [0, 1.2, 0]
+    );
+    const environmentGlowGeometry = new THREE.SphereGeometry(0.8, 16, 12);
+    const environmentGlowMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(8.0, 4.8, 2.0),
+    });
+    for (let index = 0; index < 5; index++) {
+      addEnvironmentMesh(environmentGlowGeometry, environmentGlowMaterial, [
+        index % 2 === 0 ? -1.5 : 1.5,
+        3.5,
+        -14 + index * 7,
+      ]);
+    }
+    // Faint neon hints only -- the real signs reflect via the floor's actual
+    // mirror pass; these just tint glints on the gold and clearcoat.
+    const environmentNeonGeometry = new THREE.PlaneGeometry(11, 3.2);
+    addEnvironmentMesh(
+      environmentNeonGeometry,
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 0.5, 0.85) }),
+      [0, 0.8, -19.7]
+    );
+    addEnvironmentMesh(
+      environmentNeonGeometry,
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0.85, 0.1, 0.42) }),
+      [0, 0.4, 19.7],
+      Math.PI
+    );
+
+    const environmentRenderTarget = pmremGenerator.fromScene(
+      environmentScene,
+      0.04
+    );
+    const environmentTexture = environmentRenderTarget.texture;
+    environmentResources.forEach((resource) => resource.dispose());
+    pmremGenerator.dispose();
+
+    // Strips the environment's diffuse irradiance from a material's shader,
+    // leaving only the specular (and clearcoat) reflection lobes.
+    const specularOnlyLightsFragmentMaps =
+      THREE.ShaderChunk.lights_fragment_maps.replace(
+        'iblIrradiance += getIBLIrradiance( geometryNormal );',
+        ''
+      );
+    const injectSpecularOnlyEnvironment = (shader: {
+      fragmentShader: string;
+    }) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <lights_fragment_maps>',
+        specularOnlyLightsFragmentMaps
+      );
+    };
+
+    // Cached planar floor reflection. The scene is static between camera
+    // moves, so the mirror pass renders on invalidation (pose change, frame
+    // swap, texture load) instead of every frame, at reduced resolution.
+    const getReflectionSize = (width: number, height: number) => ({
+      width: clamp(
+        Math.round(width * FLOOR_REFLECTION_SETTINGS.textureScale),
+        FLOOR_REFLECTION_SETTINGS.minSize,
+        FLOOR_REFLECTION_SETTINGS.maxSize
+      ),
+      height: clamp(
+        Math.round(height * FLOOR_REFLECTION_SETTINGS.textureScale),
+        FLOOR_REFLECTION_SETTINGS.minSize,
+        FLOOR_REFLECTION_SETTINGS.maxSize
+      ),
+    });
+    const initialReflectionSize = getReflectionSize(
+      initialRenderSize.width,
+      initialRenderSize.height
+    );
+    const reflectionRenderTarget = new THREE.WebGLRenderTarget(
+      initialReflectionSize.width,
+      initialReflectionSize.height,
+      { type: THREE.HalfFloatType }
+    );
+    reflectionRenderTarget.texture.minFilter = THREE.LinearFilter;
+    reflectionRenderTarget.texture.magFilter = THREE.LinearFilter;
+    reflectionRenderTarget.texture.generateMipmaps = false;
+    const reflectionCamera = new THREE.PerspectiveCamera();
+    reflectionCamera.layers.mask = camera.layers.mask;
+    const reflectionTextureMatrix = new THREE.Matrix4();
+    const reflectionBiasMatrix = new THREE.Matrix4().set(
+      0.5,
+      0,
+      0,
+      0.5,
+      0,
+      0.5,
+      0,
+      0.5,
+      0,
+      0,
+      0.5,
+      0.5,
+      0,
+      0,
+      0,
+      1
+    );
+    const reflectionUniforms = {
+      uReflectionMap: { value: reflectionRenderTarget.texture },
+      uReflectionMatrix: { value: reflectionTextureMatrix },
+      uReflectionStrength: { value: FLOOR_REFLECTION_SETTINGS.strength },
+      uReflectionBase: { value: FLOOR_REFLECTION_SETTINGS.baseStrength },
+      uReflectionFresnelPower: {
+        value: FLOOR_REFLECTION_SETTINGS.fresnelPower,
+      },
+      uReflectionDistort: { value: FLOOR_REFLECTION_SETTINGS.normalDistort },
+    };
+    let reflectionFloorMesh: THREE.Mesh | null = null;
+    let reflectionDirty = true;
+    let lastReflectionRenderedAt = Number.NEGATIVE_INFINITY;
+    // The mirror camera sits below the floor plane, so rays at grazing
+    // angles can slip under the wall bottoms and out of the closed hall. If
+    // they cleared to the bright page background they would smear as glowing
+    // bands along the wall bases -- clear the mirror pass to darkness so an
+    // escaped ray simply reflects nothing.
+    const reflectionClearColor = new THREE.Color(0x0b0908);
+    const lastReflectionCameraMatrix = new THREE.Matrix4();
+    const reflectionCameraPosition = new THREE.Vector3();
+    const reflectionCameraDirection = new THREE.Vector3();
+    const reflectionCameraUp = new THREE.Vector3();
+    const reflectionLookTarget = new THREE.Vector3();
+    const invalidateReflection = () => {
+      reflectionDirty = true;
+    };
+
+    const renderFloorReflection = (now: number) => {
+      camera.updateMatrixWorld();
+      const cameraElements = camera.matrixWorld.elements;
+
+      // Mirror the camera's world position and basis across y = floorY. The
+      // mirrored up vector keeps triangle winding consistent, so no cull-face
+      // juggling is needed.
+      reflectionCameraPosition.set(
+        cameraElements[12],
+        2 * layout.floorY - cameraElements[13],
+        cameraElements[14]
+      );
+      reflectionCameraDirection
+        .set(-cameraElements[8], cameraElements[9], -cameraElements[10])
+        .normalize();
+      reflectionCameraUp
+        .set(cameraElements[4], -cameraElements[5], cameraElements[6])
+        .normalize();
+
+      reflectionCamera.fov = camera.fov;
+      reflectionCamera.aspect = camera.aspect;
+      reflectionCamera.near = camera.near;
+      reflectionCamera.far = camera.far;
+      reflectionCamera.position.copy(reflectionCameraPosition);
+      reflectionCamera.up.copy(reflectionCameraUp);
+      reflectionLookTarget
+        .copy(reflectionCameraPosition)
+        .add(reflectionCameraDirection);
+      reflectionCamera.lookAt(reflectionLookTarget);
+      reflectionCamera.updateProjectionMatrix();
+      reflectionCamera.updateMatrixWorld();
+
+      reflectionTextureMatrix
+        .copy(reflectionBiasMatrix)
+        .multiply(reflectionCamera.projectionMatrix)
+        .multiply(reflectionCamera.matrixWorldInverse);
+
+      if (reflectionFloorMesh) {
+        reflectionFloorMesh.visible = false;
+      }
+      const previousBackground = scene.background;
+      scene.background = reflectionClearColor;
+      const previousRenderTarget = renderer.getRenderTarget();
+      renderer.setRenderTarget(reflectionRenderTarget);
+      renderer.render(scene, reflectionCamera);
+      renderer.setRenderTarget(previousRenderTarget);
+      scene.background = previousBackground;
+      if (reflectionFloorMesh) {
+        reflectionFloorMesh.visible = true;
+      }
+
+      reflectionDirty = false;
+      lastReflectionRenderedAt = now;
+      lastReflectionCameraMatrix.copy(camera.matrixWorld);
+    };
+
     let composer: EffectComposerInstance | null = null;
     let bloomComposer: EffectComposerInstance | null = null;
     let chandelierBloomComposer: EffectComposerInstance | null = null;
@@ -1791,7 +2084,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const chandelierBloomLayer = new THREE.Layers();
     chandelierBloomLayer.set(CHANDELIER_BLOOM_SCENE_LAYER);
     let activeBloomLayer = bloomLayer;
-    const darkBloomMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    // fog: false — otherwise the darkened stand-ins would fade toward the
+    // bright fog color at distance and the bloom passes would bloom the haze.
+    const darkBloomMaterial = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      fog: false,
+    });
     const darkenedBloomMeshes: Array<{
       mesh: THREE.Mesh;
       material: THREE.Material | THREE.Material[];
@@ -1846,12 +2144,25 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       nextComposer.setPixelRatio(pixelRatio);
       nextComposer.setSize(width, height);
       nextComposer.addPass(new RenderPass(scene, camera));
+      // The combine pass doubles as the color grade: warm tint, vignette,
+      // and fine grain ride along in the shader that already runs, so the
+      // grade costs zero extra passes.
       finalBloomMaterial = new THREE.ShaderMaterial({
         uniforms: {
           baseTexture: { value: null },
           bloomTexture: { value: nextBloomComposer.renderTarget2.texture },
           chandelierBloomTexture: {
             value: nextChandelierBloomComposer.renderTarget2.texture,
+          },
+          uAspect: { value: width / Math.max(1, height) },
+          uVignetteStrength: {
+            value: FINAL_GRADE_SETTINGS.vignetteStrength,
+          },
+          uVignetteInner: { value: FINAL_GRADE_SETTINGS.vignetteInner },
+          uVignetteOuter: { value: FINAL_GRADE_SETTINGS.vignetteOuter },
+          uGrainAmount: { value: FINAL_GRADE_SETTINGS.grainAmount },
+          uWarmTint: {
+            value: new THREE.Vector3(...FINAL_GRADE_SETTINGS.warmTint),
           },
         },
         vertexShader: `
@@ -1865,12 +2176,36 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           uniform sampler2D baseTexture;
           uniform sampler2D bloomTexture;
           uniform sampler2D chandelierBloomTexture;
+          uniform float uAspect;
+          uniform float uVignetteStrength;
+          uniform float uVignetteInner;
+          uniform float uVignetteOuter;
+          uniform float uGrainAmount;
+          uniform vec3 uWarmTint;
           varying vec2 vUv;
           void main() {
-            gl_FragColor =
-              texture2D(baseTexture, vUv) +
-              texture2D(bloomTexture, vUv) +
-              texture2D(chandelierBloomTexture, vUv);
+            vec4 base = texture2D(baseTexture, vUv);
+            vec3 color =
+              base.rgb +
+              texture2D(bloomTexture, vUv).rgb +
+              texture2D(chandelierBloomTexture, vUv).rgb;
+
+            color *= uWarmTint;
+
+            vec2 centered = vUv - 0.5;
+            centered.x *= uAspect;
+            float vignette = smoothstep(
+              uVignetteInner,
+              uVignetteOuter,
+              length(centered) * 2.0
+            );
+            color *= 1.0 - uVignetteStrength * vignette;
+
+            float grain =
+              fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453);
+            color += (grain - 0.5) * uGrainAmount;
+
+            gl_FragColor = vec4(color, base.a);
           }
         `,
       });
@@ -1907,6 +2242,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let cameraNeedsCssRender = true;
     const invalidateShadows = () => {
       renderer.shadowMap.needsUpdate = true;
+      invalidateReflection();
     };
     const invalidateCssRender = () => {
       cssNeedsRender = true;
@@ -1918,7 +2254,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     );
     const loadTexture = (url: string, repeatX: number, repeatY: number) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) requestRenderLoop();
+        if (!isMounted) return;
+        invalidateReflection();
+        requestRenderLoop();
       });
       configureTexture(texture, repeatX, repeatY, textureAnisotropy);
       loadedTextures.push(texture);
@@ -1927,7 +2265,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const loadSingleSurfaceTexture = (url: string) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) requestRenderLoop();
+        if (!isMounted) return;
+        invalidateReflection();
+        requestRenderLoop();
       });
       configureSingleSurfaceTexture(texture, textureAnisotropy);
       loadedTextures.push(texture);
@@ -1936,7 +2276,9 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const loadBumpTexture = (url: string, repeatX: number, repeatY: number) => {
       const texture = textureLoader.load(url, () => {
-        if (isMounted) requestRenderLoop();
+        if (!isMounted) return;
+        invalidateReflection();
+        requestRenderLoop();
       });
       configureTexture(texture, repeatX, repeatY, textureAnisotropy, false);
       loadedTextures.push(texture);
@@ -1958,15 +2300,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const estimatedHallwayMeters = isMobile ? 3.6 : isTablet ? 4.2 : 4.6;
     const sceneUnitsPerMeter = layout.hallwayWidth / estimatedHallwayMeters;
     const floorDrawWidth = layout.hallwayWidth + ceilingWallOverlap * 2;
-    const carpetTextureSizeMeters = 0.5;
     const floorTextureRepeat = {
       x: Math.max(
         1,
-        floorDrawWidth / sceneUnitsPerMeter / carpetTextureSizeMeters
+        floorDrawWidth / sceneUnitsPerMeter / FLOOR_TEXTURE_SIZE_METERS
       ),
       y: Math.max(
         1,
-        hallLength / sceneUnitsPerMeter / carpetTextureSizeMeters
+        hallLength / sceneUnitsPerMeter / FLOOR_TEXTURE_SIZE_METERS
       ),
     };
     const sideWallTexture = loadTexture(
@@ -1999,8 +2340,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       ceilingTextureRepeat.x,
       ceilingTextureRepeat.y
     );
-    const floorTexture = loadTexture(
-      floorTextureUrl,
+    const floorBaseTexture = loadTexture(
+      floorBaseTextureUrl,
+      floorTextureRepeat.x,
+      floorTextureRepeat.y
+    );
+    const floorNormalTexture = loadBumpTexture(
+      floorNormalTextureUrl,
       floorTextureRepeat.x,
       floorTextureRepeat.y
     );
@@ -2050,13 +2396,83 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       side: THREE.FrontSide,
     });
     const floorMaterial = new THREE.MeshStandardMaterial({
-      map: floorTexture,
-      bumpMap: floorTexture,
-      bumpScale: 0.003,
+      map: floorBaseTexture,
+      normalMap: floorNormalTexture,
+      normalScale: new THREE.Vector2(0.8, 0.8),
       color: 0xffffff,
-      roughness: 0.92,
+      roughness: 0.34,
       metalness: 0,
     });
+    // The oversized neon RectAreaLights are diffuse wall-wash fakes (see
+    // GALLERY_LIGHTING.neon); on glossy marble their specular lobe reads as
+    // a giant false sheen across the distant floor. The floor's shader keeps
+    // their diffuse wash and discards their specular. Declared outside the
+    // unrolled loop body -- three duplicates the body per light.
+    const floorLightsFragmentBegin = THREE.ShaderChunk.lights_fragment_begin
+      .replace(
+        'RectAreaLight rectAreaLight;',
+        `RectAreaLight rectAreaLight;
+	vec3 rectAreaSpecularBefore = vec3( 0.0 );`
+      )
+      .replace(
+        'RE_Direct_RectArea( rectAreaLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );',
+        `rectAreaSpecularBefore = reflectedLight.directSpecular;
+		RE_Direct_RectArea( rectAreaLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+		reflectedLight.directSpecular = rectAreaSpecularBefore;`
+      );
+    // Inject the cached planar reflection into the marble shader: projective
+    // sample of the mirror target, faded by fresnel and rippled by the
+    // normal map so the polish reads as stone rather than a perfect mirror.
+    // The floor gets NO environment map -- its only mirrored content is the
+    // real scene from the planar reflection pass.
+    floorMaterial.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, reflectionUniforms);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <lights_fragment_begin>',
+        floorLightsFragmentBegin
+      );
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform mat4 uReflectionMatrix;
+          varying vec4 vReflectionCoord;`
+        )
+        .replace(
+          '#include <fog_vertex>',
+          `#include <fog_vertex>
+          vReflectionCoord = uReflectionMatrix * modelMatrix * vec4( transformed, 1.0 );`
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform sampler2D uReflectionMap;
+          uniform float uReflectionStrength;
+          uniform float uReflectionBase;
+          uniform float uReflectionFresnelPower;
+          uniform float uReflectionDistort;
+          varying vec4 vReflectionCoord;`
+        )
+        .replace(
+          '#include <opaque_fragment>',
+          `{
+            vec3 reflectionViewDir = normalize( vViewPosition );
+            float reflectionFresnel = pow(
+              clamp( 1.0 - dot( normalize( normal ), reflectionViewDir ), 0.0, 1.0 ),
+              uReflectionFresnelPower
+            );
+            vec2 reflectionUv = vReflectionCoord.xy / max( vReflectionCoord.w, 1e-4 );
+            // Perturb only by the normal-map deviation; using the full
+            // view-space normal would shift the whole reflection at grazing
+            // angles instead of rippling it.
+            reflectionUv += ( normal.xy - nonPerturbedNormal.xy ) * uReflectionDistort;
+            vec3 reflectionSample = texture2D( uReflectionMap, clamp( reflectionUv, 0.0, 1.0 ) ).rgb;
+            outgoingLight += reflectionSample * ( uReflectionBase + uReflectionStrength * reflectionFresnel );
+          }
+          #include <opaque_fragment>`
+        );
+    };
     const walnutMaterial = new THREE.MeshPhysicalMaterial({
       map: walnutTexture,
       bumpMap: walnutTexture,
@@ -2224,6 +2640,23 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       plaqueTextMaterial,
     ];
 
+    // Specular-only environment on the glossy materials; the matte plaster,
+    // mats, and props receive no environment at all -- their light comes
+    // exclusively from the in-scene fixtures.
+    const specularEnvironmentMaterials: Array<
+      [THREE.MeshPhysicalMaterial, number]
+    > = [
+      [walnutMaterial, 0.5],
+      [goldMaterial, 0.65],
+      [ebonyMaterial, 0.5],
+      [plaqueMaterial, 0.7],
+    ];
+    specularEnvironmentMaterials.forEach(([material, intensity]) => {
+      material.envMap = environmentTexture;
+      material.envMapIntensity = intensity;
+      material.onBeforeCompile = injectSpecularOnlyEnvironment;
+    });
+
     const environmentGeometries: THREE.BufferGeometry[] = [];
     const neonGeometries: THREE.BufferGeometry[] = [];
     const neonMaterials: THREE.Material[] = [];
@@ -2299,13 +2732,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       28,
       floorSegments
     );
-    roughenPlane(floorGeometry, 0.006);
+    // Marble lies much flatter than the old carpet; a whisper of ripple keeps
+    // reflections from being laser-perfect.
+    roughenPlane(floorGeometry, 0.0015);
     environmentGeometries.push(floorGeometry);
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, layout.floorY, hallCenterZ);
     floor.receiveShadow = true;
     scene.add(floor);
+    reflectionFloorMesh = floor;
 
     const ceilingGeometry = new THREE.PlaneGeometry(
       layout.hallwayWidth + ceilingWallOverlap * 2,
@@ -2342,35 +2778,43 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       scene.add(baseboard);
     };
 
-    addBaseboard('left', layout.floorY + 0.2, 0.13, 0.18);
-    addBaseboard('right', layout.floorY + 0.2, 0.13, 0.18);
-    addBaseboard('left', layout.floorY + 0.29, 0.025, 0.055);
-    addBaseboard('right', layout.floorY + 0.29, 0.025, 0.055);
+    // Baseboards are grounded: the board sinks slightly into the floor and
+    // the cap sits flush on the board. Floating skirting used to expose its
+    // unlit underside and a dark slot to the floor mirror, which read as
+    // dashed black lines along the walls in the reflection.
+    addBaseboard('left', layout.floorY + 0.1175, 0.295, 0.18);
+    addBaseboard('right', layout.floorY + 0.1175, 0.295, 0.18);
+    addBaseboard('left', layout.floorY + 0.2775, 0.025, 0.055);
+    addBaseboard('right', layout.floorY + 0.2775, 0.025, 0.055);
 
     const endBaseboard = new THREE.Mesh(unitBox, baseboardMaterial);
-    endBaseboard.scale.set(layout.hallwayWidth, 0.13, 0.18);
-    endBaseboard.position.set(0, layout.floorY + 0.2, hallEndZ + 0.09);
+    endBaseboard.scale.set(layout.hallwayWidth, 0.295, 0.18);
+    endBaseboard.position.set(0, layout.floorY + 0.1175, hallEndZ + 0.09);
     endBaseboard.castShadow = true;
     endBaseboard.receiveShadow = true;
     scene.add(endBaseboard);
 
     const endBaseboardCap = new THREE.Mesh(unitBox, baseboardMaterial);
     endBaseboardCap.scale.set(layout.hallwayWidth, 0.025, 0.055);
-    endBaseboardCap.position.set(0, layout.floorY + 0.29, hallEndZ + 0.03);
+    endBaseboardCap.position.set(0, layout.floorY + 0.2775, hallEndZ + 0.03);
     endBaseboardCap.castShadow = true;
     endBaseboardCap.receiveShadow = true;
     scene.add(endBaseboardCap);
 
     const startBaseboard = new THREE.Mesh(unitBox, baseboardMaterial);
-    startBaseboard.scale.set(layout.hallwayWidth, 0.13, 0.18);
-    startBaseboard.position.set(0, layout.floorY + 0.2, hallStartZ - 0.09);
+    startBaseboard.scale.set(layout.hallwayWidth, 0.295, 0.18);
+    startBaseboard.position.set(0, layout.floorY + 0.1175, hallStartZ - 0.09);
     startBaseboard.castShadow = true;
     startBaseboard.receiveShadow = true;
     scene.add(startBaseboard);
 
     const startBaseboardCap = new THREE.Mesh(unitBox, baseboardMaterial);
     startBaseboardCap.scale.set(layout.hallwayWidth, 0.025, 0.055);
-    startBaseboardCap.position.set(0, layout.floorY + 0.29, hallStartZ - 0.03);
+    startBaseboardCap.position.set(
+      0,
+      layout.floorY + 0.2775,
+      hallStartZ - 0.03
+    );
     startBaseboardCap.castShadow = true;
     startBaseboardCap.receiveShadow = true;
     scene.add(startBaseboardCap);
@@ -2458,6 +2902,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         createWallNeonSign(gltf.scene, hallEndZ, 0);
         createWallNeonSign(gltf.scene, hallStartZ, Math.PI);
 
+        if (intro.signReadyAt < 0) {
+          intro.signReadyAt = performance.now();
+        }
+        invalidateReflection();
+
         const sourceMaterials = new Set<THREE.Material>();
         gltf.scene.traverse((object) => {
           if (!(object instanceof THREE.Mesh)) {
@@ -2501,10 +2950,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       mesh.castShadow = castShadow;
       mesh.receiveShadow = receiveShadow;
       mesh.frustumCulled = true;
-      mesh.userData.detailCull =
-        material === chandelierCrystalMaterial ||
-        material === chandelierWarmGlassMaterial ||
-        material === chandelierFlameGlowMaterial;
       parent.add(mesh);
       return mesh;
     };
@@ -2548,7 +2993,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       addChandelierMesh(
         group,
-        new THREE.SphereGeometry(0.18 * scale, 14, 18),
+        new THREE.SphereGeometry(0.18 * scale, chSeg(14, 8), chSeg(18, 8)),
         chandelierCrystalMaterial,
         [0, -0.09 * scale, 0],
         [0, 0, 0],
@@ -2622,18 +3067,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       addChandelierMesh(
         parent,
-        new THREE.TubeGeometry(curve, 64, 0.026, 18, false),
+        new THREE.TubeGeometry(
+          curve,
+          chSeg(64, 24),
+          0.026,
+          chSeg(18, 8),
+          false
+        ),
         chandelierCableMaterial
       );
       addChandelierMesh(
         parent,
-        new THREE.CylinderGeometry(0.05, 0.06, 0.1, 24),
+        new THREE.CylinderGeometry(0.05, 0.06, 0.1, chSeg(24, 12)),
         chandelierAgedGoldMaterial,
         [0, topY + 0.015, 0]
       );
       addChandelierMesh(
         parent,
-        new THREE.CylinderGeometry(0.044, 0.052, 0.09, 24),
+        new THREE.CylinderGeometry(0.044, 0.052, 0.09, chSeg(24, 12)),
         chandelierAgedGoldMaterial,
         [0, bottomY - 0.015, 0]
       );
@@ -2641,31 +3092,35 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const createReferenceChandelier = () => {
       const chandelier = new THREE.Group();
-      const beadGeometry = new THREE.SphereGeometry(0.043, 18, 12);
+      const beadGeometry = new THREE.SphereGeometry(
+        0.043,
+        chSeg(18, 8),
+        chSeg(12, 6)
+      );
       chandelierGeometries.add(beadGeometry);
 
       addChandelierMesh(
         chandelier,
-        new THREE.CylinderGeometry(0.74, 0.84, 0.12, 96),
+        new THREE.CylinderGeometry(0.74, 0.84, 0.12, chSeg(96, 24)),
         chandelierDarkGoldMaterial,
         [0, 3.62, 0]
       );
       addChandelierMesh(
         chandelier,
-        new THREE.TorusGeometry(0.79, 0.035, 14, 128),
+        new THREE.TorusGeometry(0.79, 0.035, chSeg(14, 8), chSeg(128, 48)),
         chandelierAgedGoldMaterial,
         [0, 3.55, 0],
         [Math.PI / 2, 0, 0]
       );
       addChandelierMesh(
         chandelier,
-        new THREE.CylinderGeometry(0.34, 0.45, 0.2, 96),
+        new THREE.CylinderGeometry(0.34, 0.45, 0.2, chSeg(96, 24)),
         chandelierAgedGoldMaterial,
         [0, 3.42, 0]
       );
       addChandelierMesh(
         chandelier,
-        new THREE.TorusGeometry(0.39, 0.035, 14, 96),
+        new THREE.TorusGeometry(0.39, 0.035, chSeg(14, 8), chSeg(96, 36)),
         chandelierDarkGoldMaterial,
         [0, 3.31, 0],
         [Math.PI / 2, 0, 0]
@@ -2674,13 +3129,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       addChandelierMesh(
         chandelier,
-        new THREE.CylinderGeometry(0.09, 0.09, 1.75, 48),
+        new THREE.CylinderGeometry(0.09, 0.09, 1.75, chSeg(48, 16)),
         chandelierAgedGoldMaterial,
         [0, 1.55, 0]
       );
       addChandelierMesh(
         chandelier,
-        new THREE.SphereGeometry(0.18, 48, 24),
+        new THREE.SphereGeometry(0.18, chSeg(48, 16), chSeg(24, 10)),
         chandelierAgedGoldMaterial,
         [0, 2.34, 0],
         [0, 0, 0],
@@ -2688,7 +3143,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       addChandelierMesh(
         chandelier,
-        new THREE.SphereGeometry(0.25, 64, 28),
+        new THREE.SphereGeometry(0.25, chSeg(64, 20), chSeg(28, 12)),
         chandelierAgedGoldMaterial,
         [0, 1.22, 0],
         [0, 0, 0],
@@ -2696,7 +3151,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       addChandelierMesh(
         chandelier,
-        new THREE.SphereGeometry(0.16, 48, 24),
+        new THREE.SphereGeometry(0.16, chSeg(48, 16), chSeg(24, 10)),
         chandelierDarkGoldMaterial,
         [0, 0.38, 0],
         [0, 0, 0],
@@ -2714,8 +3169,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           new THREE.TorusGeometry(
             radius as number,
             tube as number,
-            radial as number,
-            tubular as number
+            chSeg(radial as number, 8),
+            chSeg(tubular as number, 48)
           ),
           material as THREE.Material,
           [0, y as number, 0],
@@ -2727,8 +3182,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         chandelier,
         new THREE.SphereGeometry(
           0.72,
-          96,
-          24,
+          chSeg(96, 28),
+          chSeg(24, 10),
           0,
           Math.PI * 2,
           0,
@@ -2741,14 +3196,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       );
       addChandelierMesh(
         chandelier,
-        new THREE.TorusGeometry(0.71, 0.028, 14, 128),
+        new THREE.TorusGeometry(0.71, 0.028, chSeg(14, 8), chSeg(128, 48)),
         chandelierAgedGoldMaterial,
         [0, 0.78, 0],
         [Math.PI / 2, 0, 0]
       );
       addChandelierMesh(
         chandelier,
-        new THREE.TorusGeometry(0.42, 0.018, 10, 96),
+        new THREE.TorusGeometry(0.42, 0.018, chSeg(10, 6), chSeg(96, 36)),
         chandelierDarkGoldMaterial,
         [0, 0.95, 0],
         [Math.PI / 2, 0, 0]
@@ -2790,12 +3245,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         addChandelierMesh(
           arm,
-          new THREE.TubeGeometry(curve, 72, 0.035, 16, false),
+          new THREE.TubeGeometry(
+            curve,
+            chSeg(72, 28),
+            0.035,
+            chSeg(16, 8),
+            false
+          ),
           chandelierAgedGoldMaterial
         );
         addChandelierMesh(
           arm,
-          new THREE.TorusGeometry(0.25, 0.018, 10, 52, Math.PI * 1.42),
+          new THREE.TorusGeometry(
+            0.25,
+            0.018,
+            chSeg(10, 6),
+            chSeg(52, 24),
+            Math.PI * 1.42
+          ),
           chandelierDarkGoldMaterial,
           [1.05, y - 0.15, 0],
           [0, Math.PI / 2, 0.2],
@@ -2803,7 +3270,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         );
         addChandelierMesh(
           arm,
-          new THREE.TorusGeometry(0.17, 0.014, 10, 44, Math.PI * 1.55),
+          new THREE.TorusGeometry(
+            0.17,
+            0.014,
+            chSeg(10, 6),
+            chSeg(44, 20),
+            Math.PI * 1.55
+          ),
           chandelierAgedGoldMaterial,
           [1.48, y - 0.05, 0],
           [0, -Math.PI / 2, -0.45],
@@ -2811,39 +3284,39 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         );
         addChandelierMesh(
           arm,
-          new THREE.CylinderGeometry(0.19, 0.29, 0.18, 64),
+          new THREE.CylinderGeometry(0.19, 0.29, 0.18, chSeg(64, 20)),
           chandelierAgedGoldMaterial,
           [radius, y + 0.21, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.TorusGeometry(0.29, 0.035, 14, 90),
+          new THREE.TorusGeometry(0.29, 0.035, chSeg(14, 8), chSeg(90, 36)),
           chandelierAgedGoldMaterial,
           [radius, y + 0.32, 0],
           [Math.PI / 2, 0, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.TorusGeometry(0.19, 0.022, 10, 70),
+          new THREE.TorusGeometry(0.19, 0.022, chSeg(10, 6), chSeg(70, 28)),
           chandelierDarkGoldMaterial,
           [radius, y + 0.39, 0],
           [Math.PI / 2, 0, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.CylinderGeometry(0.13, 0.13, 0.42, 48),
+          new THREE.CylinderGeometry(0.13, 0.13, 0.42, chSeg(48, 16)),
           chandelierCandleSleeveMaterial,
           [radius, y + 0.62, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.CylinderGeometry(0.105, 0.13, 0.09, 48),
+          new THREE.CylinderGeometry(0.105, 0.13, 0.09, chSeg(48, 16)),
           chandelierAgedGoldMaterial,
           [radius, y + 0.39, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.SphereGeometry(0.135, 36, 24),
+          new THREE.SphereGeometry(0.135, chSeg(36, 14), chSeg(24, 10)),
           chandelierBulbLitMaterial,
           [radius, y + 0.89, 0],
           [0, 0, 0],
@@ -2851,7 +3324,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         );
         addChandelierMesh(
           arm,
-          new THREE.SphereGeometry(0.09, 24, 16),
+          new THREE.SphereGeometry(0.09, chSeg(24, 10), chSeg(16, 8)),
           chandelierFlameGlowMaterial,
           [radius, y + 0.91, 0],
           [0, 0, 0],
@@ -2922,18 +3395,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         addChandelierMesh(
           arm,
-          new THREE.TubeGeometry(curve, 52, 0.025, 14, false),
+          new THREE.TubeGeometry(
+            curve,
+            chSeg(52, 20),
+            0.025,
+            chSeg(14, 7),
+            false
+          ),
           chandelierAgedGoldMaterial
         );
         addChandelierMesh(
           arm,
-          new THREE.CylinderGeometry(0.1, 0.16, 0.12, 48),
+          new THREE.CylinderGeometry(0.1, 0.16, 0.12, chSeg(48, 16)),
           chandelierAgedGoldMaterial,
           [1.18, y + 0.47, 0]
         );
         addChandelierMesh(
           arm,
-          new THREE.SphereGeometry(0.08, 24, 18),
+          new THREE.SphereGeometry(0.08, chSeg(24, 10), chSeg(18, 8)),
           chandelierFlameGlowMaterial,
           [1.18, y + 0.66, 0],
           [0, 0, 0],
@@ -2942,7 +3421,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         );
         addChandelierMesh(
           arm,
-          new THREE.SphereGeometry(0.105, 24, 18),
+          new THREE.SphereGeometry(0.105, chSeg(24, 10), chSeg(18, 8)),
           chandelierBulbLitMaterial,
           [1.18, y + 0.64, 0],
           [0, 0, 0],
@@ -3050,23 +3529,128 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         ),
       })
     );
-    const fullChandelier = createReferenceChandelier();
-    const createFullChandelierInstance = (
-      source: THREE.Group,
-      index: number
+    // Full-detail chandeliers at every anchor. The hand-built reference
+    // model is merged into one geometry per material -- shared across all
+    // anchors -- so each fixture costs ~10 draw calls instead of hundreds of
+    // meshes. Materials stay unlit MeshBasic: under the glow and bloom the
+    // frame reads as silhouette and sparkle, not surface detail.
+    const referenceChandelier = createReferenceChandelier();
+    referenceChandelier.updateMatrixWorld(true);
+
+    const chandelierMergeBuckets = new Map<
+      THREE.Material,
+      THREE.BufferGeometry[]
+    >();
+    const chandelierBloomGlowParts: THREE.BufferGeometry[] = [];
+    const chandelierBloomGlowScaleMatrix = new THREE.Matrix4().makeScale(
+      CHANDELIER_BLOOM_SETTINGS.glowScale,
+      CHANDELIER_BLOOM_SETTINGS.glowScale,
+      CHANDELIER_BLOOM_SETTINGS.glowScale
+    );
+
+    referenceChandelier.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+
+      const material = object.material as THREE.Material;
+      const transformed = object.geometry.clone();
+      transformed.applyMatrix4(object.matrixWorld);
+      const bucket = chandelierMergeBuckets.get(material);
+
+      if (bucket) {
+        bucket.push(transformed);
+      } else {
+        chandelierMergeBuckets.set(material, [transformed]);
+      }
+
+      if (material === chandelierFlameGlowMaterial) {
+        // The chandelier bloom pass draws enlarged copies of the flame glows
+        // only, mirroring the old imposter bloom rig.
+        const glow = object.geometry.clone();
+        glow.applyMatrix4(chandelierBloomGlowScaleMatrix);
+        glow.applyMatrix4(object.matrixWorld);
+        chandelierBloomGlowParts.push(glow);
+      }
+    });
+
+    // The builder geometries were folded into the merged buffers above.
+    referenceChandelier.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+      }
+    });
+    chandelierGeometries.clear();
+
+    const chandelierBaseMeshes: THREE.Mesh[] = [];
+    const chandelierBloomGlowMeshes: THREE.Mesh[] = [];
+
+    const addMergedChandelierMeshes = (
+      geometry: THREE.BufferGeometry,
+      material: THREE.Material,
+      bloomOnly: boolean
     ) => {
-      const chandelier =
-        index === 0 ? source : (source.clone(true) as THREE.Group);
-      chandelier.name = `${CHANDELIER_LOD_NAME}-detail-${index}`;
-      chandelier.visible = false;
-      chandelier.scale.setScalar(chandelierScale);
-      chandelierRoot.add(chandelier);
-      return chandelier;
+      geometry.computeBoundingSphere();
+      chandelierGeometries.add(geometry);
+      chandelierAnchors.forEach((anchor) => {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = `${CHANDELIER_LOD_NAME}-${bloomOnly ? 'bloom' : 'base'}-${
+          anchor.index
+        }`;
+        mesh.position.copy(anchor.position);
+        mesh.rotation.y = anchor.rotationY;
+        mesh.scale.setScalar(chandelierScale);
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        if (bloomOnly) {
+          mesh.visible = false;
+          mesh.layers.enable(CHANDELIER_BLOOM_SCENE_LAYER);
+          chandelierBloomGlowMeshes.push(mesh);
+        } else {
+          chandelierBaseMeshes.push(mesh);
+        }
+        chandelierRoot.add(mesh);
+      });
     };
-    const fullChandeliers = [
-      createFullChandelierInstance(fullChandelier, 0),
-      createFullChandelierInstance(fullChandelier, 1),
-    ];
+
+    // The octahedron crystal tops are PolyhedronGeometry, which three builds
+    // non-indexed, while every other primitive is indexed -- and
+    // mergeGeometries refuses mixed buckets. Normalize such a bucket to
+    // non-indexed before merging so no bucket is silently dropped.
+    const mergeChandelierParts = (
+      parts: THREE.BufferGeometry[]
+    ): THREE.BufferGeometry | null => {
+      const hasIndexed = parts.some((part) => part.index !== null);
+      const hasNonIndexed = parts.some((part) => part.index === null);
+      const normalizedParts =
+        hasIndexed && hasNonIndexed
+          ? parts.map((part) => {
+              if (part.index === null) return part;
+              const nonIndexed = part.toNonIndexed();
+              part.dispose();
+              return nonIndexed;
+            })
+          : parts;
+      const merged = mergeGeometries(normalizedParts, false);
+      normalizedParts.forEach((part) => part.dispose());
+      return merged;
+    };
+
+    chandelierMergeBuckets.forEach((parts, material) => {
+      const merged = mergeChandelierParts(parts);
+      if (!merged) return;
+      addMergedChandelierMeshes(merged, material, false);
+    });
+
+    if (chandelierBloomGlowParts.length > 0) {
+      const mergedGlow = mergeChandelierParts(chandelierBloomGlowParts);
+      if (mergedGlow) {
+        addMergedChandelierMeshes(
+          mergedGlow,
+          chandelierBloomGlowMaterial,
+          true
+        );
+      }
+    }
+
     chandelierAnchors.forEach((anchor) => {
       const light = new THREE.PointLight(
         GALLERY_LIGHTING.chandelier.color,
@@ -3084,909 +3668,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       chandelierRoot.add(light);
     });
 
-    const simpleChandelierDummy = new THREE.Object3D();
-    const simpleChandelierCanopyGeometry = new THREE.CylinderGeometry(
-      0.42,
-      0.52,
-      0.1,
-      24
-    );
-    const simpleChandelierCanopyRingGeometry = new THREE.TorusGeometry(
-      0.79,
-      0.032,
-      8,
-      42
-    );
-    const simpleChandelierStemGeometry = new THREE.CylinderGeometry(
-      0.035,
-      0.035,
-      1.7,
-      12
-    );
-    const simpleChandelierCenterGeometry = new THREE.SphereGeometry(
-      0.22,
-      20,
-      12
-    );
-    const simpleChandelierBowlGeometry = new THREE.SphereGeometry(
-      0.72,
-      32,
-      10,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI * 0.42
-    );
-    const simpleChandelierRingGeometry = new THREE.TorusGeometry(
-      0.74,
-      0.044,
-      10,
-      56
-    );
-    const simpleChandelierOuterRingGeometry = new THREE.TorusGeometry(
-      0.92,
-      0.03,
-      8,
-      56
-    );
-    const simpleChandelierInnerRingGeometry = new THREE.TorusGeometry(
-      0.42,
-      0.017,
-      8,
-      42
-    );
-    const simpleChandelierBulbGeometry = new THREE.SphereGeometry(
-      0.105,
-      14,
-      10
-    );
-    const simpleChandelierGlowGeometry = new THREE.SphereGeometry(0.16, 12, 8);
-    const simpleChandelierCrystalGeometry = new THREE.OctahedronGeometry(
-      0.13,
-      0
-    );
-    const simpleChandelierPrismGeometry = new THREE.CylinderGeometry(
-      0.05,
-      0.062,
-      0.54,
-      6,
-      1,
-      false
-    );
-    const simpleChandelierBeadGeometry = new THREE.SphereGeometry(0.043, 8, 6);
-    const simpleChandelierArmGeometry = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0.72, 0.18),
-        new THREE.Vector3(0, 0.34, 0.38),
-        new THREE.Vector3(0, -0.08, 0.42),
-        new THREE.Vector3(0, -0.52, 0.18),
-        new THREE.Vector3(0, -0.86, -0.06),
-      ]),
-      28,
-      0.022,
-      6,
-      false
-    );
-    const simpleChandelierUpperArmGeometry = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0.46, 0.28),
-        new THREE.Vector3(0, 0.12, 0.18),
-        new THREE.Vector3(0, -0.18, 0.06),
-        new THREE.Vector3(0, -0.44, -0.16),
-      ]),
-      20,
-      0.017,
-      6,
-      false
-    );
-    const simpleChandelierCupGeometry = new THREE.CylinderGeometry(
-      0.19,
-      0.29,
-      0.18,
-      16
-    );
-    const simpleChandelierCupRingGeometry = new THREE.TorusGeometry(
-      0.26,
-      0.026,
-      8,
-      32
-    );
-    const simpleChandelierSleeveGeometry = new THREE.CylinderGeometry(
-      0.12,
-      0.12,
-      0.42,
-      12
-    );
-    const simpleChandelierUpperCupGeometry = new THREE.CylinderGeometry(
-      0.1,
-      0.16,
-      0.12,
-      12
-    );
-    const simpleChandelierDropLineGeometry = new THREE.CylinderGeometry(
-      0.006,
-      0.006,
-      CHANDELIER_LOD_DROP_LINE_HEIGHT,
-      5
-    );
-    const simpleChandelierCenterDropGeometry = new THREE.CylinderGeometry(
-      0.008,
-      0.008,
-      0.7,
-      6
-    );
-    const simpleChandelierCenterCrystalGeometry = new THREE.OctahedronGeometry(
-      0.17,
-      0
-    );
-    [
-      simpleChandelierCanopyGeometry,
-      simpleChandelierCanopyRingGeometry,
-      simpleChandelierStemGeometry,
-      simpleChandelierCenterGeometry,
-      simpleChandelierBowlGeometry,
-      simpleChandelierRingGeometry,
-      simpleChandelierOuterRingGeometry,
-      simpleChandelierInnerRingGeometry,
-      simpleChandelierBulbGeometry,
-      simpleChandelierGlowGeometry,
-      simpleChandelierCrystalGeometry,
-      simpleChandelierPrismGeometry,
-      simpleChandelierBeadGeometry,
-      simpleChandelierArmGeometry,
-      simpleChandelierUpperArmGeometry,
-      simpleChandelierCupGeometry,
-      simpleChandelierCupRingGeometry,
-      simpleChandelierSleeveGeometry,
-      simpleChandelierUpperCupGeometry,
-      simpleChandelierDropLineGeometry,
-      simpleChandelierCenterDropGeometry,
-      simpleChandelierCenterCrystalGeometry,
-    ].forEach((geometry) => chandelierGeometries.add(geometry));
-
-    const createSimpleChandelierMesh = (
-      geometry: THREE.BufferGeometry,
-      material: THREE.Material,
-      count: number,
-      bloomOnly = false
-    ) => {
-      const mesh = new THREE.InstancedMesh(geometry, material, count);
-      mesh.frustumCulled = true;
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
-      if (bloomOnly) {
-        mesh.layers.enable(CHANDELIER_BLOOM_SCENE_LAYER);
-        mesh.visible = false;
-      }
-      chandelierRoot.add(mesh);
-      return mesh;
-    };
-
-    const simpleChandeliers = {
-      canopy: createSimpleChandelierMesh(
-        simpleChandelierCanopyGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount
-      ),
-      canopyRing: createSimpleChandelierMesh(
-        simpleChandelierCanopyRingGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount
-      ),
-      stem: createSimpleChandelierMesh(
-        simpleChandelierStemGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount
-      ),
-      center: createSimpleChandelierMesh(
-        simpleChandelierCenterGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount
-      ),
-      bowl: createSimpleChandelierMesh(
-        simpleChandelierBowlGeometry,
-        chandelierWarmGlassMaterial,
-        chandelierCount
-      ),
-      ring: createSimpleChandelierMesh(
-        simpleChandelierRingGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount
-      ),
-      outerRing: createSimpleChandelierMesh(
-        simpleChandelierOuterRingGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount
-      ),
-      innerRing: createSimpleChandelierMesh(
-        simpleChandelierInnerRingGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount
-      ),
-      bulbs: createSimpleChandelierMesh(
-        simpleChandelierBulbGeometry,
-        chandelierBulbLitMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      glow: createSimpleChandelierMesh(
-        simpleChandelierGlowGeometry,
-        chandelierSimpleFlameGlowMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      upperBulbs: createSimpleChandelierMesh(
-        simpleChandelierBulbGeometry,
-        chandelierBulbLitMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
-      ),
-      upperGlow: createSimpleChandelierMesh(
-        simpleChandelierGlowGeometry,
-        chandelierSimpleFlameGlowMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
-      ),
-      cups: createSimpleChandelierMesh(
-        simpleChandelierCupGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      cupRings: createSimpleChandelierMesh(
-        simpleChandelierCupRingGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      sleeves: createSimpleChandelierMesh(
-        simpleChandelierSleeveGeometry,
-        chandelierCandleSleeveMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      upperCups: createSimpleChandelierMesh(
-        simpleChandelierUpperCupGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
-      ),
-      dropLines: createSimpleChandelierMesh(
-        simpleChandelierDropLineGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT
-      ),
-      centerDrops: createSimpleChandelierMesh(
-        simpleChandelierCenterDropGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount
-      ),
-      centerCrystals: createSimpleChandelierMesh(
-        simpleChandelierCenterCrystalGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount
-      ),
-      crystals: createSimpleChandelierMesh(
-        simpleChandelierCrystalGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT
-      ),
-      prisms: createSimpleChandelierMesh(
-        simpleChandelierPrismGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT
-      ),
-      beads: createSimpleChandelierMesh(
-        simpleChandelierBeadGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_BEAD_COUNT
-      ),
-      arms: createSimpleChandelierMesh(
-        simpleChandelierArmGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT
-      ),
-      upperArms: createSimpleChandelierMesh(
-        simpleChandelierUpperArmGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT
-      ),
-    };
-    const bloomSimpleChandeliers = {
-      canopy: createSimpleChandelierMesh(
-        simpleChandelierCanopyGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      canopyRing: createSimpleChandelierMesh(
-        simpleChandelierCanopyRingGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      stem: createSimpleChandelierMesh(
-        simpleChandelierStemGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      center: createSimpleChandelierMesh(
-        simpleChandelierCenterGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      bowl: createSimpleChandelierMesh(
-        simpleChandelierBowlGeometry,
-        chandelierWarmGlassMaterial,
-        chandelierCount,
-        true
-      ),
-      ring: createSimpleChandelierMesh(
-        simpleChandelierRingGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      outerRing: createSimpleChandelierMesh(
-        simpleChandelierOuterRingGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      innerRing: createSimpleChandelierMesh(
-        simpleChandelierInnerRingGeometry,
-        chandelierDarkGoldMaterial,
-        chandelierCount,
-        true
-      ),
-      bulbs: createSimpleChandelierMesh(
-        simpleChandelierBulbGeometry,
-        chandelierBulbLitMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT,
-        true
-      ),
-      glow: createSimpleChandelierMesh(
-        simpleChandelierGlowGeometry,
-        chandelierBloomGlowMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT,
-        true
-      ),
-      upperBulbs: createSimpleChandelierMesh(
-        simpleChandelierBulbGeometry,
-        chandelierBulbLitMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT,
-        true
-      ),
-      upperGlow: createSimpleChandelierMesh(
-        simpleChandelierGlowGeometry,
-        chandelierBloomGlowMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT,
-        true
-      ),
-      crystals: createSimpleChandelierMesh(
-        simpleChandelierCrystalGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT,
-        true
-      ),
-      prisms: createSimpleChandelierMesh(
-        simpleChandelierPrismGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_CRYSTAL_COUNT,
-        true
-      ),
-      beads: createSimpleChandelierMesh(
-        simpleChandelierBeadGeometry,
-        chandelierCrystalLiteMaterial,
-        chandelierCount * CHANDELIER_LOD_BEAD_COUNT,
-        true
-      ),
-      arms: createSimpleChandelierMesh(
-        simpleChandelierArmGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_LOWER_ARM_COUNT,
-        true
-      ),
-      upperArms: createSimpleChandelierMesh(
-        simpleChandelierUpperArmGeometry,
-        chandelierAgedGoldMaterial,
-        chandelierCount * CHANDELIER_LOD_UPPER_ARM_COUNT,
-        true
-      ),
-    };
-    const simpleChandelierMeshes = Object.values(simpleChandeliers);
-    const bloomSimpleChandelierMeshes = [
-      bloomSimpleChandeliers.glow,
-      bloomSimpleChandeliers.upperGlow,
-    ];
-    const allSimpleChandelierMeshes = [
-      ...simpleChandelierMeshes,
-      ...bloomSimpleChandelierMeshes,
-    ];
-    let simpleChandelierDetailKey = '';
-
-    const setSimpleChandelierMatrix = (
-      mesh: THREE.InstancedMesh,
-      instanceIndex: number,
-      position: THREE.Vector3,
-      rotation: THREE.Euler,
-      scale: THREE.Vector3
-    ) => {
-      simpleChandelierDummy.position.copy(position);
-      simpleChandelierDummy.rotation.copy(rotation);
-      simpleChandelierDummy.scale.copy(scale);
-      simpleChandelierDummy.updateMatrix();
-      mesh.setMatrixAt(instanceIndex, simpleChandelierDummy.matrix);
-    };
-
-    const setSimpleChandelierInstance = (
-      mesh: THREE.InstancedMesh,
-      instanceIndex: number,
-      position: THREE.Vector3,
-      rotation: THREE.Euler,
-      scale: THREE.Vector3,
-      visible: boolean
-    ) => {
-      setSimpleChandelierMatrix(
-        mesh,
-        instanceIndex,
-        position,
-        rotation,
-        visible ? scale : PLACEHOLDER_ZERO_SCALE
-      );
-    };
-
-    const setBloomChandelierMeshesVisible = (visible: boolean) => {
-      bloomSimpleChandelierMeshes.forEach((mesh) => {
+    const setChandelierBloomGlowVisible = (visible: boolean) => {
+      chandelierBloomGlowMeshes.forEach((mesh) => {
         mesh.visible = visible;
       });
     };
-    const setBaseSimpleChandelierMeshesVisible = (visible: boolean) => {
-      simpleChandelierMeshes.forEach((mesh) => {
+    const setChandelierBaseVisible = (visible: boolean) => {
+      chandelierBaseMeshes.forEach((mesh) => {
         mesh.visible = visible;
       });
-    };
-
-    const hideFullChandeliers = () => {
-      fullChandeliers.forEach((chandelier) => {
-        chandelier.visible = false;
-      });
-    };
-
-    const populateSimpleChandeliers = () => {
-      chandelierAnchors.forEach((anchor) => {
-        const rootY = anchor.position.y;
-        const rootRotation = anchor.rotationY;
-        const rootScale = chandelierScale;
-        const rootPosition = anchor.position;
-        const showLodInstance = true;
-        const rootEuler = new THREE.Euler(0, rootRotation, 0);
-        const ringEuler = new THREE.Euler(Math.PI / 2, rootRotation, 0);
-
-        const setLodPair = (
-          baseMesh: THREE.InstancedMesh,
-          bloomMesh: THREE.InstancedMesh,
-          instanceIndex: number,
-          position: THREE.Vector3,
-          rotation: THREE.Euler,
-          scale: THREE.Vector3,
-          bloomScale = scale
-        ) => {
-          setSimpleChandelierInstance(
-            baseMesh,
-            instanceIndex,
-            position,
-            rotation,
-            scale,
-            showLodInstance
-          );
-          setSimpleChandelierInstance(
-            bloomMesh,
-            instanceIndex,
-            position,
-            rotation,
-            bloomScale,
-            true
-          );
-        };
-
-        setLodPair(
-          simpleChandeliers.canopy,
-          bloomSimpleChandeliers.canopy,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 3.6 * rootScale,
-            rootPosition.z
-          ),
-          rootEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.canopyRing,
-          bloomSimpleChandeliers.canopyRing,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 3.55 * rootScale,
-            rootPosition.z
-          ),
-          ringEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.stem,
-          bloomSimpleChandeliers.stem,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 2.42 * rootScale,
-            rootPosition.z
-          ),
-          rootEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.center,
-          bloomSimpleChandeliers.center,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 1.22 * rootScale,
-            rootPosition.z
-          ),
-          rootEuler,
-          new THREE.Vector3(rootScale, rootScale * 0.72, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.bowl,
-          bloomSimpleChandeliers.bowl,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 0.98 * rootScale,
-            rootPosition.z
-          ),
-          new THREE.Euler(Math.PI, rootRotation, 0),
-          new THREE.Vector3(rootScale, rootScale * 0.28, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.ring,
-          bloomSimpleChandeliers.ring,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 0.83 * rootScale,
-            rootPosition.z
-          ),
-          ringEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.outerRing,
-          bloomSimpleChandeliers.outerRing,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 0.66 * rootScale,
-            rootPosition.z
-          ),
-          ringEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setLodPair(
-          simpleChandeliers.innerRing,
-          bloomSimpleChandeliers.innerRing,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 0.95 * rootScale,
-            rootPosition.z
-          ),
-          ringEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale)
-        );
-        setSimpleChandelierInstance(
-          simpleChandeliers.centerDrops,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY + 0.075 * rootScale,
-            rootPosition.z
-          ),
-          rootEuler,
-          new THREE.Vector3(rootScale, rootScale, rootScale),
-          true
-        );
-        setSimpleChandelierInstance(
-          simpleChandeliers.centerCrystals,
-          anchor.index,
-          new THREE.Vector3(
-            rootPosition.x,
-            rootY - 0.38 * rootScale,
-            rootPosition.z
-          ),
-          new THREE.Euler(0.18, rootRotation, 0.06),
-          new THREE.Vector3(
-            rootScale * 1.05,
-            rootScale * 1.55,
-            rootScale * 1.05
-          ),
-          true
-        );
-
-        for (
-          let bulbIndex = 0;
-          bulbIndex < CHANDELIER_LOD_LOWER_ARM_COUNT;
-          bulbIndex++
-        ) {
-          const angle =
-            rootRotation +
-            (bulbIndex / CHANDELIER_LOD_LOWER_ARM_COUNT) * Math.PI * 2;
-          const localRadius = bulbIndex % 2 === 0 ? 2.14 : 1.88;
-          const localY = bulbIndex % 2 === 0 ? 1.13 : 1.02;
-          const radius = localRadius * rootScale;
-          const armMidRadius = localRadius * 0.55 * rootScale;
-          const instanceIndex =
-            anchor.index * CHANDELIER_LOD_LOWER_ARM_COUNT + bulbIndex;
-          const bulbPosition = new THREE.Vector3(
-            rootPosition.x + Math.cos(angle) * radius,
-            rootY + (localY + 0.89) * rootScale,
-            rootPosition.z + Math.sin(angle) * radius
-          );
-
-          setLodPair(
-            simpleChandeliers.arms,
-            bloomSimpleChandeliers.arms,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * armMidRadius,
-              rootY + (localY + 0.18) * rootScale,
-              rootPosition.z + Math.sin(angle) * armMidRadius
-            ),
-            new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
-            new THREE.Vector3(rootScale, rootScale, rootScale)
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.cups,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + (localY + 0.21) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale, rootScale),
-            true
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.cupRings,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + (localY + 0.32) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            ringEuler,
-            new THREE.Vector3(rootScale, rootScale, rootScale),
-            true
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.sleeves,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + (localY + 0.62) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale, rootScale),
-            true
-          );
-          setLodPair(
-            simpleChandeliers.bulbs,
-            bloomSimpleChandeliers.bulbs,
-            instanceIndex,
-            bulbPosition,
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale * 1.3, rootScale)
-          );
-          setLodPair(
-            simpleChandeliers.glow,
-            bloomSimpleChandeliers.glow,
-            instanceIndex,
-            bulbPosition,
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale * 1.45, rootScale),
-            new THREE.Vector3(
-              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale,
-              rootScale * 1.45 * CHANDELIER_BLOOM_SETTINGS.glowScale,
-              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale
-            )
-          );
-        }
-
-        for (
-          let bulbIndex = 0;
-          bulbIndex < CHANDELIER_LOD_UPPER_ARM_COUNT;
-          bulbIndex++
-        ) {
-          const angle =
-            rootRotation +
-            (bulbIndex / CHANDELIER_LOD_UPPER_ARM_COUNT) * Math.PI * 2 +
-            Math.PI / CHANDELIER_LOD_UPPER_ARM_COUNT;
-          const radius = 1.18 * rootScale;
-          const armMidRadius = 0.74 * rootScale;
-          const instanceIndex =
-            anchor.index * CHANDELIER_LOD_UPPER_ARM_COUNT + bulbIndex;
-          const bulbPosition = new THREE.Vector3(
-            rootPosition.x + Math.cos(angle) * radius,
-            rootY + 2.6 * rootScale,
-            rootPosition.z + Math.sin(angle) * radius
-          );
-
-          setLodPair(
-            simpleChandeliers.upperArms,
-            bloomSimpleChandeliers.upperArms,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * armMidRadius,
-              rootY + 2.24 * rootScale,
-              rootPosition.z + Math.sin(angle) * armMidRadius
-            ),
-            new THREE.Euler(Math.PI / 2, 0, Math.PI / 2 - angle),
-            new THREE.Vector3(rootScale, rootScale, rootScale)
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.upperCups,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + 2.43 * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale, rootScale),
-            true
-          );
-          setLodPair(
-            simpleChandeliers.upperBulbs,
-            bloomSimpleChandeliers.upperBulbs,
-            instanceIndex,
-            bulbPosition,
-            rootEuler,
-            new THREE.Vector3(rootScale * 0.82, rootScale, rootScale * 0.82)
-          );
-          setLodPair(
-            simpleChandeliers.upperGlow,
-            bloomSimpleChandeliers.upperGlow,
-            instanceIndex,
-            bulbPosition,
-            rootEuler,
-            new THREE.Vector3(
-              rootScale * 0.78,
-              rootScale * 1.22,
-              rootScale * 0.78
-            ),
-            new THREE.Vector3(
-              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale * 0.78,
-              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale * 1.22,
-              rootScale * CHANDELIER_BLOOM_SETTINGS.glowScale * 0.78
-            )
-          );
-        }
-
-        for (
-          let beadIndex = 0;
-          beadIndex < CHANDELIER_LOD_BEAD_COUNT;
-          beadIndex++
-        ) {
-          const angle =
-            rootRotation +
-            (beadIndex / CHANDELIER_LOD_BEAD_COUNT) * Math.PI * 2;
-          const radius = 0.94 * rootScale;
-          const instanceIndex =
-            anchor.index * CHANDELIER_LOD_BEAD_COUNT + beadIndex;
-
-          setLodPair(
-            simpleChandeliers.beads,
-            bloomSimpleChandeliers.beads,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + (0.61 + Math.sin(beadIndex * 0.5) * 0.012) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            rootEuler,
-            new THREE.Vector3(rootScale, rootScale, rootScale)
-          );
-        }
-
-        for (
-          let crystalIndex = 0;
-          crystalIndex < CHANDELIER_LOD_CRYSTAL_COUNT;
-          crystalIndex++
-        ) {
-          const angle =
-            rootRotation +
-            (crystalIndex / CHANDELIER_LOD_CRYSTAL_COUNT) * Math.PI * 2;
-          const radius = (crystalIndex % 2 === 0 ? 0.83 : 0.68) * rootScale;
-          const localCrystalY = 0.08 - (crystalIndex % 3) * 0.1;
-          const dropTopY = 0.61;
-          const dropHeight = Math.max(0.12, dropTopY - localCrystalY);
-          const instanceIndex =
-            anchor.index * CHANDELIER_LOD_CRYSTAL_COUNT + crystalIndex;
-          const crystalPosition = new THREE.Vector3(
-            rootPosition.x + Math.cos(angle) * radius,
-            rootY + localCrystalY * rootScale,
-            rootPosition.z + Math.sin(angle) * radius
-          );
-          const crystalRotation = new THREE.Euler(0.25, -angle, 0.08);
-          const crystalScale = new THREE.Vector3(
-            rootScale,
-            rootScale * 1.45,
-            rootScale
-          );
-          const showPearCrystal = crystalIndex % 3 !== 0;
-
-          setSimpleChandelierInstance(
-            simpleChandeliers.dropLines,
-            instanceIndex,
-            new THREE.Vector3(
-              rootPosition.x + Math.cos(angle) * radius,
-              rootY + ((dropTopY + localCrystalY) / 2) * rootScale,
-              rootPosition.z + Math.sin(angle) * radius
-            ),
-            rootEuler,
-            new THREE.Vector3(
-              rootScale,
-              rootScale * (dropHeight / CHANDELIER_LOD_DROP_LINE_HEIGHT),
-              rootScale
-            ),
-            true
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.crystals,
-            instanceIndex,
-            crystalPosition,
-            crystalRotation,
-            crystalScale,
-            showLodInstance && showPearCrystal
-          );
-          setSimpleChandelierInstance(
-            bloomSimpleChandeliers.crystals,
-            instanceIndex,
-            crystalPosition,
-            crystalRotation,
-            crystalScale,
-            showPearCrystal
-          );
-          setSimpleChandelierInstance(
-            simpleChandeliers.prisms,
-            instanceIndex,
-            crystalPosition,
-            crystalRotation,
-            crystalScale,
-            showLodInstance && !showPearCrystal
-          );
-          setSimpleChandelierInstance(
-            bloomSimpleChandeliers.prisms,
-            instanceIndex,
-            crystalPosition,
-            crystalRotation,
-            crystalScale,
-            !showPearCrystal
-          );
-        }
-      });
-
-      allSimpleChandelierMeshes.forEach((mesh) => {
-        mesh.instanceMatrix.needsUpdate = true;
-        mesh.computeBoundingSphere();
-      });
-    };
-
-    const updateChandelierLod = () => {
-      if (simpleChandelierDetailKey === 'single-silhouette') return;
-
-      simpleChandelierDetailKey = 'single-silhouette';
-      hideFullChandeliers();
-      populateSimpleChandeliers();
-      invalidateShadows();
     };
 
     const getGroupSide = (groupIndex: number): GalleryWallSide =>
@@ -4198,8 +3888,18 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         urls.length
       ),
     };
+    // Placeholder plaques sit in unlit stretches of the hall, so they get a
+    // variant without the environment map -- otherwise they'd glint in the
+    // dark at constant strength.
+    const placeholderPlaqueMaterial = plaqueMaterial.clone();
+    placeholderPlaqueMaterial.envMap = null;
+    materials.push(placeholderPlaqueMaterial);
     const placeholderPlaques = {
-      body: new THREE.InstancedMesh(unitBox, plaqueMaterial, urls.length),
+      body: new THREE.InstancedMesh(
+        unitBox,
+        placeholderPlaqueMaterial,
+        urls.length
+      ),
       text: new THREE.InstancedMesh(unitPlane, plaqueTextMaterial, urls.length),
     };
 
@@ -4408,11 +4108,23 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const updateEmbedRecordVisibility = (
       record: FrameRecord,
-      _now: number | null
+      now: number | null
     ) => {
-      const isVisible = record.embedMounted;
-      record.element.style.opacity = isVisible ? '1' : '0';
-      record.element.style.pointerEvents = isVisible ? 'auto' : 'none';
+      // The embed fades with its painting light instead of popping — during
+      // group transitions and during the intro reveal alike.
+      const needsAnimatedFactor =
+        cameraTransition !== null || intro.phase !== 'done';
+      const effectiveNow =
+        now ?? (needsAnimatedFactor ? performance.now() : null);
+      const factor = !record.embedMounted
+        ? 0
+        : effectiveNow === null
+          ? 1
+          : clamp(getRecordLightFactor(record, effectiveNow), 0, 1);
+
+      record.element.style.opacity = factor.toFixed(3);
+      record.element.style.pointerEvents =
+        record.embedMounted && factor > 0.55 ? 'auto' : 'none';
     };
 
     const updateEmbedVisibility = (now: number | null) => {
@@ -4676,19 +4388,41 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       requestRenderLoop();
     };
 
+    const frameMaterialVariants = [walnutMaterial, goldMaterial, ebonyMaterial];
+
+    // A frame's environment glints must obey its local lighting: the shared
+    // materials get a cheap per-record clone (same shader program -- only the
+    // envMapIntensity uniform differs) so each frame's glints can fade with
+    // its own light factor.
+    const createEnvGlintMaterial = (
+      source: THREE.MeshPhysicalMaterial
+    ): THREE.MeshPhysicalMaterial => {
+      const material = source.clone();
+      // clone() does not carry onBeforeCompile; re-attach the specular-only
+      // environment patch so the clone shares the source's program.
+      material.onBeforeCompile = injectSpecularOnlyEnvironment;
+      material.userData.baseEnvMapIntensity = source.envMapIntensity;
+      material.envMapIntensity = 0;
+      return material;
+    };
+
     const createFrameRecord = (index: number): FrameRecord => {
       const placement = getFramePlacement(index);
+      const frameMaterial = createEnvGlintMaterial(
+        frameMaterialVariants[index % frameMaterialVariants.length]
+      );
+      const framePlaqueMaterial = createEnvGlintMaterial(plaqueMaterial);
       const { group, paintingSpotlight } = createFrameGroup({
         index,
         x: 0,
         isMobile,
         layout,
         materials: {
-          frame: [walnutMaterial, goldMaterial, ebonyMaterial],
+          frame: [frameMaterial],
           backing: backingMaterial,
           placeholderArt:
             placeholderArtMaterials[index % placeholderArtMaterials.length],
-          plaque: plaqueMaterial,
+          plaque: framePlaqueMaterial,
           plaqueText: plaqueTextMaterial,
         },
         railGeometries: sharedFrameRailGeometries,
@@ -4709,6 +4443,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         cssObject,
         element,
         paintingSpotlight,
+        envGlintMaterials: [frameMaterial, framePlaqueMaterial],
         embedMounted: false,
         embedRequested: false,
         embedRequestId: 0,
@@ -4733,6 +4468,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         if (sharedFrameRailGeometrySet.has(object.geometry)) return;
         object.geometry.dispose();
       });
+      record.envGlintMaterials.forEach((material) => material.dispose());
       record.element.remove();
     };
 
@@ -4756,8 +4492,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const embedStart = getGroupStart(groupIndex);
       const embedEnd = getGroupEnd(groupIndex);
 
-      activeFrameStart = activeStart;
-      activeFrameEnd = activeEnd;
       updatePlaceholderVisibility(activeStart, activeEnd);
       updateActiveCeilingSpotlights([groupIndex]);
       let didFrameSetChange = false;
@@ -4807,8 +4541,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const embedStart = getGroupStart(toGroupIndex);
       const embedEnd = getGroupEnd(toGroupIndex);
 
-      activeFrameStart = activeStart;
-      activeFrameEnd = activeEnd;
       updatePlaceholderVisibility(activeStart, activeEnd);
       updateActiveCeilingSpotlights([fromGroupIndex, toGroupIndex]);
       let didFrameSetChange = false;
@@ -4889,6 +4621,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
       bloomPass?.resolution.set(width, height);
       chandelierBloomPass?.resolution.set(width, height);
+      if (finalBloomMaterial) {
+        finalBloomMaterial.uniforms.uAspect.value = width / Math.max(1, height);
+      }
+      const reflectionSize = getReflectionSize(width, height);
+      reflectionRenderTarget.setSize(
+        reflectionSize.width,
+        reflectionSize.height
+      );
       cssRenderer.setSize(width, height);
       renderer.domElement.style.width = `${width}px`;
       renderer.domElement.style.height = `${height}px`;
@@ -4918,7 +4658,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       groupIndex: number,
       requestedMode: CameraTransitionMode = 'step'
     ) => {
-      if (cameraTransition) return;
+      if (cameraTransition || intro.phase !== 'done') return;
 
       const nextGroupIndex = clamp(groupIndex, 0, maxGroupIndex);
       if (nextGroupIndex === targetGroupIndex) return;
@@ -4936,8 +4676,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const maxTurnTravelDistance =
         travelDistance * LONG_JUMP_TURN_TRAVEL_MAX_RATIO;
       const idealTurnTravelDistance =
-        (LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND *
-          (baseTurnDuration / 1000)) /
+        (LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND * (baseTurnDuration / 1000)) /
         2;
       const turnTravelDistance =
         mode === 'cruise'
@@ -5094,7 +4833,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const renderScene = (renderCss = false) => {
       if (composer && bloomComposer && chandelierBloomComposer) {
-        setBloomChandelierMeshesVisible(false);
+        setChandelierBloomGlowVisible(false);
         activeBloomLayer = bloomLayer;
         scene.traverseVisible(darkenVisibleNonBloomed);
         try {
@@ -5103,16 +4842,16 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           restoreDarkenedBloomMeshes();
         }
 
-        setBloomChandelierMeshesVisible(true);
-        setBaseSimpleChandelierMeshesVisible(false);
+        setChandelierBloomGlowVisible(true);
+        setChandelierBaseVisible(false);
         activeBloomLayer = chandelierBloomLayer;
         scene.traverseVisible(darkenVisibleNonBloomed);
         try {
           chandelierBloomComposer.render();
         } finally {
           restoreDarkenedBloomMeshes();
-          setBloomChandelierMeshesVisible(false);
-          setBaseSimpleChandelierMeshesVisible(true);
+          setChandelierBloomGlowVisible(false);
+          setChandelierBaseVisible(true);
           activeBloomLayer = bloomLayer;
         }
 
@@ -5173,6 +4912,62 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return factor;
     };
 
+    // During the intro reveal, group 0's lights warm up in sequence: the
+    // ceiling wash first, then each painting light (and its embed) with a
+    // short stagger.
+    const getIntroWarmLightFloor = (groupIndex: number): number =>
+      introLightsWarmed && groupIndex === 0
+        ? INTRO_SETTINGS.warmLightFactor
+        : 0;
+
+    const getRecordLightFactor = (
+      record: FrameRecord,
+      now: number | null
+    ): number => {
+      const groupIndex = getFramePlacement(record.index).groupIndex;
+
+      if (intro.phase !== 'done') {
+        const warmFloor = getIntroWarmLightFloor(groupIndex);
+        if (groupIndex !== 0 || intro.phase !== 'reveal' || now === null) {
+          return warmFloor;
+        }
+
+        const slot = record.index - getGroupStart(groupIndex);
+        return Math.max(
+          warmFloor,
+          smoothstep(
+            0,
+            PAINTING_LIGHT_ON_MS,
+            now -
+              intro.revealStartedAt -
+              INTRO_SETTINGS.ceilingLeadMs -
+              slot * INTRO_SETTINGS.lightStaggerMs
+          )
+        );
+      }
+
+      return getGroupLightFactor(groupIndex, now);
+    };
+
+    const getCeilingLightFactor = (
+      groupIndex: number,
+      now: number | null
+    ): number => {
+      if (intro.phase !== 'done') {
+        const warmFloor = getIntroWarmLightFloor(groupIndex);
+        if (groupIndex !== 0 || intro.phase !== 'reveal' || now === null) {
+          return warmFloor;
+        }
+
+        return Math.max(
+          warmFloor,
+          smoothstep(0, PAINTING_LIGHT_ON_MS, now - intro.revealStartedAt)
+        );
+      }
+
+      return getGroupLightFactor(groupIndex, now);
+    };
+
     const setCeilingSpotlightFactor = (
       spotlight: THREE.SpotLight,
       factor: number
@@ -5194,11 +4989,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const updatePaintingSpotlights = (now: number | null) => {
       activeFrames.forEach((record) => {
-        const groupIndex = getFramePlacement(record.index).groupIndex;
-        setPaintingSpotlightFactor(
-          record,
-          getGroupLightFactor(groupIndex, now)
-        );
+        const factor = getRecordLightFactor(record, now);
+        setPaintingSpotlightFactor(record, factor);
+        record.envGlintMaterials.forEach((material) => {
+          const baseIntensity =
+            typeof material.userData.baseEnvMapIntensity === 'number'
+              ? material.userData.baseEnvMapIntensity
+              : 0;
+          material.envMapIntensity = baseIntensity * factor;
+        });
       });
     };
 
@@ -5206,9 +5005,246 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       activeCeilingSpotlights.forEach((spotlight, groupIndex) => {
         setCeilingSpotlightFactor(
           spotlight,
-          getGroupLightFactor(groupIndex, now)
+          getCeilingLightFactor(groupIndex, now)
         );
       });
+    };
+
+    // Subtle head bob + sway while the camera "walks". Time-based so the
+    // fast cruise glide doesn't shake; weight fades it in and out around
+    // turns and arrivals.
+    const walkBobState = { offset: 0, roll: 0 };
+    const computeWalkBob = (elapsedMs: number, weight: number) => {
+      const seconds = elapsedMs / 1000;
+      walkBobState.offset =
+        Math.sin(seconds * Math.PI * 2 * WALK_BOB_SETTINGS.frequencyHz) *
+        WALK_BOB_SETTINGS.amplitude *
+        weight;
+      walkBobState.roll =
+        Math.sin(
+          seconds * Math.PI * 2 * WALK_BOB_SETTINGS.rollFrequencyHz +
+            Math.PI / 3
+        ) *
+        WALK_BOB_SETTINGS.rollAmplitude *
+        weight;
+      return walkBobState;
+    };
+
+    const introPose = createCameraPose();
+    const introFinalPose = createCameraPose();
+    const introDirection = new THREE.Vector3();
+    const introArriveDirection = new THREE.Vector3();
+    const introSignTarget = new THREE.Vector3(
+      0,
+      wallCenterY + INTRO_SETTINGS.signLookHeightOffset,
+      hallStartZ
+    );
+
+    const getIntroHoldPose = (pushProgress: number): CameraPose => {
+      introPose.position.set(
+        0,
+        layout.cameraY,
+        introStartZ +
+          INTRO_SETTINGS.pushDistance *
+            easeInOutCubic(clamp(pushProgress, 0, 1))
+      );
+      introPose.target.copy(introSignTarget);
+      return introPose;
+    };
+
+    const getIntroTravelPose = (t: number): CameraPose => {
+      const clampedT = clamp(t, 0, 1);
+      const eased = easeInOutCubic(clampedT);
+      // Yaw path: face the entrance sign (0), swing across the left wall to
+      // face down the hall (-PI), then blend onto the group-0 look.
+      const startYaw = intro.hasSignMoment ? 0 : -Math.PI;
+      const turnProgress = easeInOutCubic(clamp(clampedT / 0.42, 0, 1));
+      const arriveProgress = easeInOutCubic(
+        clamp((clampedT - 0.66) / 0.34, 0, 1)
+      );
+      const yaw = lerp(startYaw, -Math.PI, turnProgress);
+      const hallwayPitch =
+        (layout.frameY - layout.cameraY) / layout.transitionLookDistance;
+      const signPitch = intro.hasSignMoment
+        ? (introSignTarget.y - layout.cameraY) / Math.max(1, introSignDistance)
+        : hallwayPitch;
+      const pitch = lerp(signPitch, hallwayPitch, turnProgress);
+
+      introDirection.set(Math.sin(yaw), pitch, Math.cos(yaw)).normalize();
+
+      const finalPose = getCameraPose(0, 0, 0, introFinalPose);
+      const travelStartZ = intro.hasSignMoment
+        ? introStartZ + INTRO_SETTINGS.pushDistance
+        : introStartZ;
+      introPose.position.set(
+        0,
+        layout.cameraY,
+        lerp(travelStartZ, finalPose.position.z, eased)
+      );
+
+      if (arriveProgress > 0) {
+        introArriveDirection
+          .copy(finalPose.target)
+          .sub(finalPose.position)
+          .normalize();
+        introDirection.lerp(introArriveDirection, arriveProgress).normalize();
+      }
+
+      introPose.target
+        .copy(introPose.position)
+        .addScaledVector(introDirection, layout.transitionLookDistance);
+      return introPose;
+    };
+
+    const getIntroPose = (now: number): CameraPose => {
+      if (intro.phase === 'pending') {
+        intro.phase = intro.hasSignMoment ? 'hold' : 'travel';
+        intro.startedAt = now;
+        intro.travelStartedAt = now;
+        hasPlayedIntroRef.current = true;
+      }
+
+      if (intro.phase === 'hold') {
+        const heldFor = now - intro.startedAt;
+        // Hold on the flickering sign; if the GLB is still streaming in,
+        // wait for it briefly so the moment isn't spent on a bare wall.
+        const signSettled =
+          intro.signReadyAt >= 0 &&
+          now - intro.signReadyAt >= INTRO_SETTINGS.signSettleMs;
+        const holdComplete =
+          heldFor >= INTRO_SETTINGS.holdMs &&
+          (signSettled ||
+            heldFor >= INTRO_SETTINGS.holdMs + INTRO_SETTINGS.maxSignWaitMs);
+
+        if (!holdComplete) {
+          cameraRoll = 0;
+          return getIntroHoldPose(heldFor / INTRO_SETTINGS.holdMs);
+        }
+
+        intro.phase = 'travel';
+        intro.travelStartedAt = now;
+      }
+
+      if (intro.phase === 'travel') {
+        const travelElapsed = now - intro.travelStartedAt;
+        const t = travelElapsed / INTRO_SETTINGS.travelMs;
+
+        if (t < 1) {
+          const bobWeight =
+            smoothstep(0.18, 0.36, t) * (1 - smoothstep(0.72, 0.9, t));
+          const pose = getIntroTravelPose(t);
+          const bob = computeWalkBob(travelElapsed, bobWeight);
+          pose.position.y += bob.offset;
+          pose.target.y += bob.offset * WALK_BOB_SETTINGS.targetFollow;
+          cameraRoll = bob.roll;
+          return pose;
+        }
+
+        intro.phase = 'reveal';
+        intro.revealStartedAt = now;
+        cameraNeedsCssRender = true;
+      }
+
+      // Reveal: camera has settled on group 0 while its lights stagger on;
+      // pointer parallax blends in instead of snapping.
+      const pointerBlend = smoothstep(
+        0,
+        INTRO_SETTINGS.pointerBlendMs,
+        now - intro.revealStartedAt
+      );
+      const pose = getCameraPose(
+        0,
+        pointerX * pointerBlend,
+        -pointerY * pointerBlend,
+        renderPose
+      );
+
+      const revealSlots = Math.max(0, getGroupEnd(0) - getGroupStart(0));
+      const revealDuration =
+        INTRO_SETTINGS.ceilingLeadMs +
+        PAINTING_LIGHT_ON_MS +
+        INTRO_SETTINGS.lightStaggerMs * revealSlots +
+        200;
+      if (now - intro.revealStartedAt >= revealDuration) {
+        intro.phase = 'done';
+        setIsNavThrottled(false);
+      }
+
+      cameraRoll = 0;
+      return pose;
+    };
+
+    // The reveal used to pay a one-off freeze: lights turning visible for
+    // the first time changed the scene's light count, forcing synchronous
+    // shader recompiles of every material plus first shadow-map builds,
+    // right as the camera settled. Instead, compile the fully-lit program
+    // variants in the background during the hold/travel phases, bake the
+    // shadow maps into a throwaway target, and keep the lights visible at an
+    // imperceptible intensity -- the reveal becomes a pure intensity ramp.
+    const warmupIntroLighting = () => {
+      if (intro.phase === 'done') return;
+
+      const ceilingSpotlight = activeCeilingSpotlights.get(0) ?? null;
+      const groupZeroRecords: FrameRecord[] = [];
+      activeFrames.forEach((record) => {
+        if (getFramePlacement(record.index).groupIndex === 0) {
+          groupZeroRecords.push(record);
+        }
+      });
+
+      const setWarmupLightsVisible = (visible: boolean) => {
+        groupZeroRecords.forEach((record) => {
+          record.paintingSpotlight.visible = visible;
+        });
+        if (ceilingSpotlight) {
+          ceilingSpotlight.visible = visible;
+        }
+      };
+
+      // Capture the fully-lit light state and issue every program compile
+      // WITHOUT waiting -- drivers with parallel shader compilation finish
+      // them in the background while the intro holds on the sign.
+      // (renderer.compileAsync is deliberately avoided: its readiness
+      // polling crashes if any compiled material is disposed mid-poll, e.g.
+      // on a React remount.)
+      setWarmupLightsVisible(true);
+      try {
+        renderer.compile(scene, camera);
+      } catch {
+        // Warmup is an optimization only; without it the reveal simply pays
+        // the old one-off compile cost.
+      } finally {
+        setWarmupLightsVisible(false);
+      }
+
+      warmupTimeoutId = window.setTimeout(() => {
+        warmupTimeoutId = 0;
+        if (!isMounted) return;
+
+        introLightsWarmed = true;
+        if (intro.phase === 'reveal' || intro.phase === 'done') return;
+
+        groupZeroRecords.forEach((record) => {
+          setPaintingSpotlightFactor(record, INTRO_SETTINGS.warmLightFactor);
+        });
+        if (ceilingSpotlight) {
+          setCeilingSpotlightFactor(
+            ceilingSpotlight,
+            INTRO_SETTINGS.warmLightFactor
+          );
+        }
+
+        // This off-screen render force-finishes any still-pending program
+        // links and bakes the shadow maps, so the reveal itself has nothing
+        // left to pay.
+        const warmupTarget = new THREE.WebGLRenderTarget(8, 8);
+        const previousTarget = renderer.getRenderTarget();
+        renderer.shadowMap.needsUpdate = true;
+        renderer.setRenderTarget(warmupTarget);
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(previousTarget);
+        warmupTarget.dispose();
+      }, INTRO_SETTINGS.warmupSettleMs);
     };
 
     const getTransitionPose = (
@@ -5323,7 +5359,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             .lerp(transitionToDirection, easeInOutCubic(turnProgress));
         }
       } else {
-        const easedProgress = easeInOutCubic(cameraProgress);
+        // A hair of overshoot at the end reads as a person stopping rather
+        // than a dolly hitting its mark; the pulse returns to exactly 1.
+        const easedProgress =
+          easeInOutCubic(cameraProgress) +
+          Math.sin(Math.PI * clamp((cameraProgress - 0.7) / 0.3, 0, 1)) *
+            STEP_ARRIVAL_OVERSHOOT;
         position.copy(fromPose.position).lerp(toPose.position, easedProgress);
 
         if (cameraProgress < 0.5) {
@@ -5345,14 +5386,33 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
       if (cameraProgress >= 1) {
         position.copy(toPose.position);
-        transitionDirection
-          .copy(toPose.target)
-          .sub(toPose.position);
+        transitionDirection.copy(toPose.target).sub(toPose.position);
       }
       transitionDirection.normalize();
       transitionResultPose.target
         .copy(position)
         .addScaledVector(transitionDirection, layout.transitionLookDistance);
+
+      const walkElapsed = Math.max(0, elapsed - PAINTING_LIGHT_OFF_MS);
+      const bobWeight =
+        transition.mode === 'cruise'
+          ? smoothstep(
+              transition.turnDuration * 0.55,
+              transition.turnDuration * 1.2,
+              walkElapsed
+            ) *
+            (1 -
+              smoothstep(
+                transition.duration - transition.turnDuration * 1.2,
+                transition.duration - transition.turnDuration * 0.55,
+                walkElapsed
+              ))
+          : Math.sin(Math.PI * cameraProgress) * 0.55;
+      const bob = computeWalkBob(walkElapsed, bobWeight);
+      position.y += bob.offset;
+      transitionResultPose.target.y +=
+        bob.offset * WALK_BOB_SETTINGS.targetFollow;
+      cameraRoll = bob.roll;
 
       transitionPoseResult.cameraProgress = cameraProgress;
       transitionPoseResult.elapsed = elapsed;
@@ -5362,10 +5422,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const renderFrame = (now: number) => {
       animationFrame = 0;
+      cameraRoll = 0;
       let pose: CameraPose;
       let isSettling = false;
 
-      if (cameraTransition) {
+      if (intro.phase !== 'done') {
+        pose = getIntroPose(now);
+      } else if (cameraTransition) {
         const transitionPose = getTransitionPose(cameraTransition, now);
         pose = transitionPose.pose;
         isSettling =
@@ -5397,24 +5460,54 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
 
       applyCameraPose(pose);
-      updateChandelierLod();
+      if (cameraRoll !== 0) {
+        camera.rotateZ(cameraRoll);
+      }
 
-      if (!cameraTransition && targetGroupIndex !== currentGroupIndex) {
+      if (
+        intro.phase === 'done' &&
+        !cameraTransition &&
+        targetGroupIndex !== currentGroupIndex
+      ) {
         currentGroupIndex = targetGroupIndex;
         updateVirtualFrames(targetGroupIndex);
       }
-      updatePaintingSpotlights(cameraTransition ? now : null);
-      updateCeilingSpotlights(cameraTransition ? now : null);
+      const animatedLightsNow =
+        cameraTransition || intro.phase !== 'done' ? now : null;
+      updatePaintingSpotlights(animatedLightsNow);
+      updateCeilingSpotlights(animatedLightsNow);
       updateNeonSign();
-      updateEmbedVisibility(cameraTransition ? now : null);
+      updateEmbedVisibility(animatedLightsNow);
+
+      // Refresh the cached floor reflection when the camera moved or the
+      // scene content changed; while parked with only the neon flickering,
+      // throttle the mirror pass instead of paying it every frame.
+      camera.updateMatrixWorld();
+      const reflectionCameraMoved = !lastReflectionCameraMatrix.equals(
+        camera.matrixWorld
+      );
+      if (
+        reflectionDirty ||
+        reflectionCameraMoved ||
+        (shouldAnimateSettledNeon() &&
+          now - lastReflectionRenderedAt >
+            FLOOR_REFLECTION_SETTINGS.idleIntervalMs)
+      ) {
+        renderFloorReflection(now);
+      }
 
       renderScene(
         cssNeedsRender ||
           cameraNeedsCssRender ||
+          intro.phase !== 'done' ||
           Boolean(cameraTransition && !cameraTransition.settled)
       );
 
-      if (cameraTransition || shouldAnimateSettledNeon()) {
+      if (
+        cameraTransition ||
+        intro.phase !== 'done' ||
+        shouldAnimateSettledNeon()
+      ) {
         requestRenderLoop();
       }
     };
@@ -5457,17 +5550,27 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     targetGroupIndex = 0;
     setNavGroupIndex(0);
-    const initialPose = getCameraPose(targetGroupIndex, 0, 0, renderPose);
+    setIsNavThrottled(intro.phase !== 'done');
+    const initialPose =
+      intro.phase !== 'done'
+        ? intro.hasSignMoment
+          ? getIntroHoldPose(0)
+          : getIntroTravelPose(0)
+        : getCameraPose(targetGroupIndex, 0, 0, renderPose);
     applyCameraPose(initialPose);
     applyResize(true);
     updateVirtualFrames(targetGroupIndex);
     currentGroupIndex = targetGroupIndex;
-    updateChandelierLod();
     updatePaintingSpotlights(null);
     updateCeilingSpotlights(null);
     updateEmbedVisibility(null);
+    renderFloorReflection(performance.now());
     renderScene(true);
     setIsReady(true);
+    if (intro.phase !== 'done') {
+      requestRenderLoop();
+      warmupIntroLighting();
+    }
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('resize', resize, { passive: true });
@@ -5493,6 +5596,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     return () => {
       isMounted = false;
       window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(warmupTimeoutId);
       if (resizeRaf) {
         window.cancelAnimationFrame(resizeRaf);
       }
@@ -5538,6 +5642,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       chandelierBloomComposer?.dispose();
       bloomComposer?.dispose();
       composer?.dispose();
+      reflectionRenderTarget.dispose();
+      environmentRenderTarget.dispose();
       renderer.dispose();
       webglHost.remove();
       cssHost.remove();
@@ -5546,6 +5652,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   }, [
     groupCount,
     isMobile,
+    isTablet,
     layout,
     reducedMotion,
     sceneClassNames,

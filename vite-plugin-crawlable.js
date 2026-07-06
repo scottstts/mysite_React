@@ -91,9 +91,7 @@ function escapeHtml(value) {
 }
 
 function escapeAttr(value) {
-  return escapeHtml(value)
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function safeHref(href) {
@@ -132,10 +130,13 @@ function inline(text) {
       stash(linkToHtml(label, href))
     );
 
-  return escapeHtml(withTokens)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\u0000(\d+)\u0000/g, (_match, index) => tokens[Number(index)]);
+  return (
+    escapeHtml(withTokens)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // eslint-disable-next-line no-control-regex -- NUL bytes intentionally delimit the stashed link tokens
+      .replace(/\u0000(\d+)\u0000/g, (_match, index) => tokens[Number(index)])
+  );
 }
 
 /**
