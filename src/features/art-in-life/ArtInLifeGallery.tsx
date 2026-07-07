@@ -600,19 +600,6 @@ const useMediaQuery = (query: string): boolean => {
   return matches;
 };
 
-const isDesktopSafari = (): boolean => {
-  if (typeof navigator === 'undefined') return false;
-
-  const userAgent = navigator.userAgent;
-  const isSafari = /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(
-    userAgent
-  );
-  const isMacDesktop = /Mac/i.test(navigator.platform);
-  const isTouchMac = navigator.maxTouchPoints > 1;
-
-  return isSafari && isMacDesktop && !isTouchMac;
-};
-
 const getLayout = (isMobile: boolean, isTablet: boolean): GalleryLayout => {
   if (isMobile) {
     return {
@@ -1932,12 +1919,6 @@ const FallbackGallery = ({ urls }: ArtInLifeGalleryProps) => (
   </div>
 );
 
-const DesktopSafariNotice = () => (
-  <div className={styles.sceneFallback} role="status">
-    For a better experience, visit on a Chromium browser.
-  </div>
-);
-
 const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -1953,7 +1934,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const isTablet = useMediaQuery(TABLET_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const shouldShowDesktopSafariNotice = isDesktopSafari();
   const layout = useMemo(
     () => getLayout(isMobile, isTablet),
     [isMobile, isTablet]
@@ -1983,12 +1963,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   );
 
   useEffect(() => {
-    if (shouldShowDesktopSafariNotice) {
-      setUseFallback(false);
-      setIsReady(true);
-      return;
-    }
-
     if (reducedMotion || !supportsWebGL()) {
       setUseFallback(true);
       setIsReady(true);
@@ -6146,13 +6120,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     layout,
     reducedMotion,
     sceneClassNames,
-    shouldShowDesktopSafariNotice,
     urls,
   ]);
-
-  if (shouldShowDesktopSafariNotice) {
-    return <DesktopSafariNotice />;
-  }
 
   if (useFallback) {
     return <FallbackGallery urls={urls} />;
