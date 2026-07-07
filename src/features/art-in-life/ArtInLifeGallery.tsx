@@ -1959,10 +1959,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       initialRenderSize.width,
       initialRenderSize.height
     );
+    // samples: the mirror renders at a fraction of screen resolution, so a
+    // sub-texel specular glint on the metal frames covers or misses whole
+    // texels frame to frame while the camera cruises. Without MSAA that
+    // quantization reads as amplified flicker in the floor reflection.
     const reflectionRenderTarget = new THREE.WebGLRenderTarget(
       initialReflectionSize.width,
       initialReflectionSize.height,
-      { type: THREE.HalfFloatType }
+      { type: THREE.HalfFloatType, samples: 4 }
     );
     reflectionRenderTarget.texture.minFilter = THREE.LinearFilter;
     reflectionRenderTarget.texture.magFilter = THREE.LinearFilter;
@@ -2101,13 +2105,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         { RenderPass },
         { UnrealBloomPass },
         { ShaderPass },
-        { OutputPass },
       ] = await Promise.all([
         import('three/examples/jsm/postprocessing/EffectComposer.js'),
         import('three/examples/jsm/postprocessing/RenderPass.js'),
         import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
         import('three/examples/jsm/postprocessing/ShaderPass.js'),
-        import('three/examples/jsm/postprocessing/OutputPass.js'),
       ]);
 
       if (!isMounted) return;
@@ -2141,12 +2143,27 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       nextChandelierBloomComposer.addPass(nextChandelierBloomPass);
 
       const nextComposer = new EffectComposer(renderer);
+      // Once this composer takes over, the canvas' own MSAA framebuffer no
+      // longer rasterizes the scene -- these targets do. Without samples the
+      // base render loses antialiasing and the frames' sub-pixel specular
+      // glints shimmer during camera moves. Only the read buffer needs MSAA:
+      // the scene RenderPass rasterizes into it, and because the grade pass
+      // below never swaps buffers, the read buffer is renderTarget2 on every
+      // frame while renderTarget1 receives no draws at all. (The bloom
+      // composers stay unsampled: their scene passes are black except the
+      // emissive sources, and the blur pyramid low-passes any aliasing.)
+      nextComposer.renderTarget2.samples = 2;
       nextComposer.setPixelRatio(pixelRatio);
       nextComposer.setSize(width, height);
       nextComposer.addPass(new RenderPass(scene, camera));
       // The combine pass doubles as the color grade: warm tint, vignette,
       // and fine grain ride along in the shader that already runs, so the
-      // grade costs zero extra passes.
+      // grade costs zero extra passes. It also renders straight to the
+      // canvas and ends with three's tonemapping/colorspace chunks -- for a
+      // to-screen ShaderMaterial the renderer injects the active tone
+      // mapping (ACES + exposure) and sRGB output transform, which is
+      // exactly what a trailing OutputPass would do, minus one
+      // full-resolution pass.
       finalBloomMaterial = new THREE.ShaderMaterial({
         uniforms: {
           baseTexture: { value: null },
@@ -2206,6 +2223,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
             color += (grain - 0.5) * uGrainAmount;
 
             gl_FragColor = vec4(color, base.a);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
       });
@@ -2213,8 +2232,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         finalBloomMaterial,
         'baseTexture'
       );
+      // This pass draws to the screen, so the composer's read/write swap
+      // after it would only alternate which buffer the RenderPass draws
+      // into next frame -- off of the MSAA buffer on odd frames. Pin it.
+      nextFinalBloomPass.needsSwap = false;
       nextComposer.addPass(nextFinalBloomPass);
-      nextComposer.addPass(new OutputPass());
 
       composer = nextComposer;
       bloomComposer = nextBloomComposer;

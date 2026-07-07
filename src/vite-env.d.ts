@@ -7,6 +7,11 @@ declare module '*.module.css' {
 
 declare module '*.css';
 
+declare module '*.glb' {
+  const src: string;
+  export default src;
+}
+
 interface InstagramApi {
   Embeds: {
     process: (_element?: Element | Document) => void;
