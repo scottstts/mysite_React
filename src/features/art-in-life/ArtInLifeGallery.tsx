@@ -5,6 +5,7 @@ import {
   CSS3DRenderer,
 } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createInstagramEmbedHtml } from './artInLife.data';
 import styles from './ArtInLifeTab.module.css';
@@ -266,6 +267,40 @@ const WALK_BOB_SETTINGS = {
 const STEP_ARRIVAL_OVERSHOOT = 0.014;
 // The marble tile texture covers a real-world 2.5m x 2.5m area per repeat.
 const FLOOR_TEXTURE_SIZE_METERS = 2.5;
+// Hall dressing: a rope stanchion line guards each painting group and a
+// bench faces the art from the bare wall opposite. Everything is procedural
+// (lathe profiles, swag curves, canvas textures) and instanced, so the
+// entire dressing costs four draw calls regardless of hall length. The
+// scene reads at roughly 0.53m per unit -- the camera's standing eye sits
+// 3.0 units above the floor.
+const GALLERY_PROPS_SETTINGS = {
+  stanchion: {
+    // One post per frame-slot boundary, a walkway's gap out from the art
+    // wall. At 1.7 units (~0.9m) tall the finials stay below the settled
+    // camera's sight line to the embeds' bottom edge on every layout, so
+    // these WebGL posts can never cross the CSS3D embeds composited above
+    // the canvas.
+    wallOffset: 1.6,
+    radialSegments: 40,
+  },
+  rope: {
+    radius: 0.042,
+    // Swag depth as a fraction of the span -- velvet hangs heavy.
+    sagRatio: 0.145,
+    tubularSegments: 44,
+    radialSegments: 12,
+    sheenColor: 0xff5f79,
+  },
+  bench: {
+    // Cushion half-depth plus baseboard clearance keeps the bench just off
+    // the wall; the z jitter stops the run reading as a stamped pattern.
+    wallOffset: 0.78,
+    zJitter: 0.3,
+  },
+  // Props sink a hair into the floor so its ripple never pokes through a
+  // flat base -- the same grounding trick the baseboards use.
+  floorSink: 0.012,
+};
 
 if (typeof window !== 'undefined') {
   window.__ART_IN_LIFE_CARD_SIZE_SCALE__ = FRAME_CARD_SIZE_SCALE;
@@ -1152,6 +1187,256 @@ const createChandelierMetalNoiseTexture = (
   texture.anisotropy = Math.min(anisotropy, 8);
   texture.needsUpdate = true;
   return texture;
+};
+
+// Shared skeleton for the procedural prop canvases: an ImageData walk where
+// every sine frequency is a whole number of cycles per tile, so the noise
+// wraps seamlessly under RepeatWrapping.
+const createProceduralSurfaceTexture = (
+  anisotropy: number,
+  repeatX: number,
+  repeatY: number,
+  shadePixel: (
+    _u: number,
+    _v: number,
+    _speckle: number
+  ) => [number, number, number]
+): THREE.CanvasTexture => {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    const image = context.createImageData(size, size);
+    const tau = Math.PI * 2;
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const offset = (y * size + x) * 4;
+        const hash = Math.sin(x * 12.9898 + y * 78.233 + 53) * 43758.5453;
+        const [r, g, b] = shadePixel(
+          (x / size) * tau,
+          (y / size) * tau,
+          hash - Math.floor(hash)
+        );
+
+        image.data[offset] = Math.round(clamp(r, 0, 255));
+        image.data[offset + 1] = Math.round(clamp(g, 0, 255));
+        image.data[offset + 2] = Math.round(clamp(b, 0, 255));
+        image.data[offset + 3] = 255;
+      }
+    }
+
+    context.putImageData(image, 0, 0);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(repeatX, repeatY);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(anisotropy, 4);
+  texture.needsUpdate = true;
+  return texture;
+};
+
+// Deep crimson velvet: broad crushed-pile mottling, fine thread runs around
+// the rope, and per-pixel fuzz. Doubles as its own bump map.
+const createVelvetTexture = (anisotropy: number): THREE.CanvasTexture =>
+  createProceduralSurfaceTexture(anisotropy, 6, 2, (u, v, speckle) => {
+    const mottle =
+      Math.sin(u * 3 + Math.sin(v * 2) * 2.1) *
+      Math.sin(v * 4 + Math.sin(u * 5) * 1.7);
+    const thread = Math.sin(v * 38 + Math.sin(u * 7) * 2.4);
+    const shade = 0.88 + mottle * 0.07 + thread * 0.045 + speckle * 0.09;
+
+    return [116 * shade, 20 * shade, 34 * shade];
+  });
+
+// Cognac leather: two warped sine fields multiply into an irregular pore
+// cell pattern, darkened where cells crease.
+const createLeatherTexture = (anisotropy: number): THREE.CanvasTexture =>
+  createProceduralSurfaceTexture(anisotropy, 3, 1.4, (u, v, speckle) => {
+    const cells =
+      Math.sin(u * 9 + Math.sin(v * 7) * 2.3) *
+      Math.sin(v * 11 + Math.sin(u * 6) * 2.1);
+    const pore = Math.pow(Math.max(0, cells), 2.2);
+    const patina = Math.sin(u * 2 + Math.sin(v * 3) * 1.4) * 0.5 + 0.5;
+    const shade = 0.92 - pore * 0.16 + speckle * 0.1 + patina * 0.06;
+
+    return [118 * shade, 68 * shade, 37 * shade * (1 - pore * 0.12)];
+  });
+
+// Espresso bench wood: tight horizontal grain bands with slow wobble, a
+// darker streak where bands crest, and fine pore speckle.
+const createBenchWoodTexture = (anisotropy: number): THREE.CanvasTexture =>
+  createProceduralSurfaceTexture(anisotropy, 1.6, 1, (u, v, speckle) => {
+    const rings = Math.sin(
+      v * 14 + Math.sin(u * 2) * 2.6 + Math.sin(u * 5) * 0.8
+    );
+    const streak = smoothstep(0.62, 0.98, rings) * 0.14;
+    const shade = 0.9 + rings * 0.09 + speckle * 0.07 - streak;
+
+    return [64 * shade, 40 * shade, 24 * shade];
+  });
+
+// Museum stanchion profile, lathed about Y: domed base plate, slim barrel
+// with a turned ring, collar bead, then the crown drum the rope clips into
+// and a ball finial. Near-duplicate profile points pinch the normals into
+// tight fillets so edges read as softly rounded metal rather than CG-sharp.
+const STANCHION_PROFILE: ReadonlyArray<readonly [number, number]> = [
+  [0.315, 0.0],
+  [0.315, 0.028],
+  [0.298, 0.06],
+  [0.262, 0.09],
+  [0.205, 0.112],
+  [0.148, 0.124],
+  [0.102, 0.134],
+  [0.085, 0.155],
+  [0.064, 0.19],
+  [0.053, 0.23],
+  [0.049, 0.275],
+  [0.049, 0.498],
+  [0.057, 0.52],
+  [0.057, 0.546],
+  [0.049, 0.568],
+  [0.049, 1.252],
+  [0.055, 1.29],
+  [0.071, 1.317],
+  [0.055, 1.344],
+  [0.049, 1.372],
+  [0.051, 1.406],
+  [0.111, 1.434],
+  [0.119, 1.458],
+  [0.119, 1.492],
+  [0.111, 1.512],
+  [0.063, 1.527],
+  [0.051, 1.542],
+  [0.069, 1.558],
+  [0.078, 1.592],
+  [0.069, 1.628],
+  [0.047, 1.658],
+  [0.02, 1.684],
+  [0.0001, 1.7],
+];
+// Rope ends anchor at the crown drum's mid-height; the drum radius swallows
+// the open tube ends so no cap geometry is needed.
+const STANCHION_ROPE_ATTACH_Y = 1.476;
+
+const createStanchionGeometry = (
+  radialSegments: number
+): THREE.BufferGeometry => {
+  const points = STANCHION_PROFILE.map(
+    ([radius, y]) => new THREE.Vector2(radius, y)
+  );
+  const geometry = new THREE.LatheGeometry(points, radialSegments);
+  geometry.computeBoundingSphere();
+  return geometry;
+};
+
+// One rope swag spanning exactly the gap between adjacent stanchions. Posts
+// sit at uniform frame-boundary spacing, so a single geometry instances
+// across every gap in the hall; its endpoints land on the post axes, hidden
+// inside the crown drums.
+const createVelvetRopeGeometry = (
+  span: number,
+  attachHeight: number,
+  sagRatio: number,
+  radius: number,
+  tubularSegments: number,
+  radialSegments: number
+): THREE.BufferGeometry => {
+  const sag = span * sagRatio;
+  const sampleCount = 13;
+  const samples: THREE.Vector3[] = [];
+
+  for (let index = 0; index < sampleCount; index++) {
+    const t = index / (sampleCount - 1);
+    samples.push(
+      new THREE.Vector3(
+        (t - 0.5) * span,
+        attachHeight - sag * 4 * t * (1 - t),
+        0
+      )
+    );
+  }
+
+  const curve = new THREE.CatmullRomCurve3(samples, false, 'catmullrom', 0.5);
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    tubularSegments,
+    radius,
+    radialSegments,
+    false
+  );
+  geometry.computeBoundingSphere();
+  return geometry;
+};
+
+// Gallery bench: a piped leather cushion (rounded box, pillowed on top)
+// over an espresso apron with four tapered square legs. The wood parts
+// merge into one geometry so the bench costs two instanced draws total.
+const createBenchGeometries = (
+  length: number
+): { cushion: THREE.BufferGeometry; base: THREE.BufferGeometry } => {
+  const cushionHeight = 0.3;
+  const cushionDepth = 1.02;
+  const halfLength = length / 2;
+  const halfDepth = cushionDepth / 2;
+  const halfHeight = cushionHeight / 2;
+  const cushion = new RoundedBoxGeometry(
+    length,
+    cushionHeight,
+    cushionDepth,
+    4,
+    0.1
+  );
+  const cushionPosition = cushion.getAttribute(
+    'position'
+  ) as THREE.BufferAttribute;
+
+  for (let index = 0; index < cushionPosition.count; index++) {
+    const x = cushionPosition.getX(index);
+    const y = cushionPosition.getY(index);
+    const z = cushionPosition.getZ(index);
+    // Pillow the top: a gentle dome fading toward the piped edges, leaving
+    // the sides and underside straight.
+    const lift = smoothstep(-0.02, halfHeight, y);
+    const domeX = Math.cos(clamp(x / halfLength, -1, 1) * Math.PI * 0.5);
+    const domeZ = Math.cos(clamp(z / halfDepth, -1, 1) * Math.PI * 0.5);
+
+    cushionPosition.setY(index, y + 0.05 * lift * Math.pow(domeX * domeZ, 0.7));
+  }
+
+  cushion.computeVertexNormals();
+  cushion.translate(0, 0.775, 0);
+  cushion.computeBoundingSphere();
+
+  const apron = new THREE.BoxGeometry(length - 0.3, 0.15, 0.84);
+  apron.translate(0, 0.555, 0);
+  const parts: THREE.BufferGeometry[] = [apron];
+  const legTemplate = new THREE.CylinderGeometry(0.088, 0.062, 0.5, 4, 1);
+  legTemplate.rotateY(Math.PI / 4);
+  const legX = halfLength - 0.36;
+
+  [-legX, legX].forEach((x) => {
+    [-0.3, 0.3].forEach((z) => {
+      const leg = legTemplate.clone();
+      leg.translate(x, 0.25, z);
+      parts.push(leg);
+    });
+  });
+  legTemplate.dispose();
+
+  const base = mergeGeometries(parts) ?? apron;
+  parts.forEach((part) => {
+    if (part !== base) part.dispose();
+  });
+  base.computeBoundingSphere();
+
+  return { cushion, base };
 };
 
 const roughenPlane = (geometry: THREE.BufferGeometry, amplitude: number) => {
@@ -3868,6 +4153,189 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
         invalidateShadows();
       }
     };
+
+    // Hall dressing: stanchion lines in front of every painting group and a
+    // bench against the bare wall opposite. All static -- matrices are
+    // written once and the meshes ride through the shadow, mirror, and bloom
+    // passes like the rest of the furniture.
+    const velvetTexture = createVelvetTexture(textureAnisotropy);
+    const leatherTexture = createLeatherTexture(textureAnisotropy);
+    const benchWoodTexture = createBenchWoodTexture(textureAnisotropy);
+    loadedTextures.push(velvetTexture, leatherTexture, benchWoodTexture);
+
+    // No environment map on any prop material: like the placeholder plaques,
+    // these live mostly in unlit stretches of the hall where canned glints
+    // at constant strength would read as wrong. The chandeliers, neon wash,
+    // and painting spotlights provide their real highlights.
+    const stanchionBrassMaterial = new THREE.MeshPhysicalMaterial({
+      map: chandelierMetalNoise,
+      color: 0xffc87c,
+      metalness: 0.92,
+      roughness: 0.3,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.26,
+    });
+    const velvetRopeMaterial = new THREE.MeshPhysicalMaterial({
+      map: velvetTexture,
+      bumpMap: velvetTexture,
+      bumpScale: 0.02,
+      roughness: 0.92,
+      metalness: 0,
+      // Asperity scattering is what sells velvet: a strong sheen lobe gives
+      // the grazing-angle glow that flat diffuse red never has.
+      sheen: 1,
+      sheenRoughness: 0.38,
+      sheenColor: GALLERY_PROPS_SETTINGS.rope.sheenColor,
+    });
+    const benchLeatherMaterial = new THREE.MeshPhysicalMaterial({
+      map: leatherTexture,
+      bumpMap: leatherTexture,
+      bumpScale: 0.018,
+      roughness: 0.52,
+      metalness: 0,
+      clearcoat: 0.16,
+      clearcoatRoughness: 0.44,
+      sheen: 0.28,
+      sheenRoughness: 0.55,
+      sheenColor: 0xffd9a8,
+    });
+    const benchWoodMaterial = new THREE.MeshPhysicalMaterial({
+      map: benchWoodTexture,
+      bumpMap: benchWoodTexture,
+      bumpScale: 0.012,
+      roughness: 0.4,
+      metalness: 0.02,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.28,
+    });
+    materials.push(
+      stanchionBrassMaterial,
+      velvetRopeMaterial,
+      benchLeatherMaterial,
+      benchWoodMaterial
+    );
+
+    const stanchionGeometry = createStanchionGeometry(
+      GALLERY_PROPS_SETTINGS.stanchion.radialSegments
+    );
+    const ropeGeometry = createVelvetRopeGeometry(
+      layout.spacing,
+      STANCHION_ROPE_ATTACH_Y,
+      GALLERY_PROPS_SETTINGS.rope.sagRatio,
+      GALLERY_PROPS_SETTINGS.rope.radius,
+      GALLERY_PROPS_SETTINGS.rope.tubularSegments,
+      GALLERY_PROPS_SETTINGS.rope.radialSegments
+    );
+    const benchLength = isMobile ? 2.5 : isTablet ? 3 : 3.4;
+    const benchGeometries = createBenchGeometries(benchLength);
+    environmentGeometries.push(
+      stanchionGeometry,
+      ropeGeometry,
+      benchGeometries.cushion,
+      benchGeometries.base
+    );
+
+    const groupFrameCount = (groupIndex: number) =>
+      Math.max(1, getGroupEnd(groupIndex) - getGroupStart(groupIndex) + 1);
+    let stanchionTotal = 0;
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+      stanchionTotal += groupFrameCount(groupIndex) + 1;
+    }
+    const ropeTotal = stanchionTotal - groupCount;
+
+    const createPropMesh = (
+      geometry: THREE.BufferGeometry,
+      material: THREE.Material,
+      count: number
+    ) => {
+      const mesh = new THREE.InstancedMesh(geometry, material, count);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = true;
+      scene.add(mesh);
+      return mesh;
+    };
+    const stanchionMesh = createPropMesh(
+      stanchionGeometry,
+      stanchionBrassMaterial,
+      stanchionTotal
+    );
+    const ropeMesh = createPropMesh(
+      ropeGeometry,
+      velvetRopeMaterial,
+      ropeTotal
+    );
+    const benchCushionMesh = createPropMesh(
+      benchGeometries.cushion,
+      benchLeatherMaterial,
+      groupCount
+    );
+    const benchBaseMesh = createPropMesh(
+      benchGeometries.base,
+      benchWoodMaterial,
+      groupCount
+    );
+
+    const propDummy = new THREE.Object3D();
+    const propFloorY = layout.floorY - GALLERY_PROPS_SETTINGS.floorSink;
+    const benchRandom = createSeededRandom(0x5ea7cafe);
+    let stanchionIndex = 0;
+    let ropeIndex = 0;
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+      const side = getGroupSide(groupIndex);
+      const normalX = side === 'left' ? 1 : -1;
+      const wallX = side === 'left' ? -halfHallWidth : halfHallWidth;
+      const groupZ = getGroupZ(groupIndex);
+      const frameCount = groupFrameCount(groupIndex);
+      const lineX =
+        wallX + normalX * GALLERY_PROPS_SETTINGS.stanchion.wallOffset;
+
+      // Posts stand at the frame-slot boundaries (one beyond each end), so
+      // every rope span equals the frame spacing exactly and one swag
+      // geometry fits every gap.
+      for (let boundary = 0; boundary <= frameCount; boundary++) {
+        const boundaryZ =
+          groupZ + (boundary - 0.5 - (frameCount - 1) / 2) * layout.spacing;
+
+        propDummy.position.set(lineX, propFloorY, boundaryZ);
+        propDummy.rotation.set(0, 0, 0);
+        propDummy.updateMatrix();
+        stanchionMesh.setMatrixAt(stanchionIndex, propDummy.matrix);
+        stanchionIndex += 1;
+
+        if (boundary < frameCount) {
+          propDummy.position.set(
+            lineX,
+            propFloorY,
+            boundaryZ + layout.spacing / 2
+          );
+          propDummy.rotation.set(0, Math.PI / 2, 0);
+          propDummy.updateMatrix();
+          ropeMesh.setMatrixAt(ropeIndex, propDummy.matrix);
+          ropeIndex += 1;
+        }
+      }
+
+      // The bench faces the art from across the hall.
+      const benchZ =
+        groupZ +
+        (benchRandom() - 0.5) * 2 * GALLERY_PROPS_SETTINGS.bench.zJitter;
+      propDummy.position.set(
+        -wallX - normalX * GALLERY_PROPS_SETTINGS.bench.wallOffset,
+        propFloorY,
+        benchZ
+      );
+      propDummy.rotation.set(0, Math.PI / 2, 0);
+      propDummy.updateMatrix();
+      benchCushionMesh.setMatrixAt(groupIndex, propDummy.matrix);
+      benchBaseMesh.setMatrixAt(groupIndex, propDummy.matrix);
+    }
+    [stanchionMesh, ropeMesh, benchCushionMesh, benchBaseMesh].forEach(
+      (mesh) => {
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.computeBoundingSphere();
+      }
+    );
 
     const placeholderRailThickness = Math.min(
       0.16,
