@@ -2,6 +2,22 @@ import type { App } from '@/types/content';
 
 export const apps: App[] = [
   {
+    id: 'pearl',
+    title: 'The Pearl - Underwater Sea Park',
+    tagline: 'One golden afternoon under the sea just for you.',
+    description: `For one golden day, you are the only guest in the most beautiful place humans ever built — and they built it at the bottom of the sea.<br><br>
+
+    Descend past the waterline and step onto the sunlit reef where a visionary founder raised a Belle Époque wonderland of glass domes, brass filigree, and white marble. Here the sea behaves like air — you simply walk the boulevards while rays and turtles drift overhead and light shafts rake across the mosaic. No crowds, no clocks, no fail states: you hold Golden Ticket No. 1, and the whole park is turning, chiming, and glittering just for you. Roam it, ride it, and let it surprise you.`,
+    videos: [
+      {
+        videoId: '4b0YPnXh_lU',
+        title: 'The Pearl - Underwater Sea Park',
+      },
+    ],
+    link: 'https://pearl.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'manifest3d',
     title: 'Manifest3D',
     tagline: 'A mini procedural 3D asset factory.',
@@ -9,7 +25,7 @@ export const apps: App[] = [
     
     Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.<br><br>
     
-    In the Manifest3D app, provide a text prompt with optional reference image attachement, and watch the agent build out the 3D asset with mechanical components.`,
+    In the Manifest3D app, provide a text prompt with optional reference image attachment, and watch the agent build out the 3D asset with mechanical components.`,
     images: [
       'manifest1.jpeg',
       'manifest2.jpeg',

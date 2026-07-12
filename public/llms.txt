@@ -36,6 +36,20 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 ## Apps
 
+### The Pearl - Underwater Sea Park
+
+**Tagline:** One golden afternoon under the sea just for you..
+
+**Videos:**
+
+- [The Pearl - Underwater Sea Park](https://www.youtube.com/watch?v=4b0YPnXh_lU)
+
+For one golden day, you are the only guest in the most beautiful place humans ever built — and they built it at the bottom of the sea.
+
+Descend past the waterline and step onto the sunlit reef where a visionary founder raised a Belle Époque wonderland of glass domes, brass filigree, and white marble. Here the sea behaves like air — you simply walk the boulevards while rays and turtles drift overhead and light shafts rake across the mosaic. No crowds, no clocks, no fail states: you hold Golden Ticket No. 1, and the whole park is turning, chiming, and glittering just for you. Roam it, ride it, and let it surprise you.
+
+- Link: https://pearl.scottsun.io
+
 ### Manifest3D
 
 **Tagline:** A mini procedural 3D asset factory.
