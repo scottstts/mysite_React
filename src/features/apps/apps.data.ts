@@ -13,6 +13,10 @@ export const apps: App[] = [
         videoId: 'WGHcX-HHC8M',
         title: 'The Pearl - Underwater Sea Park',
       },
+      {
+        videoId: '4Jf9Q0sxUqg',
+        title: 'The Pearl - Wild Life',
+      },
     ],
     link: 'https://pearl.scottsun.io',
     showLink: true,
