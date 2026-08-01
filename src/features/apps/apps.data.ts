@@ -22,6 +22,20 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'friends3',
+    title: 'Recreation of Friends in Three.js',
+    tagline: 'Nostalgia.',
+    description: `I have no reason to create this other than the fond nostalgia. And that's reason enough.`,
+    videos: [
+      {
+        videoId: 'osiF-gJvm7U',
+        title: `I recreated Monica's Apt from Friends in Three.js`,
+      },
+    ],
+    link: 'https://friends3.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'manifest3d',
     title: 'Manifest3D',
     tagline: 'A mini procedural 3D asset factory.',
