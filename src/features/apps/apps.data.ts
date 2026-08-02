@@ -23,13 +23,17 @@ export const apps: App[] = [
   },
   {
     id: 'friends3',
-    title: 'Recreation of Friends in Three.js',
+    title: 'Friends.Three.js',
     tagline: 'Nostalgia.',
     description: `I have no reason to create this other than the fond nostalgia. And that's reason enough.`,
     videos: [
       {
         videoId: 'osiF-gJvm7U',
         title: `I recreated Monica's Apt from Friends in Three.js`,
+      },
+      {
+        videoId: 'CtZzPU2vLaw',
+        title: `Joey & Chandler's Apt. 19 in Three.js`,
       },
     ],
     link: 'https://friends3.scottsun.io',

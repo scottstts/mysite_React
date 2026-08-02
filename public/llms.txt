@@ -51,13 +51,14 @@ Descend past the waterline and step onto the sunlit reef where a visionary found
 
 - Link: https://pearl.scottsun.io
 
-### Recreation of Friends in Three.js
+### Friends.Three.js
 
 **Tagline:** Nostalgia.
 
 **Videos:**
 
 - [I recreated Monica's Apt from Friends in Three.js](https://youtu.be/osiF-gJvm7U)
+- [Joey & Chandler's Apt. 19 in Three.js](https://youtu.be/CtZzPU2vLaw)
 
 I have no reason to create this other than the fond nostalgia. And that's reason enough.
 
