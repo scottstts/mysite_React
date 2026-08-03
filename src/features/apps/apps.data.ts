@@ -35,6 +35,10 @@ export const apps: App[] = [
         videoId: 'CtZzPU2vLaw',
         title: `Joey & Chandler's Apt. 19 in Three.js`,
       },
+      {
+        videoId: 'H9YxPmz7M0U',
+        title: `Central Perk from Friends in Three.js`,
+      },
     ],
     link: 'https://friends3.scottsun.io',
     showLink: true,
