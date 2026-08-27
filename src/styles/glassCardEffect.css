@@ -19,10 +19,7 @@
   isolation: isolate;
   overflow: hidden;
   border-radius: 1.25rem;
-  --lift-translate: -5px;
-  --lift-scale: 1.006;
   transition:
-    transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
     box-shadow 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
     border-color 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -58,7 +55,6 @@
 
 /* More gentle hover effect for cards */
 .glass-card:hover {
-  transform: translateY(var(--lift-translate)) scale(var(--lift-scale)) !important;
   box-shadow:
     0 20px 40px -5px rgba(0, 0, 0, 0.3),
     0 10px 20px -5px rgba(0, 0, 0, 0.2),
