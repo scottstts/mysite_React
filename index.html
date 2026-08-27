@@ -115,20 +115,15 @@
         z-index: 51;
         display: inline-flex;
         align-items: center;
-        gap: clamp(8px, 1.2vw, 12px);
-        padding: clamp(10px, 1.3vw, 14px) clamp(14px, 1.9vw, 20px);
-        border: 2px solid rgba(255, 255, 255, 0.96);
-        border-radius: 999px;
+        justify-content: center;
+        width: clamp(72px, 7vw, 100px);
+        aspect-ratio: 1;
+        padding: clamp(8px, 1vw, 12px);
+        border-radius: 50%;
         background: rgba(36, 36, 36, 0.42);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
-        color: #fff;
-        font-family: 'Roboto Slab', Georgia, serif;
-        font-size: clamp(0.92rem, 1vw, 1.15rem);
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        line-height: 1;
         opacity: 0;
         visibility: hidden;
         transform: translate3d(0, 8px, 0);
@@ -149,13 +144,9 @@
         transition-delay: 0s;
       }
 
-      #intro-video-badge-text {
-        white-space: nowrap;
-      }
-
       #intro-video-badge-logo {
         display: block;
-        width: clamp(48px, 6vw, 76px);
+        width: 100%;
         height: auto;
         flex-shrink: 0;
       }
@@ -175,13 +166,8 @@
         #intro-video-badge {
           right: calc(env(safe-area-inset-right, 0px) + 14px);
           bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-          gap: 8px;
-          padding: 10px 14px;
-          font-size: 0.92rem;
-        }
-
-        #intro-video-badge-logo {
-          width: 46px;
+          width: 64px;
+          padding: 8px;
         }
       }
     </style>
@@ -202,7 +188,6 @@
         <!-- Source is set dynamically by intro script -->
       </video>
       <div id="intro-video-badge" aria-hidden="true">
-        <span id="intro-video-badge-text">Made with</span>
         <img
           id="intro-video-badge-logo"
           src="/static_assets/blender-logo.png"
@@ -269,12 +254,18 @@
         const badge = document.getElementById('intro-video-badge');
         const badgeLogo = document.getElementById('intro-video-badge-logo');
         let videoFinished = false;
-        let badgeShown = false;
+        let badgeVisible = false;
 
         const showBadge = () => {
-          if (badgeShown || videoFinished) return;
-          badgeShown = true;
+          if (badgeVisible || videoFinished || video.paused) return;
+          badgeVisible = true;
           badge.classList.add('is-visible');
+        };
+
+        const hideBadge = () => {
+          if (!badgeVisible) return;
+          badgeVisible = false;
+          badge.classList.remove('is-visible');
         };
 
         if (badgeLogo && !badgeLogo.complete) {
@@ -300,6 +291,7 @@
         // Function to signal completion to the React app
         const finishVideo = () => {
           if (videoFinished) return;
+          hideBadge();
           videoFinished = true;
 
           // Add fade-out class
@@ -321,7 +313,11 @@
         };
 
         // Video Event Listeners
-        video.addEventListener('playing', showBadge, { once: true });
+        video.addEventListener('playing', showBadge);
+        video.addEventListener('pause', hideBadge);
+        video.addEventListener('waiting', hideBadge);
+        video.addEventListener('stalled', hideBadge);
+        video.addEventListener('emptied', hideBadge);
         video.addEventListener('ended', finishVideo);
         video.addEventListener('error', (e) => {
           console.error('Video error:', e);

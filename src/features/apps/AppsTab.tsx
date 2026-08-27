@@ -46,11 +46,7 @@ const AppsTab = () => {
         </h1>
 
         {apps.map((app, index) => (
-          <GlassCard
-            key={app.id}
-            className="rounded-2xl overflow-hidden fade-in"
-            style={{ animationDelay: index === 0 ? '0.4s' : '0.2s' }}
-          >
+          <GlassCard key={app.id} className="rounded-2xl overflow-hidden">
             <div className="p-5 md:p-8">
               {/* Title */}
               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left leading-tight">
@@ -107,10 +103,7 @@ const AppsTab = () => {
         ))}
 
         {/* Future Project Teaser */}
-        <GlassCard
-          className="rounded-2xl overflow-hidden fade-in p-8 text-center"
-          style={{ animationDelay: '0.6s' }}
-        >
+        <GlassCard className="rounded-2xl overflow-hidden p-8 text-center">
           <p
             className="text-xl md:text-2xl text-yellow-100"
             dangerouslySetInnerHTML={safeHtml(

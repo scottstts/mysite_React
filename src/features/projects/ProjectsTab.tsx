@@ -20,11 +20,7 @@ const ProjectsTab = () => {
         </h1>
 
         {projects.map((project, index) => (
-          <GlassCard
-            key={project.id}
-            className="rounded-2xl overflow-hidden fade-in"
-            style={{ animationDelay: '0.4s' }}
-          >
+          <GlassCard key={project.id} className="rounded-2xl overflow-hidden">
             <div className="p-5 md:p-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left">
                 {project.title}
@@ -56,10 +52,7 @@ const ProjectsTab = () => {
         ))}
 
         {/* Final quote card */}
-        <GlassCard
-          className="rounded-2xl overflow-hidden fade-in p-8"
-          style={{ animationDelay: '0.6s' }}
-        >
+        <GlassCard className="rounded-2xl overflow-hidden p-8">
           <p
             className="text-xl md:text-2xl text-yellow-100 mb-8 text-left"
             dangerouslySetInnerHTML={safeHtml(

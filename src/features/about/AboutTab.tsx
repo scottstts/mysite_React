@@ -157,7 +157,7 @@ const AboutTab = () => {
           Techno Optimist
         </h1>
 
-        <GlassCard className="rounded-2xl p-8 fade-in">
+        <GlassCard className="rounded-2xl p-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left">
             Into The Unknown
           </h2>

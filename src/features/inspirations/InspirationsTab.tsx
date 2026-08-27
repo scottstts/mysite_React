@@ -19,11 +19,10 @@ const InspirationsTab = () => {
         </h1>
 
         <div className="space-y-12">
-          {inspirations.map((inspiration, _index) => (
+          {inspirations.map((inspiration) => (
             <GlassCard
               key={inspiration.id}
-              className="rounded-2xl overflow-hidden fade-in"
-              style={{ animationDelay: '0.2s' }}
+              className="rounded-2xl overflow-hidden"
             >
               <div className="p-5 md:p-8">
                 {/* Title */}
@@ -49,10 +48,7 @@ const InspirationsTab = () => {
           ))}
 
           {/* Final quote card */}
-          <GlassCard
-            className="rounded-2xl overflow-hidden fade-in p-8 text-left"
-            style={{ animationDelay: '0.6s' }}
-          >
+          <GlassCard className="rounded-2xl overflow-hidden p-8 text-left">
             <p
               className="text-xl md:text-2xl text-yellow-100"
               dangerouslySetInnerHTML={safeHtml(
