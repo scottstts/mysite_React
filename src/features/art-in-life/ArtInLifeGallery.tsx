@@ -252,10 +252,6 @@ const INTRO_SETTINGS = {
   // factor instead of visible=false, so the reveal never changes the light
   // count (which would force synchronous shader recompiles mid-animation).
   warmLightFactor: 0.002,
-  // How long after issuing the warmup compiles to flip the lights on and
-  // bake shadows -- enough for parallel driver compilation to finish, still
-  // comfortably inside the intro's hold phase.
-  warmupSettleMs: 1100,
 };
 const WALK_BOB_SETTINGS = {
   frequencyHz: 1.7,
@@ -1981,6 +1977,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let currentGroupIndex = -1;
     let cameraTransition: CameraTransition | null = null;
     let requestRenderLoop = () => {};
+    let isRenderReady = false;
+    let preparationFrame = 0;
     let isDocumentVisible = document.visibilityState === 'visible';
     let isViewportVisible = true;
     const shouldRunRenderLoop = () => isDocumentVisible && isViewportVisible;
@@ -2020,7 +2018,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       hasSignMoment: introHasSignMoment,
     };
     let introLightsWarmed = false;
-    let warmupTimeoutId = 0;
     let cameraRoll = 0;
     const wallCeilingOverlap = 0.35;
     const ceilingWallOverlap = 0.45;
@@ -2029,6 +2026,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const wallCenterY = layout.floorY + roomHeight / 2;
     const textureLoader = new THREE.TextureLoader();
     const loadedTextures: THREE.Texture[] = [];
+    const textureReadyPromises: Promise<void>[] = [];
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
     const unitPlane = new THREE.PlaneGeometry(1, 1);
     const sharedFrameMetrics = getFrameMetrics(layout);
@@ -2506,7 +2504,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       requestRenderLoop();
     };
 
-    void loadBloomComposer().catch(() => {
+    const bloomComposerReady = loadBloomComposer().catch(() => {
       // The gallery can render without bloom if the postprocessing chunk fails.
     });
 
@@ -2533,8 +2531,32 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       renderer.capabilities.getMaxAnisotropy(),
       8
     );
+    const loadTextureAsset = (url: string, onLoad: () => void) => {
+      let settleReady: () => void = () => {};
+      const ready = new Promise<void>((resolve) => {
+        settleReady = resolve;
+      });
+      textureReadyPromises.push(ready);
+
+      const texture = textureLoader.load(
+        url,
+        () => {
+          settleReady();
+          onLoad();
+        },
+        undefined,
+        () => {
+          // The renderer can still use the texture's fallback state when an
+          // optional local surface asset fails; do not hold the gallery
+          // curtain open forever for a failed request.
+          settleReady();
+        }
+      );
+
+      return texture;
+    };
     const loadTexture = (url: string, repeatX: number, repeatY: number) => {
-      const texture = textureLoader.load(url, () => {
+      const texture = loadTextureAsset(url, () => {
         if (!isMounted) return;
         invalidateReflection();
         requestRenderLoop();
@@ -2545,7 +2567,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const loadSingleSurfaceTexture = (url: string) => {
-      const texture = textureLoader.load(url, () => {
+      const texture = loadTextureAsset(url, () => {
         if (!isMounted) return;
         invalidateReflection();
         requestRenderLoop();
@@ -2556,7 +2578,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const loadBumpTexture = (url: string, repeatX: number, repeatY: number) => {
-      const texture = textureLoader.load(url, () => {
+      const texture = loadTextureAsset(url, () => {
         if (!isMounted) return;
         invalidateReflection();
         requestRenderLoop();
@@ -3207,7 +3229,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
     };
 
-    void loadNeonSigns();
+    const neonSignsReady = loadNeonSigns();
 
     const chandelierRoot = new THREE.Group();
     scene.add(chandelierRoot);
@@ -5638,79 +5660,6 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       return pose;
     };
 
-    // The reveal used to pay a one-off freeze: lights turning visible for
-    // the first time changed the scene's light count, forcing synchronous
-    // shader recompiles of every material plus first shadow-map builds,
-    // right as the camera settled. Instead, compile the fully-lit program
-    // variants in the background during the hold/travel phases, bake the
-    // shadow maps into a throwaway target, and keep the lights visible at an
-    // imperceptible intensity -- the reveal becomes a pure intensity ramp.
-    const warmupIntroLighting = () => {
-      if (intro.phase === 'done') return;
-
-      const ceilingSpotlight = activeCeilingSpotlights.get(0) ?? null;
-      const groupZeroRecords: FrameRecord[] = [];
-      activeFrames.forEach((record) => {
-        if (getFramePlacement(record.index).groupIndex === 0) {
-          groupZeroRecords.push(record);
-        }
-      });
-
-      const setWarmupLightsVisible = (visible: boolean) => {
-        groupZeroRecords.forEach((record) => {
-          record.paintingSpotlight.visible = visible;
-        });
-        if (ceilingSpotlight) {
-          ceilingSpotlight.visible = visible;
-        }
-      };
-
-      // Capture the fully-lit light state and issue every program compile
-      // WITHOUT waiting -- drivers with parallel shader compilation finish
-      // them in the background while the intro holds on the sign.
-      // (renderer.compileAsync is deliberately avoided: its readiness
-      // polling crashes if any compiled material is disposed mid-poll, e.g.
-      // on a React remount.)
-      setWarmupLightsVisible(true);
-      try {
-        renderer.compile(scene, camera);
-      } catch {
-        // Warmup is an optimization only; without it the reveal simply pays
-        // the old one-off compile cost.
-      } finally {
-        setWarmupLightsVisible(false);
-      }
-
-      warmupTimeoutId = window.setTimeout(() => {
-        warmupTimeoutId = 0;
-        if (!isMounted) return;
-
-        introLightsWarmed = true;
-        if (intro.phase === 'reveal' || intro.phase === 'done') return;
-
-        groupZeroRecords.forEach((record) => {
-          setPaintingSpotlightFactor(record, INTRO_SETTINGS.warmLightFactor);
-        });
-        if (ceilingSpotlight) {
-          setCeilingSpotlightFactor(
-            ceilingSpotlight,
-            INTRO_SETTINGS.warmLightFactor
-          );
-        }
-
-        // This off-screen render force-finishes any still-pending program
-        // links and bakes the shadow maps, so the reveal itself has nothing
-        // left to pay.
-        const warmupTarget = new THREE.WebGLRenderTarget(8, 8);
-        const previousTarget = renderer.getRenderTarget();
-        renderer.shadowMap.needsUpdate = true;
-        renderer.setRenderTarget(warmupTarget);
-        renderer.render(scene, camera);
-        renderer.setRenderTarget(previousTarget);
-        warmupTarget.dispose();
-      }, INTRO_SETTINGS.warmupSettleMs);
-    };
-
     const getTransitionPose = (
       transition: CameraTransition,
       now: number
@@ -5977,7 +5926,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     requestRenderLoop = () => {
-      if (!isMounted || animationFrame || !shouldRunRenderLoop()) return;
+      if (
+        !isMounted ||
+        !isRenderReady ||
+        animationFrame ||
+        !shouldRunRenderLoop()
+      ) {
+        return;
+      }
 
       animationFrame = window.requestAnimationFrame(renderFrame);
     };
@@ -5996,6 +5952,107 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
 
       requestRenderLoop();
+    };
+
+    let preparationStartPose: CameraPose | null = null;
+    const waitForPreparationFrame = () =>
+      new Promise<void>((resolve) => {
+        preparationFrame = window.requestAnimationFrame(() => {
+          preparationFrame = 0;
+          resolve();
+        });
+      });
+
+    const renderPreparationFrame = (pose: CameraPose) => {
+      applyCameraPose(pose);
+      cameraRoll = 0;
+      updatePaintingSpotlights(null);
+      updateCeilingSpotlights(null);
+      updateNeonSign();
+      updateEmbedVisibility(null);
+      camera.updateMatrixWorld();
+      // The moving intro invalidates this pass on every pose change. Render
+      // it here at the real target size so allocation, shader links, and
+      // shadow-map work are paid for behind the preparation curtain.
+      reflectionDirty = true;
+      renderFloorReflection(performance.now());
+      renderScene(true);
+    };
+
+    const releaseGallery = () => {
+      if (!isMounted) return;
+
+      isRenderReady = true;
+      setIsReady(true);
+      requestRenderLoop();
+    };
+
+    const prepareGalleryRender = async () => {
+      // The curtain must have a chance to paint before the first synchronous
+      // compile/render. Otherwise the browser can postpone showing the very
+      // status that explains the preparation work.
+      await waitForPreparationFrame();
+      if (!isMounted) return;
+
+      await Promise.all([
+        bloomComposerReady,
+        neonSignsReady,
+        Promise.all(textureReadyPromises),
+      ]);
+      if (!isMounted) return;
+
+      // Let late asset callbacks and composer target allocation settle before
+      // fixing the final render size used by the sacrificial production pass.
+      await waitForPreparationFrame();
+      if (!isMounted || !preparationStartPose) return;
+
+      applyResize(true);
+
+      // Keep the intro lights in the scene at an imperceptible intensity from
+      // the first prepared frame onward. Their visibility, shader variants,
+      // and shadow maps therefore never change during the visible animation.
+      introLightsWarmed = true;
+      updatePaintingSpotlights(null);
+      updateCeilingSpotlights(null);
+      camera.updateMatrixWorld();
+
+      try {
+        // Compile the scene programs with the same active light set that the
+        // intro will use. The real production renders below are still
+        // required to initialize render targets, shadows, and post passes.
+        renderer.compile(scene, camera);
+        renderer.shadowMap.needsUpdate = true;
+
+        // First frame: exact intro start state. Second frame: a nearby moving
+        // pose to exercise the reflection/camera path. Final frame: restore
+        // the exact start pose before establishing the animation clock.
+        renderPreparationFrame(preparationStartPose);
+        await waitForPreparationFrame();
+        if (!isMounted) return;
+
+        if (intro.phase !== 'done') {
+          const movingPose = intro.hasSignMoment
+            ? getIntroHoldPose(0.08)
+            : getIntroTravelPose(0.08);
+          renderPreparationFrame(movingPose);
+          await waitForPreparationFrame();
+          if (!isMounted) return;
+          renderPreparationFrame(preparationStartPose);
+        }
+
+        // WebGL queues commands asynchronously. Drain the queue before the
+        // intro clock starts so deferred driver work cannot leak into frame 0.
+        renderer.getContext().finish();
+        renderer.shadowMap.needsUpdate = false;
+      } catch {
+        // A failed optional warmup must not strand the gallery behind its
+        // curtain. The normal render path remains the fallback.
+        introLightsWarmed = true;
+        updatePaintingSpotlights(null);
+        updateCeilingSpotlights(null);
+      }
+
+      releaseGallery();
     };
 
     const handleVisibilityChange = () => {
@@ -6021,20 +6078,17 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           ? getIntroHoldPose(0)
           : getIntroTravelPose(0)
         : getCameraPose(targetGroupIndex, 0, 0, renderPose);
+    preparationStartPose = createCameraPose();
+    preparationStartPose.position.copy(initialPose.position);
+    preparationStartPose.target.copy(initialPose.target);
     applyCameraPose(initialPose);
     applyResize(true);
     updateVirtualFrames(targetGroupIndex);
     currentGroupIndex = targetGroupIndex;
+    introLightsWarmed = true;
     updatePaintingSpotlights(null);
     updateCeilingSpotlights(null);
     updateEmbedVisibility(null);
-    renderFloorReflection(performance.now());
-    renderScene(true);
-    setIsReady(true);
-    if (intro.phase !== 'done') {
-      requestRenderLoop();
-      warmupIntroLighting();
-    }
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('resize', resize, { passive: true });
@@ -6057,10 +6111,24 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     nextButton?.addEventListener('click', goNext);
     lastButton?.addEventListener('click', goLast);
 
+    void prepareGalleryRender().catch(() => {
+      if (!isMounted) return;
+
+      // Keep unexpected preparation failures recoverable just like a failed
+      // renderer warmup: the curtain should not permanently hide the normal
+      // fallback render path.
+      introLightsWarmed = true;
+      updatePaintingSpotlights(null);
+      updateCeilingSpotlights(null);
+      releaseGallery();
+    });
+
     return () => {
       isMounted = false;
+      isRenderReady = false;
       window.cancelAnimationFrame(animationFrame);
-      window.clearTimeout(warmupTimeoutId);
+      window.cancelAnimationFrame(preparationFrame);
+      preparationFrame = 0;
       if (resizeRaf) {
         window.cancelAnimationFrame(resizeRaf);
       }
