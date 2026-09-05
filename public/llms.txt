@@ -63,6 +63,18 @@ Descend past the waterline and step onto the sunlit reef where a visionary found
 
 - Link: https://pearl.scottsun.io
 
+### Jelly Baby
+
+**Tagline:** Bouncy fun.
+
+**Videos:**
+
+- [Bouncy Jelly Baby Game](https://youtu.be/zGO9sFU1sjs)
+
+Started as a jelly physics simulation demo which seemed well received, so I goofed off and made this Jelly Baby game with the same physics engine and softbody kernel.
+
+- Link: https://jelly.scottsun.io
+
 ### Friends.Three.js
 
 **Tagline:** Nostalgia.
