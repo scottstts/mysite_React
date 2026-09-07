@@ -36,6 +36,18 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 ## Apps
 
+### Jelly Baby
+
+**Tagline:** Bouncy fun.
+
+**Videos:**
+
+- [Bouncy Jelly Baby Game](https://youtu.be/CyIb1XJU9SQ)
+
+Started as a jelly physics simulation demo which seemed well received, so I goofed off and made this Jelly Baby game with the same physics engine and softbody kernel.
+
+- Link: https://jelly.scottsun.io
+
 ### Elysium
 
 **Tagline:** Weary traveler, visit the first park on Mars.
@@ -62,18 +74,6 @@ For one golden day, you are the only guest in the most beautiful place humans ev
 Descend past the waterline and step onto the sunlit reef where a visionary founder raised a Belle Époque wonderland of glass domes, brass filigree, and white marble. Here the sea behaves like air — you simply walk the boulevards while rays and turtles drift overhead and light shafts rake across the mosaic. No crowds, no clocks, no fail states: you hold Golden Ticket No. 1, and the whole park is turning, chiming, and glittering just for you. Roam it, ride it, and let it surprise you.
 
 - Link: https://pearl.scottsun.io
-
-### Jelly Baby
-
-**Tagline:** Bouncy fun.
-
-**Videos:**
-
-- [Bouncy Jelly Baby Game](https://youtu.be/zGO9sFU1sjs)
-
-Started as a jelly physics simulation demo which seemed well received, so I goofed off and made this Jelly Baby game with the same physics engine and softbody kernel.
-
-- Link: https://jelly.scottsun.io
 
 ### Friends.Three.js
 
