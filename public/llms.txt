@@ -144,7 +144,7 @@ Fundamentally, you cannot just provide a summary of what good graphics are like 
 
 I will continue updating it as I see more awesome three.js projects. Install it and give your agent instant web 3D graphics superpower:
 
-`npx threejs-awesome-graphics-agent-skills install --agent codex`
+`npx threejs-awesome-graphics-agent-skills@latest install --agent codex`
 
 ### Interstellar.three.js
 

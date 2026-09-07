@@ -120,7 +120,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 
     I will continue updating it as I see more awesome three.js projects. Install it and give your agent instant web 3D graphics superpower:<br><br>
 
-    <span class="cmd-text">npx threejs-awesome-graphics-agent-skills install --agent codex</span>`,
+    <span class="cmd-text">npx threejs-awesome-graphics-agent-skills@latest install --agent codex</span>`,
     images: ['threejs-skills.jpeg'],
     link: 'https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills',
     showLink: true,
