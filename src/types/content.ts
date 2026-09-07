@@ -1,7 +1,7 @@
 export type TabId =
   | 'about'
   | 'projects'
-  | 'apps'
+  | 'portfolio'
   | 'inspirations'
   | 'art-in-life';
 

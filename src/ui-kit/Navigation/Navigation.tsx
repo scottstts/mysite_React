@@ -26,9 +26,9 @@ const tabs: NavigationTab[] = [
     iconClass: 'fa-solid fa-route',
   },
   {
-    id: 'apps',
-    label: 'Apps',
-    path: '/apps',
+    id: 'portfolio',
+    label: 'Portfolio',
+    path: '/portfolio',
     iconClass: 'fa-solid fa-computer',
   },
   {
@@ -49,7 +49,7 @@ const Navigation = ({ activeTab }: NavigationProps) => {
   const tabRefs = useRef<Record<TabId, HTMLAnchorElement | null>>({
     about: null,
     projects: null,
-    apps: null,
+    portfolio: null,
     inspirations: null,
     'art-in-life': null,
   });

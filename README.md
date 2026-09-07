@@ -10,7 +10,7 @@ It is where I collect the things I care about most: frontier AI, building useful
 
 - **About Me**: a short personal philosophy centered on technology, intelligence, and optimism.
 - **Learning Journey**: the path from first picking up programming to building AI, 3D, and creative software projects.
-- **Apps**: live products and experiences people can actually explore.
+- **Portfolio**: live products and experiences people can actually explore.
 - **Inspirations**: thinkers and builders who shaped how I see work, ambition, and the future.
 - **Art in Life**: a virtual gallery of arts captured in life.
 

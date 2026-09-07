@@ -30,19 +30,19 @@ const StatusStamp = ({ status }: StatusStampProps) => {
   return <span className={`${baseStampClasses} ${style}`}>{label}</span>;
 };
 
-const AppsTab = () => {
+const PortfolioTab = () => {
   return (
     <>
       <Helmet>
-        <title>Apps - Scott Sun</title>
+        <title>Portfolio - Scott Sun</title>
         <meta
           name="description"
           content="Scott Sun's apps and projects - Vacation Planner and Transcrilate. Practical solutions built with modern technologies."
         />
       </Helmet>
-      <div className="apps-tab space-y-8">
+      <div className="portfolio-tab space-y-8">
         <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
-          My Apps
+          Portfolio
         </h1>
 
         {apps.map((app, index) => (
@@ -116,4 +116,4 @@ const AppsTab = () => {
   );
 };
 
-export default AppsTab;
+export default PortfolioTab;

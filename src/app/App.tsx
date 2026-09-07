@@ -18,7 +18,7 @@ import './App.css';
 const tabImports = {
   about: () => import('@/features/about/AboutTab'),
   projects: () => import('@/features/projects/ProjectsTab'),
-  apps: () => import('@/features/apps/AppsTab'),
+  portfolio: () => import('@/features/portfolio/PortfolioTab'),
   inspirations: () => import('@/features/inspirations/InspirationsTab'),
   'art-in-life': () => import('@/features/art-in-life/ArtInLifeTab'),
 };
@@ -26,7 +26,7 @@ const tabImports = {
 // Lazy load tabs for better initial load performance.
 const AboutTab = React.lazy(tabImports.about);
 const ProjectsTab = React.lazy(tabImports.projects);
-const AppsTab = React.lazy(tabImports.apps);
+const PortfolioTab = React.lazy(tabImports.portfolio);
 const InspirationsTab = React.lazy(tabImports.inspirations);
 const ArtInLifeTab = React.lazy(tabImports['art-in-life']);
 
@@ -35,7 +35,7 @@ const ArtInLifeTab = React.lazy(tabImports['art-in-life']);
 const tabPreloads = {
   about: tabImports.about,
   projects: tabImports.projects,
-  apps: tabImports.apps,
+  portfolio: tabImports.portfolio,
   inspirations: tabImports.inspirations,
   'art-in-life': () =>
     Promise.all([
@@ -59,8 +59,9 @@ function App() {
     switch (pathname) {
       case '/journey':
         return 'projects';
+      case '/portfolio':
       case '/apps':
-        return 'apps';
+        return 'portfolio';
       case '/inspirations':
         return 'inspirations';
       case '/art-in-life':
@@ -90,7 +91,7 @@ function App() {
     const titles: Record<TabId, string> = {
       about: 'About - Scott Sun',
       projects: 'Learning Journey - Scott Sun',
-      apps: 'Apps - Scott Sun',
+      portfolio: 'Portfolio - Scott Sun',
       inspirations: 'Inspirations - Scott Sun',
       'art-in-life': 'Art in Life - Scott Sun',
     };
@@ -192,7 +193,9 @@ function App() {
               {shouldMountTabContent && activeTab === 'projects' && (
                 <ProjectsTab />
               )}
-              {shouldMountTabContent && activeTab === 'apps' && <AppsTab />}
+              {shouldMountTabContent && activeTab === 'portfolio' && (
+                <PortfolioTab />
+              )}
               {shouldMountTabContent && activeTab === 'inspirations' && (
                 <InspirationsTab />
               )}

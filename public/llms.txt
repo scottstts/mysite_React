@@ -34,7 +34,7 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 ---
 
-## Apps
+## Portfolio
 
 ### Jelly Baby
 
