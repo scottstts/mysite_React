@@ -152,3 +152,24 @@ html {
     padding: 0;
   }
 }
+
+/* Give mobile glass cards half their current outer side margin. */
+@media (max-width: 639px) {
+  #root {
+    padding-inline: 1rem;
+  }
+
+  .site-main:not(.site-main--gallery) {
+    padding-inline: 0.5rem;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  #root {
+    padding-inline: 1rem;
+  }
+
+  .site-main:not(.site-main--gallery) {
+    padding-inline: 0.75rem;
+  }
+}

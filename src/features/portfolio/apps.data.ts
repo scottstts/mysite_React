@@ -31,7 +31,7 @@ export const apps: App[] = [
   },
   {
     id: 'pearl',
-    title: 'The Pearl - Underwater Sea Park',
+    title: 'Pearl',
     tagline: 'One golden afternoon under the sea just for you.',
     description: `For one golden day, you are the only guest in the most beautiful place humans ever built — and they built it at the bottom of the sea.<br><br>
 
@@ -110,7 +110,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
   },
   {
     id: 'threejs-awesome-graphics-agent-skills',
-    title: 'Three.js Awesome Graphics Agent Skills',
+    title: 'Three.js Skills',
     tagline: 'Your agent just got schooled on awesome 3D web graphics.',
     description: `This is not an app, but I am very proud of it. It is an Agent Skills pack for creating awesome 3D graphics in games and scenes.<br><br>
 
