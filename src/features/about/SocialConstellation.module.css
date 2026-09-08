@@ -1,0 +1,290 @@
+.section {
+  --heading-gap: clamp(2.5rem, 6vw, 5rem);
+  position: relative;
+  padding: var(--heading-gap) 0 1rem;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  /* Include the parent's space-y-8 gap above this section in the midpoint. */
+  top: calc((var(--heading-gap) - 2rem) / 2);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgb(255 255 255 / 10%);
+  pointer-events: none;
+}
+
+.title {
+  margin: 0;
+  padding-left: clamp(0.5rem, 3vw, 2rem);
+  color: #eee;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 540;
+  isolation: isolate;
+}
+.definitions {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.wire {
+  fill: none;
+  stroke: #90939d;
+  stroke-width: 1.25;
+  opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+  transition:
+    stroke 250ms ease,
+    opacity 250ms ease,
+    filter 250ms ease;
+}
+[data-active='true'] > .wire {
+  stroke: var(--social-color);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 5px var(--social-color));
+}
+.wireTarget {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 24;
+  vector-effect: non-scaling-stroke;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.portrait {
+  position: absolute;
+  width: 38.4%;
+  aspect-ratio: 1;
+  left: 30.8%;
+  top: 16.3%;
+}
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Cache the static silhouette instead of filtering every animated glitch frame. */
+  filter: drop-shadow(0 0 1px rgb(250 244 255 / 85%))
+    drop-shadow(0 0 5px rgb(190 151 255 / 48%))
+    drop-shadow(0 0 14px rgb(125 77 210 / 22%));
+}
+.glowImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.art {
+  width: 100%;
+  height: 100%;
+  --clip-base: inset(0);
+  isolation: isolate;
+}
+.art,
+.glowImage {
+  /* Shared boundary fade: the original closest-side mask with a wider solid core. */
+  -webkit-mask-image: radial-gradient(
+    circle closest-side at center,
+    #000 80%,
+    rgb(0 0 0 / 80%) 88%,
+    rgb(0 0 0 / 35%) 96%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle closest-side at center,
+    #000 80%,
+    rgb(0 0 0 / 80%) 88%,
+    rgb(0 0 0 / 35%) 96%,
+    transparent 100%
+  );
+}
+.base {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.art .reflection {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  z-index: 3;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.75;
+  z-index: 2;
+  filter: saturate(1.25) contrast(1.2);
+}
+.scanlines :global(.cybr-glitch-img__scanline) {
+  /* One shared filter; no persistent promotion hints for 200 individual strips. */
+  filter: none;
+  will-change: auto;
+}
+.segment {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  z-index: 4;
+}
+.segment[data-active='true'] {
+  opacity: 1;
+}
+.segment img {
+  width: 100%;
+  height: 100%;
+}
+.section[data-visible='false'] .art * {
+  animation-play-state: paused;
+}
+.link.link {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 19%;
+  min-height: 64px;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0.75rem 0.6rem;
+  border: 1px solid rgb(190 192 206 / 38%);
+  border-radius: 0.85rem;
+  background-color: rgb(12 13 22 / 52%);
+  color: #a2a4ac;
+  text-decoration: none;
+  text-shadow: none;
+  transition:
+    color 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  z-index: 3;
+  font-family: Inter, system-ui, sans-serif;
+}
+.link.link::after {
+  display: none;
+}
+.link.link[data-active='true'],
+.link.link:focus-visible {
+  color: var(--social-color);
+  border-color: var(--social-color);
+  text-shadow: none;
+  background-color: color-mix(in srgb, var(--social-color) 15%, #0c0d16);
+}
+.link:focus-visible {
+  outline: 1px solid var(--social-color);
+  outline-offset: 6px;
+}
+.link > * {
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .link.link:hover {
+    color: var(--social-color);
+    border-color: var(--social-color);
+    text-shadow: none;
+    background-color: color-mix(in srgb, var(--social-color) 15%, #0c0d16);
+  }
+}
+.link i {
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  width: 1.2em;
+  text-align: center;
+}
+.username {
+  font-size: clamp(0.8rem, 1.5vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.github {
+  left: 0;
+  top: 21%;
+}
+.x {
+  right: 0;
+  top: 5.3%;
+}
+.instagram {
+  left: 0;
+  top: 72%;
+}
+.linkedin {
+  right: 0;
+  top: 72%;
+}
+
+@media (max-width: 640px) {
+  .section {
+    --heading-gap: 2rem;
+  }
+  .title {
+    padding-left: 0;
+  }
+  .stage {
+    aspect-ratio: 360 / 520;
+    margin-top: 1rem;
+  }
+  .portrait {
+    width: 70.4%;
+    left: 14.8%;
+    top: 26.1%;
+  }
+  .link.link {
+    width: 39%;
+    min-height: 64px;
+    gap: 0.55rem;
+    padding: 0.6rem 0.25rem;
+  }
+  .link i {
+    font-size: 1.5rem;
+  }
+  .username {
+    font-size: 0.8rem;
+  }
+  .github,
+  .x {
+    top: 0;
+  }
+  .instagram,
+  .linkedin {
+    top: auto;
+    bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section *,
+  .section *::before,
+  .section *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .scanlines {
+    display: none;
+  }
+}
