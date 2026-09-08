@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from 'react';
+import { useIsPresent } from 'framer-motion';
 import styles from './SocialConstellation.module.css';
 
 const portrait = '/static_assets/logo.png';
@@ -80,7 +81,7 @@ const scanlineLayers = Array.from({ length: 200 }, (_, index) => (
 ));
 
 export default function SocialConstellation() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const isPresent = useIsPresent();
   const stageRef = useRef<HTMLDivElement>(null);
   const portraitRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef(new Map<SocialId, HTMLAnchorElement>());
@@ -92,17 +93,33 @@ export default function SocialConstellation() {
   const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const hitMaps = useRef(new Map<SocialId, Uint8ClampedArray>());
   const [visible, setVisible] = useState(false);
+  const [portraitVisible, setPortraitVisible] = useState(false);
   const [loadedSegments, setLoadedSegments] = useState<SocialId[]>([]);
   const [baseLoaded, setBaseLoaded] = useState(false);
   const [active, setActive] = useState<SocialId | null>(null);
   const filterId = useId().replace(/:/g, '');
+  const isVisible = visible && pageVisible && isPresent;
+  const animatePortrait = isVisible && portraitVisible;
 
   useEffect(() => {
+    // Observe persistent layout boxes, not the render trees that are culled.
+    // This allows the artwork to mount again without changing scroll geometry.
     const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { rootMargin: '100px' }
+      (entries) => {
+        for (const entry of entries) {
+          const intersects =
+            entry.isIntersecting &&
+            entry.intersectionRect.width > 0 &&
+            entry.intersectionRect.height > 0;
+          if (entry.target === stageRef.current) setVisible(intersects);
+          if (entry.target === portraitRef.current)
+            setPortraitVisible(intersects);
+        }
+      },
+      { rootMargin: '0px', threshold: [0, 0.001] }
     );
-    if (sectionRef.current) observer.observe(sectionRef.current);
+    if (stageRef.current) observer.observe(stageRef.current);
+    if (portraitRef.current) observer.observe(portraitRef.current);
     return () => observer.disconnect();
   }, []);
 
@@ -115,7 +132,7 @@ export default function SocialConstellation() {
   useEffect(() => {
     const stage = stageRef.current;
     const image = portraitRef.current;
-    if (!stage || !image) return;
+    if (!isVisible || !stage || !image) return;
     let frame = 0;
     const measure = () => {
       const bounds = stage.getBoundingClientRect();
@@ -169,11 +186,15 @@ export default function SocialConstellation() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [isVisible]);
 
   // The base image has priority; segment requests start only after it has loaded.
   useEffect(() => {
-    if (!visible || !baseLoaded || hitMaps.current.size === socials.length)
+    if (
+      !animatePortrait ||
+      !baseLoaded ||
+      hitMaps.current.size === socials.length
+    )
       return;
     let cancelled = false;
     async function loadSegments() {
@@ -204,9 +225,10 @@ export default function SocialConstellation() {
     return () => {
       cancelled = true;
     };
-  }, [baseLoaded, visible]);
+  }, [baseLoaded, animatePortrait]);
 
   function highlightAtPointer(event: PointerEvent<HTMLDivElement>) {
+    if (!animatePortrait) return;
     if (event.pointerType !== 'mouse' && event.buttons === 0) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = Math.min(
@@ -238,10 +260,9 @@ export default function SocialConstellation() {
 
   return (
     <section
-      ref={sectionRef}
       className={styles.section}
       aria-labelledby={`${filterId}-title`}
-      data-visible={visible && pageVisible}
+      data-visible={isVisible}
     >
       <h3 id={`${filterId}-title`} className={styles.title}>
         I'm on
@@ -252,37 +273,39 @@ export default function SocialConstellation() {
         onPointerLeave={() => setActive(null)}
         onPointerCancel={() => setActive(null)}
       >
-        <svg className={styles.definitions} aria-hidden="true">
-          <defs>
-            {socials.map((social) => (
-              <filter
-                key={social.id}
-                id={`${filterId}-${social.id}`}
-                colorInterpolationFilters="sRGB"
-              >
-                <feColorMatrix type="saturate" values="0" />
-                <feComponentTransfer>
-                  <feFuncR
-                    type="linear"
-                    slope={social.light[0] - social.dark[0]}
-                    intercept={social.dark[0]}
-                  />
-                  <feFuncG
-                    type="linear"
-                    slope={social.light[1] - social.dark[1]}
-                    intercept={social.dark[1]}
-                  />
-                  <feFuncB
-                    type="linear"
-                    slope={social.light[2] - social.dark[2]}
-                    intercept={social.dark[2]}
-                  />
-                </feComponentTransfer>
-              </filter>
-            ))}
-          </defs>
-        </svg>
-        {
+        {animatePortrait && (
+          <svg className={styles.definitions} aria-hidden="true">
+            <defs>
+              {socials.map((social) => (
+                <filter
+                  key={social.id}
+                  id={`${filterId}-${social.id}`}
+                  colorInterpolationFilters="sRGB"
+                >
+                  <feColorMatrix type="saturate" values="0" />
+                  <feComponentTransfer>
+                    <feFuncR
+                      type="linear"
+                      slope={social.light[0] - social.dark[0]}
+                      intercept={social.dark[0]}
+                    />
+                    <feFuncG
+                      type="linear"
+                      slope={social.light[1] - social.dark[1]}
+                      intercept={social.dark[1]}
+                    />
+                    <feFuncB
+                      type="linear"
+                      slope={social.light[2] - social.dark[2]}
+                      intercept={social.dark[2]}
+                    />
+                  </feComponentTransfer>
+                </filter>
+              ))}
+            </defs>
+          </svg>
+        )}
+        {isVisible && (
           <svg
             className={styles.wires}
             viewBox={`0 0 ${connections.width} ${connections.height}`}
@@ -292,7 +315,7 @@ export default function SocialConstellation() {
               <g
                 key={social.id}
                 style={{ '--social-color': social.color } as CSSProperties}
-                data-active={active === social.id}
+                data-active={isVisible && active === social.id}
               >
                 <path
                   className={styles.wire}
@@ -313,10 +336,11 @@ export default function SocialConstellation() {
               </g>
             ))}
           </svg>
-        }
+        )}
         <div
           ref={portraitRef}
           className={styles.portrait}
+          data-visible={animatePortrait}
           onPointerMove={highlightAtPointer}
           onPointerDown={highlightAtPointer}
           onPointerLeave={() => setActive(null)}
@@ -324,55 +348,61 @@ export default function SocialConstellation() {
             if (event.pointerType !== 'mouse') setActive(null);
           }}
         >
-          {baseLoaded && (
-            <div className={styles.glow} aria-hidden="true">
-              <img src={portrait} alt="" className={styles.glowImage} />
-            </div>
+          {/* Cull masks, filters and images too: pausing keyframes alone leaves
+              the portrait's compositing layers mounted after scrolling away. */}
+          {animatePortrait && (
+            <>
+              {baseLoaded && (
+                <div className={styles.glow} aria-hidden="true">
+                  <img src={portrait} alt="" className={styles.glowImage} />
+                </div>
+              )}
+              <div className={`cybr-glitch-img ${styles.art}`}>
+                <img
+                  src={portrait}
+                  alt="Black and white illustration of Scott playing guitar"
+                  width="320"
+                  height="320"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setBaseLoaded(true)}
+                  className={styles.base}
+                />
+                {baseLoaded && (
+                  <>
+                    <img
+                      src={portrait}
+                      alt=""
+                      className={`cybr-glitch-img__slice cybr-glitch-img__slice--cyan ${styles.reflection}`}
+                    />
+                    <img
+                      src={portrait}
+                      alt=""
+                      className={`cybr-glitch-img__slice cybr-glitch-img__slice--magenta ${styles.reflection}`}
+                    />
+                    <div className={styles.scanlines} aria-hidden="true">
+                      {scanlineLayers}
+                    </div>
+                  </>
+                )}
+                {socials
+                  .filter((social) => loadedSegments.includes(social.id))
+                  .map((social) => (
+                    <div
+                      key={social.id}
+                      className={styles.segment}
+                      data-active={isVisible && active === social.id}
+                    >
+                      <img
+                        src={`/static_assets/segments/${social.segment}.png`}
+                        alt=""
+                        style={{ filter: `url(#${filterId}-${social.id})` }}
+                      />
+                    </div>
+                  ))}
+              </div>
+            </>
           )}
-          <div className={`cybr-glitch-img ${styles.art}`}>
-            <img
-              src={portrait}
-              alt="Black and white illustration of Scott playing guitar"
-              width="320"
-              height="320"
-              loading="lazy"
-              decoding="async"
-              onLoad={() => setBaseLoaded(true)}
-              className={styles.base}
-            />
-            {baseLoaded && (
-              <>
-                <img
-                  src={portrait}
-                  alt=""
-                  className={`cybr-glitch-img__slice cybr-glitch-img__slice--cyan ${styles.reflection}`}
-                />
-                <img
-                  src={portrait}
-                  alt=""
-                  className={`cybr-glitch-img__slice cybr-glitch-img__slice--magenta ${styles.reflection}`}
-                />
-                <div className={styles.scanlines} aria-hidden="true">
-                  {scanlineLayers}
-                </div>
-              </>
-            )}
-            {socials
-              .filter((social) => loadedSegments.includes(social.id))
-              .map((social) => (
-                <div
-                  key={social.id}
-                  className={styles.segment}
-                  data-active={active === social.id}
-                >
-                  <img
-                    src={`/static_assets/segments/${social.segment}.png`}
-                    alt=""
-                    style={{ filter: `url(#${filterId}-${social.id})` }}
-                  />
-                </div>
-              ))}
-          </div>
         </div>
         {socials.map((social) => (
           <a
@@ -386,7 +416,7 @@ export default function SocialConstellation() {
             rel="noopener noreferrer"
             className={`${styles.link} ${styles[social.id]}`}
             style={{ '--social-color': social.color } as CSSProperties}
-            data-active={active === social.id}
+            data-active={isVisible && active === social.id}
             aria-label={`${social.name}: ${social.handle} (opens in a new tab)`}
           >
             <i className={`fa-brands ${social.icon}`} aria-hidden="true" />

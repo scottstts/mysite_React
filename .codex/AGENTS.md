@@ -4,7 +4,7 @@ This is my personal website Vite React TS project
 
 # Dev Rules
 
-1. never commit code or run dev server, these will be handled by me
+1. NEVER commit code or run dev server or do live browser inspection, these will be handled by me
 2. run lint and build after code change to make sure code is clean
 
 # Optimization Principles

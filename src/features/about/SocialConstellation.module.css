@@ -158,8 +158,18 @@
   width: 100%;
   height: 100%;
 }
-.section[data-visible='false'] .art * {
-  animation-play-state: paused;
+.section[data-visible='false'],
+.section[data-visible='false']::before,
+.section[data-visible='false']::after,
+.section[data-visible='false'] *,
+.section[data-visible='false'] *::before,
+.section[data-visible='false'] *::after,
+.portrait[data-visible='false'],
+.portrait[data-visible='false'] *,
+.portrait[data-visible='false'] *::before,
+.portrait[data-visible='false'] *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
 }
 .link.link {
   position: absolute;
