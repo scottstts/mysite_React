@@ -260,6 +260,10 @@
     gap: 0.55rem;
     padding: 0.6rem 0.25rem;
   }
+  /* Touches should always reach the links, never the invisible wire hit paths. */
+  .wireTarget {
+    pointer-events: none;
+  }
   .link i {
     font-size: 1.5rem;
   }

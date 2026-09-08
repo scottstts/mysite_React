@@ -387,30 +387,6 @@ export default function SocialConstellation() {
             className={`${styles.link} ${styles[social.id]}`}
             style={{ '--social-color': social.color } as CSSProperties}
             data-active={active === social.id}
-            onPointerEnter={(event) => {
-              if (event.pointerType === 'mouse') setActive(social.id);
-            }}
-            onPointerLeave={(event) => {
-              if (event.pointerType === 'mouse') setActive(null);
-            }}
-            onPointerDown={(event) => {
-              if (event.pointerType !== 'mouse') {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }
-              setActive(social.id);
-            }}
-            onPointerCancel={() => setActive(null)}
-            onClick={() => {
-              // Keep the anchor stable through touch release and let its native
-              // click open the URL. Never navigate from pointerdown/pointerup.
-              setActive(null);
-            }}
-            onFocus={(event) => {
-              if (event.currentTarget.matches(':focus-visible')) {
-                setActive(social.id);
-              }
-            }}
-            onBlur={() => setActive(null)}
             aria-label={`${social.name}: ${social.handle} (opens in a new tab)`}
           >
             <i className={`fa-brands ${social.icon}`} aria-hidden="true" />
