@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { useIsPresent } from 'framer-motion';
 import styles from './SocialConstellation.module.css';
+import { bindSocialLinkTouch } from './socialLinkTouch';
 
 const portrait = '/static_assets/logo.png';
 const socials = [
@@ -100,6 +101,11 @@ export default function SocialConstellation() {
   const filterId = useId().replace(/:/g, '');
   const isVisible = visible && pageVisible && isPresent;
   const animatePortrait = isVisible && portraitVisible;
+
+  useEffect(() => {
+    const cleanups = Array.from(linkRefs.current.values(), bindSocialLinkTouch);
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, []);
 
   useEffect(() => {
     // Observe persistent layout boxes, not the render trees that are culled.
@@ -417,6 +423,21 @@ export default function SocialConstellation() {
             className={`${styles.link} ${styles[social.id]}`}
             style={{ '--social-color': social.color } as CSSProperties}
             data-active={isVisible && active === social.id}
+            onPointerEnter={(event) => {
+              if (event.pointerType === 'mouse') setActive(social.id);
+            }}
+            onPointerLeave={(event) => {
+              if (event.pointerType === 'mouse') setActive(null);
+            }}
+            onPointerDown={() => setActive(social.id)}
+            onPointerCancel={() => setActive(null)}
+            onClick={() => setActive(null)}
+            onFocus={(event) => {
+              if (event.currentTarget.matches(':focus-visible')) {
+                setActive(social.id);
+              }
+            }}
+            onBlur={() => setActive(null)}
             aria-label={`${social.name}: ${social.handle} (opens in a new tab)`}
           >
             <i className={`fa-brands ${social.icon}`} aria-hidden="true" />
