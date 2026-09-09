@@ -109,6 +109,26 @@ There are great personal AI assistants out there I have no doubt, but for me it 
     showLink: true,
   },
   {
+    id: 'mycraft',
+    title: 'MyCraft',
+    tagline: `It's cozy in the browser.`,
+    description: `MyCraft is a MineCraft-like mini game that runs in your browser. It is a beautiful and immersive dream-like experience.<br><br>
+    
+    Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.`,
+    videos: [
+      {
+        videoId: 'Ab3kLACHfgU',
+        title: 'MyCraft | Remaster',
+      },
+      {
+        videoId: 'Jxn7g5fzAto',
+        title: 'MyCraft | Before Remaster',
+      },
+    ],
+    link: 'https://mycraft.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'threejs-awesome-graphics-agent-skills',
     title: 'Three.js Skills',
     tagline: 'Your agent just got schooled on awesome 3D web graphics.',
@@ -221,28 +241,6 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
       },
     ],
     link: 'https://learntube.scottsun.io',
-    showLink: true,
-  },
-  {
-    id: 'mycraft',
-    title: 'MyCraft',
-    tagline: `It's cozy in the browser.`,
-    description: `MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.<br><br>
-    
-    Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.`,
-    images: [
-      'mycraft_start.jpeg',
-      'mycraft_world.jpeg',
-      'mycraft_sunset.jpeg',
-      'mycraft_underwater.jpeg',
-    ],
-    videos: [
-      {
-        videoId: 'Jxn7g5fzAto',
-        title: 'MyCraft',
-      },
-    ],
-    link: 'https://mycraft.scottsun.io',
     showLink: true,
   },
   {

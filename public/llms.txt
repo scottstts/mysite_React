@@ -128,6 +128,21 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 
 - Link: https://github.com/scottstts/JARVIS.py
 
+### MyCraft
+
+**Tagline:** It's cozy in the browser.
+
+**Videos:**
+
+- [MyCraft | Remaster](https://youtu.be/Ab3kLACHfgU)
+- [MyCraft | Before Remaster](https://www.youtube.com/watch?v=Jxn7g5fzAto)
+
+MyCraft is a MineCraft-like mini game that runs in your browser. It is a beautiful and immersive dream-like experience.
+
+Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.
+
+- Link: https://mycraft.scottsun.io
+
 ### Three.js Awesome Graphics Agent Skills
 
 **Tagline:** Your agent just got schooled on awesome 3D web graphics.
@@ -241,27 +256,6 @@ Too many long-form podcasts and interviews and no time to watch? Just copy the v
 TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds.
 
 - Link: https://learntube.scottsun.io
-
-### MyCraft
-
-**Tagline:** It's cozy in the browser.
-
-**Images:**
-
-![MyCraft — mycraft start](https://scottsun.io/content_imgs/mycraft_start.jpeg)
-![MyCraft — mycraft world](https://scottsun.io/content_imgs/mycraft_world.jpeg)
-![MyCraft — mycraft sunset](https://scottsun.io/content_imgs/mycraft_sunset.jpeg)
-![MyCraft — mycraft underwater](https://scottsun.io/content_imgs/mycraft_underwater.jpeg)
-
-**Videos:**
-
-- [MyCraft](https://www.youtube.com/watch?v=Jxn7g5fzAto)
-
-MyCraft is a MineCraft-like mini game that runs in your browser. I made it with React and Three.js.
-
-Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.
-
-- Link: https://mycraft.scottsun.io
 
 ### Tune It All
 
