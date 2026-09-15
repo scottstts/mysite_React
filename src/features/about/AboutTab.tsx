@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import GlassCard from '@/ui-kit/GlassCard/GlassCard';
 import SocialConstellation from './SocialConstellation';
+import AboutHighlight from './AboutHighlight';
 import { safeHtml } from '@/lib/safeHtml';
 
 const AboutTab = () => {
@@ -48,6 +49,8 @@ const AboutTab = () => {
             Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span>.`)}
           />
         </GlassCard>
+
+        <AboutHighlight />
 
         <SocialConstellation />
       </div>

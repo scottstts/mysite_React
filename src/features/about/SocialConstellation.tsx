@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { useIsPresent } from 'framer-motion';
 import styles from './SocialConstellation.module.css';
+import headingStyles from './AboutSectionHeading.module.css';
 import { bindSocialLinkTouch } from './socialLinkTouch';
 
 const portrait = '/static_assets/logo.png';
@@ -270,9 +271,24 @@ export default function SocialConstellation() {
       aria-labelledby={`${filterId}-title`}
       data-visible={isVisible}
     >
-      <h3 id={`${filterId}-title`} className={styles.title}>
-        I'm on
-      </h3>
+      <h2 className={headingStyles.label} id={`${filterId}-title`}>
+        <span className={headingStyles.icon} aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m8.5 10 7-4m-7 8 7 4" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="4.5" r="3" />
+            <circle cx="18" cy="19.5" r="3" />
+          </svg>
+        </span>
+        Find me on
+      </h2>
       <div
         ref={stageRef}
         className={styles.stage}

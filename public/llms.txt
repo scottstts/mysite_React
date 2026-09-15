@@ -25,9 +25,17 @@ Technology has also been historically proven to be the only robust, consistent, 
 
 Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is *into the unknown*.
 
-#### I'm on
+#### Highlight
 
-- X (Twitter): [@scottstts](https://x.com/scottstts/)
+**Director's Cut - My Three.js Games**
+
+I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies over the past year, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.
+
+Video: [Director's Cut - My Three.js Games](https://youtu.be/o_USermt690)
+
+#### Find me on
+
+- X: [@scottstts](https://x.com/scottstts/)
 - LinkedIn: [Scott Sun](https://www.linkedin.com/in/st-scottsun-inireland/)
 - GitHub: [scottstts](https://github.com/scottstts/)
 - Instagram: [@scottstts] (https://www.instagram.com/scottstts/)

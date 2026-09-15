@@ -19,7 +19,9 @@ export function bindSocialLinkTouch(link: HTMLAnchorElement) {
   };
   const move = (event: TouchEvent) => {
     if (!tap) return;
-    const touch = Array.from(event.touches).find((t) => t.identifier === tap?.id);
+    const touch = Array.from(event.touches).find(
+      (t) => t.identifier === tap?.id
+    );
     if (
       event.touches.length !== 1 ||
       !touch ||

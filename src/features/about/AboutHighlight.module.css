@@ -1,0 +1,362 @@
+.section {
+  --highlight-accent: #c4afff;
+  padding: clamp(2rem, 5vw, 4rem) 0 clamp(0.75rem, 2vw, 1.5rem);
+  text-align: left;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.screen {
+  position: relative;
+  min-width: 0;
+}
+
+/* Offset corner marks give the video its own stage without a card shell. */
+.screen::before,
+.screen::after {
+  content: '';
+  position: absolute;
+  width: 2.5rem;
+  height: 2.5rem;
+  pointer-events: none;
+  border-color: rgb(196 175 255 / 55%);
+  border-style: solid;
+  transition:
+    width 300ms ease,
+    height 300ms ease;
+}
+
+.screen::before {
+  top: -6px;
+  left: -6px;
+  border-width: 1px 0 0 1px;
+  border-top-left-radius: 8px;
+}
+
+.screen::after {
+  right: -6px;
+  bottom: -6px;
+  border-width: 0 1px 1px 0;
+  border-bottom-right-radius: 8px;
+}
+
+.screen:focus-within::before,
+.screen:focus-within::after {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.media {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 5px;
+  background: #090a14;
+  box-shadow: 0 20px 45px -25px rgb(0 0 0 / 75%);
+}
+
+/* Asset-free artwork also covers slow or unavailable video thumbnails. */
+.horizon {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgb(139 92 246 / 24%),
+      transparent 65%
+    ),
+    linear-gradient(150deg, #131322, #090a14 60%);
+}
+
+.horizon::before {
+  content: '';
+  position: absolute;
+  top: 59%;
+  left: -15%;
+  width: 130%;
+  height: 110%;
+  border-radius: 50%;
+  border-top: 1px solid rgb(226 213 255 / 85%);
+  background: #090a14;
+  box-shadow:
+    0 -5px 18px -5px rgb(196 175 255 / 60%),
+    0 -25px 65px -30px #8b5cf6;
+  transform: rotate(-12deg);
+}
+
+.horizon::after {
+  content: '';
+  position: absolute;
+  inset: 9% 29%;
+  border: 1px solid rgb(196 175 255 / 12%);
+  border-radius: 50%;
+  transform: rotate(-35deg) scaleX(0.65);
+}
+
+.preview,
+.player {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.preview {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: white;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preview:focus-visible {
+  outline: 2px solid var(--highlight-accent);
+  outline-offset: -5px;
+}
+
+.thumbnail,
+.shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.thumbnail {
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.shade {
+  background: linear-gradient(
+    180deg,
+    rgb(3 7 17 / 6%),
+    rgb(3 7 17 / 15%) 50%,
+    rgb(3 7 17 / 75%)
+  );
+}
+
+.play,
+.placeholderMark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(3.25rem, 6vw, 4.25rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.play {
+  color: #191026;
+  background: #f2ebff;
+  box-shadow: 0 0 0 8px rgb(242 235 255 / 12%);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.play svg,
+.placeholderMark svg {
+  width: 45%;
+  height: 45%;
+}
+
+.watch {
+  position: absolute;
+  bottom: 1.1rem;
+  left: 1.25rem;
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #d5cbe7;
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.placeholderMark {
+  color: var(--highlight-accent);
+  border: 1px solid rgb(196 175 255 / 40%);
+  background: rgb(14 12 25 / 70%);
+}
+
+.copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-areas: 'heading description';
+  align-items: center;
+  column-gap: clamp(1.5rem, 5vw, 4rem);
+  row-gap: 1rem;
+  min-width: 0;
+  padding-block: 0.5rem;
+}
+
+.headingGroup {
+  grid-area: heading;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Balance the eyebrow's space below the title so the title stays centered. */
+.headingGroup::after {
+  content: '';
+}
+
+.eyebrow {
+  display: block;
+  margin: 0;
+  color: var(--highlight-accent);
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.title {
+  display: block;
+  max-width: 18ch;
+  margin: 0;
+  color: #f4f0fa;
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.title::after {
+  content: none;
+}
+
+.description {
+  grid-area: description;
+  min-width: 0;
+  margin: 0;
+  color: #ded9e8;
+  font-size: clamp(0.9rem, 1.3vw, 1rem);
+  line-height: 1.8;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.description,
+.youtubeLink.youtubeLink {
+  /* Darken around each glyph, keeping the surrounding page completely open. */
+  -webkit-text-stroke: 1.5px rgb(3 7 17 / 90%);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 2px #030711,
+    0 0 6px #030711,
+    0 0 14px rgb(3 7 17 / 95%);
+}
+
+.youtubeLink {
+  /* Keep the link outside the row that centers the title against the body. */
+  grid-column: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  margin-top: 0;
+  color: #e9e0ff;
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.youtubeLink span {
+  transition: transform 200ms ease;
+}
+
+.youtubeLink:hover span {
+  transform: translate(2px, -2px);
+}
+
+@media (hover: hover) {
+  .preview:hover .thumbnail {
+    transform: scale(1.035);
+  }
+
+  .preview:hover .play {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 12px rgb(242 235 255 / 14%);
+  }
+
+  .screen:hover::before,
+  .screen:hover::after {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .copy {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'heading'
+      'description';
+    gap: 1.25rem;
+  }
+
+  .headingGroup {
+    grid-template-rows: auto auto;
+  }
+
+  .headingGroup::after {
+    content: none;
+  }
+
+  .youtubeLink {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .section[data-visible='true'] .screen {
+    animation: arrive 700ms 120ms both;
+  }
+
+  .section[data-visible='true'] .copy {
+    animation: arrive 700ms both;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
