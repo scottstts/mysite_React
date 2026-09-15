@@ -154,9 +154,10 @@ function App() {
   return (
     <>
       {/* Background Effects */}
-      {shouldShowGlobalBackground && (
-        <BackgroundEffects introComplete={introComplete} />
-      )}
+      <BackgroundEffects
+        introComplete={introComplete}
+        isActive={shouldShowGlobalBackground}
+      />
 
       {/* Main Content */}
       <main

@@ -29,19 +29,90 @@ body.art-in-life-mode {
   color: #17120d;
 }
 
-/* Looped video background sitting behind overlays/content */
-.bg-video {
+/* Play-once background; the video retains its final frame after playback. */
+.bg-video,
+.bg-capture-flash {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100lvh;
-  object-fit: cover;
-  z-index: -3;
   pointer-events: none;
 }
 
-body.art-in-life-mode .bg-video {
+.bg-video {
+  --bg-still-filter: brightness(0.84) saturate(0.72) contrast(1.06)
+    hue-rotate(-8deg);
+  object-fit: cover;
+  z-index: -3;
+}
+
+/* The captured frame keeps a dim, cool photographic grade.
+   Only the capture animates; the final filter is static. */
+.bg-video--capturing,
+.bg-video--frozen {
+  filter: var(--bg-still-filter);
+}
+
+.bg-video--capturing {
+  animation: backgroundCapture 900ms ease-out;
+}
+
+/* A faint exposure veil also reaches the black areas of the footage.
+   This layer sits behind the content and is removed when the capture finishes. */
+.bg-capture-flash {
+  z-index: -2;
+  background: radial-gradient(ellipse at center, #e4edff, #9db5dc);
+  opacity: 0;
+  animation: backgroundCaptureFlash 900ms ease-out;
+}
+
+@keyframes backgroundCapture {
+  0% {
+    filter: none;
+  }
+
+  10% {
+    filter: brightness(0.45) saturate(0.85);
+  }
+
+  24% {
+    filter: brightness(0.82) saturate(0.72) contrast(1.06) hue-rotate(-8deg);
+  }
+
+  100% {
+    filter: var(--bg-still-filter);
+  }
+}
+
+@keyframes backgroundCaptureFlash {
+  0%,
+  10%,
+  100% {
+    opacity: 0;
+  }
+
+  22% {
+    opacity: 0.14;
+  }
+
+  48% {
+    opacity: 0.025;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-video--capturing {
+    animation: none;
+  }
+
+  .bg-capture-flash {
+    display: none;
+  }
+}
+
+body.art-in-life-mode .bg-video,
+body.art-in-life-mode .bg-capture-flash {
   display: none;
 }
 
