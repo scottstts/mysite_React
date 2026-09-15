@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
 import tailwindcss from '@tailwindcss/vite';
 import crawlable from './vite-plugin-crawlable.js';
+import youtubeDimensions from './vite-plugin-youtube-dimensions.js';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), crawlable()],
+  plugins: [react(), tailwindcss(), crawlable(), youtubeDimensions()],
   assetsInclude: ['**/*.glb'],
   resolve: {
     alias: {

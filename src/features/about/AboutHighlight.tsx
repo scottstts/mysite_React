@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { useInView } from 'framer-motion';
+import YouTubeEmbed from '@/ui-kit/YouTubeEmbed/YouTubeEmbed';
 import { aboutHighlight } from './highlight.data';
 import styles from './AboutHighlight.module.css';
 import headingStyles from './AboutSectionHeading.module.css';
@@ -24,17 +25,15 @@ const HighlightVideo = ({
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   return (
-    <div className={styles.media}>
-      {playing ? (
-        <iframe
-          className={styles.player}
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1`}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allowFullScreen
-        />
-      ) : (
+    <YouTubeEmbed
+      videoId={videoId}
+      title={title}
+      active={playing}
+      autoplay
+      privacyEnhanced
+      frameClassName={styles.screen}
+      surfaceClassName={styles.media}
+      preview={
         <>
           <div className={styles.horizon} aria-hidden="true" />
           {videoId ? (
@@ -82,8 +81,8 @@ const HighlightVideo = ({
             </div>
           )}
         </>
-      )}
-    </div>
+      }
+    />
   );
 };
 
@@ -127,14 +126,12 @@ const AboutHighlight = () => {
             </a>
           )}
         </div>
-        <div className={styles.screen}>
-          <HighlightVideo
-            key={videoId}
-            videoId={videoId}
-            title={aboutHighlight.title}
-            visible={visible}
-          />
-        </div>
+        <HighlightVideo
+          key={videoId}
+          videoId={videoId}
+          title={aboutHighlight.title}
+          visible={visible}
+        />
       </div>
     </section>
   );

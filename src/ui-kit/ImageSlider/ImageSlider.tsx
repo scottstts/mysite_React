@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VideoSlideData } from '@/types/content';
-
-/* global YouTubePlayer, YouTubePlayerEvent -- ambient types from vite-env.d.ts; core no-undef cannot see them */
+import YouTubeEmbed from '@/ui-kit/YouTubeEmbed/YouTubeEmbed';
 
 interface ImageSliderProps {
   images?: string[];
@@ -57,9 +56,7 @@ const ImageSlider = ({
   const [currentIndex, setCurrentIndex] = useState(1); // Start at index 1 for infinite loop
   const [isPlaying, setIsPlaying] = useState(autoplay);
   const [isTransitioning, setIsTransitioning] = useState(true);
-  const [youtubePlayersReady, setYoutubePlayersReady] = useState(false);
   const intervalRef = useRef<number | null>(null);
-  const youtubePlayersRef = useRef<Record<string, YouTubePlayer>>({});
 
   // Create infinite loop by duplicating slides: [last, ...original, first]
   const slides: Slide[] =
@@ -83,9 +80,7 @@ const ImageSlider = ({
 
   // Define YouTube state change handler before it's used
   const handleYouTubeStateChange = useCallback(
-    (event: YouTubePlayerEvent) => {
-      const playerState = event.data;
-
+    (playerState: number) => {
       // YouTube player states:
       // -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
 
@@ -99,93 +94,6 @@ const ImageSlider = ({
     },
     [autoplay]
   );
-
-  // Load YouTube API
-  useEffect(() => {
-    if (videos.length === 0) return;
-
-    const loadYouTubeAPI = () => {
-      if (window.YT?.Player) {
-        setYoutubePlayersReady(true);
-        return;
-      }
-
-      if (!window.onYouTubeIframeAPIReady) {
-        window.onYouTubeIframeAPIReady = () => {
-          setYoutubePlayersReady(true);
-        };
-
-        const tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
-      }
-    };
-
-    loadYouTubeAPI();
-  }, [videos.length]);
-
-  // Initialize YouTube players when API is ready
-  useEffect(() => {
-    if (!youtubePlayersReady || videos.length === 0 || !window.YT?.Player) {
-      return;
-    }
-
-    const initializePlayers = () => {
-      videos.forEach((video, index) => {
-        const playerId = `video-${index}-${uniqueId}`;
-
-        if (
-          document.getElementById(playerId) &&
-          !youtubePlayersRef.current[playerId]
-        ) {
-          try {
-            youtubePlayersRef.current[playerId] = new window.YT!.Player(
-              playerId,
-              {
-                events: {
-                  onStateChange: handleYouTubeStateChange,
-                },
-              }
-            );
-          } catch {
-            console.warn(
-              'YouTube player initialization delayed for:',
-              playerId
-            );
-            // Try again after a short delay
-            window.setTimeout(() => {
-              if (
-                document.getElementById(playerId) &&
-                !youtubePlayersRef.current[playerId] &&
-                window.YT?.Player
-              ) {
-                try {
-                  youtubePlayersRef.current[playerId] = new window.YT.Player(
-                    playerId,
-                    {
-                      events: {
-                        onStateChange: handleYouTubeStateChange,
-                      },
-                    }
-                  );
-                } catch {
-                  console.error(
-                    'Failed to initialize YouTube player:',
-                    playerId
-                  );
-                }
-              }
-            }, 1000);
-          }
-        }
-      });
-    };
-
-    // Wait a bit for iframes to be rendered
-    const timer = window.setTimeout(initializePlayers, 500);
-    return () => window.clearTimeout(timer);
-  }, [youtubePlayersReady, videos, uniqueId, handleYouTubeStateChange]);
 
   // Auto-advance slides
   useEffect(() => {
@@ -234,22 +142,6 @@ const ImageSlider = ({
     setCurrentIndex((prevIndex) => prevIndex + 1);
   };
 
-  // Cleanup YouTube players on unmount
-  useEffect(() => {
-    const playersSnapshot = youtubePlayersRef.current;
-    return () => {
-      Object.values(playersSnapshot).forEach((player) => {
-        try {
-          if (typeof player.destroy === 'function') {
-            player.destroy();
-          }
-        } catch {
-          console.error('Error destroying YouTube player');
-        }
-      });
-    };
-  }, []);
-
   if (totalSlides === 0) {
     return null;
   }
@@ -286,27 +178,11 @@ const ImageSlider = ({
                   }}
                 />
               ) : (
-                <div
-                  className="video-container"
-                  style={{
-                    aspectRatio: '16/9',
-                    borderRadius: slideRadius,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <iframe
-                    id={slide.id}
-                    src={`https://www.youtube.com/embed/${slide.videoId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
-                    title={slide.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                    width="100%"
-                    height="100%"
-                    style={{ borderRadius: slideRadius }}
-                  />
-                </div>
+                <YouTubeEmbed
+                  videoId={slide.videoId}
+                  title={slide.title}
+                  onStateChange={handleYouTubeStateChange}
+                />
               )}
             </div>
           ))}

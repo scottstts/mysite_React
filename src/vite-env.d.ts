@@ -7,6 +7,11 @@ declare module '*.module.css' {
 
 declare module '*.css';
 
+declare module 'virtual:youtube-dimensions' {
+  const dimensions: Record<string, readonly [number, number]>;
+  export default dimensions;
+}
+
 declare module '*.glb' {
   const src: string;
   export default src;
@@ -20,6 +25,7 @@ interface InstagramApi {
 
 interface YouTubePlayer {
   destroy: () => void;
+  getPlayerState: () => number;
 }
 
 interface YouTubePlayerEvent {
@@ -29,6 +35,7 @@ interface YouTubePlayerEvent {
 
 interface YouTubePlayerOptions {
   events?: {
+    onReady?: (_event: { target: YouTubePlayer }) => void;
     onStateChange?: (_event: YouTubePlayerEvent) => void;
   };
 }
