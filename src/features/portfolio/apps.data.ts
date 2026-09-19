@@ -50,6 +50,24 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'sandboard',
+    title: 'Sandboard',
+    tagline: 'Draw your line in the sand.',
+    description: `There is something oddly satisfying about dragging a finger through a perfectly smooth patch of sand and immediately ruining it in the best possible way.<br><br>
+
+    Sandboard is built around that feeling. Start with a quiet, untouched surface, draw a line, carve a shape, scribble too fast, use two hands, make a mess, then smooth everything away and start again.<br><br>
+
+    There is no score, no objective, and no correct thing to make. The whole point is the moment between a clean surface and whatever you decide to do to it next.`,
+    videos: [
+      {
+        videoId: '0xwd048EZxU',
+        title: 'Sandboard | Draw Your Line in the Sand',
+      },
+    ],
+    link: 'https://sand.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'friends3',
     title: 'Friends.Three.js',
     tagline: 'Nostalgia.',

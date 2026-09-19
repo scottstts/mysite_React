@@ -83,6 +83,22 @@ Descend past the waterline and step onto the sunlit reef where a visionary found
 
 - Link: https://pearl.scottsun.io
 
+### Sandboard
+
+**Tagline:** Draw your line in the sand.
+
+**Videos:**
+
+- [Sandboard | Draw Your Line in the Sand](https://youtu.be/0xwd048EZxU)
+
+There is something oddly satisfying about dragging a finger through a perfectly smooth patch of sand and immediately ruining it in the best possible way.
+
+Sandboard is built around that feeling. Start with a quiet, untouched surface, draw a line, carve a shape, scribble too fast, use two hands, make a mess, then smooth everything away and start again.
+
+There is no score, no objective, and no correct thing to make. The whole point is the moment between a clean surface and whatever you decide to do to it next.
+
+- Link: https://sand.scottsun.io
+
 ### Friends.Three.js
 
 **Tagline:** Nostalgia.
