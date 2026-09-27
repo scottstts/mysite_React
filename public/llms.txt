@@ -44,6 +44,20 @@ Video: [Director's Cut - My Three.js Games](https://youtu.be/o_USermt690)
 
 ## Portfolio
 
+### Transformer
+
+**Tagline:** A mechanical treat, satisfying combat.
+
+**Videos:**
+
+- [Transformer | Threejs Game](https://youtu.be/fX2OLoBESqE)
+
+My first time attempting to make a game that is actually satisfying to play, usually I am more about chill experiences.
+
+It started as a test to see Opus 5.5's capabilities, and it quickly escalated into full game development, modeling, VFX, SFX, rigging, animation, direct, art design, and storytelling, all with the help of Opus 5.5. I always say making a game can be more addictive than playing a game, it is undoubtedly true.
+
+- Link: https://transformer.scottsun.io
+
 ### Jelly Baby
 
 **Tagline:** Bouncy fun.
@@ -523,6 +537,16 @@ From a dishwasher to Founder/CEO of the biggest and most influential company in 
 He always goes to first principles when faced with extraordinarily complex problems. This is what makes him such a visionary and problem solver. He works constantly, learns constantly, and inspires people constantly. He perceives a goal, sets a course, and pursues it persistently on the order of decades. Nvidia's success is not a fluke, it is a group of brilliant people guided by a wise and persistent leader to position around the apple tree so they would be the closest to pick them up when the apples fall.
 
 Jensen tells the story with his own life that you can just do things.
+
+### David Heinemeier Hansson (DHH)
+
+Think sharply, but also be passionate and compassionate.
+
+The creator of Ruby on Rails and Omarchy, that's how many came to know DHH, including me. But his sharp thinking, eloquent wisdom, passion for technology, and his compassion for humans are what I most respect him for. I jokingly said, "He's the kind of person you want your dad to be."
+
+The world is changing at the speed of light, AI is turning the world into a completely different place, and many find the worlds they grew up and lived in are no longer the same. DHH is a beacon for optimism, hope, and excitement, and that pinch of humility and humor lights the path for many.
+
+I've come to love and respect DHH.
 
 ### Naval Ravikant
 

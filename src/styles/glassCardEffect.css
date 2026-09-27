@@ -121,18 +121,9 @@
   transition: none !important;
 }
 
-/* Add subtle parallax effect to images on hover - EXCLUDE slider and video elements */
+/* Standalone images inside glass cards */
 .glass-card img {
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 0.75rem;
-}
-
-/* Only apply image hover effects to standalone images, NOT in sliders or video containers */
-.glass-card:hover
-  img:not(.slider-container img):not(.video-container img):not(
-    [class*='slider'] img
-  ) {
-  transform: scale(1.03) translateY(-3px);
 }
 
 /* Enhance social media links with more sophisticated interactions */

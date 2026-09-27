@@ -2,6 +2,22 @@ import type { App } from '@/types/content';
 
 export const apps: App[] = [
   {
+    id: 'transformer',
+    title: 'Transformer',
+    tagline: 'A mechanical treat, satisfying combat.',
+    description: `My first time attempting to make a game that is actually satisfying to play, usually I am more about chill experiences.<br><br>
+
+    It started as a test to see Opus 5.5's capabilities, and it quickly escalated into full game development, modeling, VFX, SFX, rigging, animation, direct, art design, and storytelling, all with the help of Opus 5.5. I always say making a game can be more addictive than playing a game, it is undoubtedly true.`,
+    videos: [
+      {
+        videoId: 'fX2OLoBESqE',
+        title: 'Transformer',
+      },
+    ],
+    link: 'https://transformer.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'jelly-baby',
     title: 'Jelly Baby',
     tagline: 'Bouncy fun.',

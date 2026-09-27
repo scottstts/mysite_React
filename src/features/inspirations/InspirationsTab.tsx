@@ -24,15 +24,15 @@ const InspirationsTab = () => {
               key={inspiration.id}
               className="rounded-2xl overflow-hidden"
             >
-              <div className="p-5 md:p-8">
+              <div className="p-5 md:p-8 flex flex-col gap-6">
                 {/* Title */}
-                <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200">
+                <h2 className="text-2xl md:text-3xl font-bold -mb-2 text-gray-200">
                   {inspiration.name}
                 </h2>
 
                 {/* Description */}
                 <p
-                  className="text-white text-base md:text-lg mb-6 leading-relaxed"
+                  className="text-white text-base md:text-lg leading-relaxed"
                   dangerouslySetInnerHTML={safeHtml(inspiration.description)}
                 />
 
