@@ -1060,18 +1060,6 @@ a:not(.view-button):not(.tab-button):not(.static-footer-link):hover::after {
   padding: 0.5rem;
 }
 
-.slider-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  border-radius: 0.75rem;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
-}
-
 @media (max-width: 640px) {
   .tns-controls button {
     width: 40px;
