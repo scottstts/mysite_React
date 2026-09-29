@@ -51,6 +51,7 @@ Video: [Director's Cut - My Three.js Games](https://youtu.be/o_USermt690)
 **Videos:**
 
 - [Transformer | Threejs Game](https://youtu.be/fX2OLoBESqE)
+- [The Bat - Transformer](https://youtu.be/hp4hpxQWYDo)
 
 My first time attempting to make a game that is actually satisfying to play, usually I am more about chill experiences.
 
