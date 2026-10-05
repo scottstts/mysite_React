@@ -183,6 +183,7 @@ const CEILING_SPOTLIGHT_NAME = 'gallery-group-ceiling-spotlight';
 const PAINTING_SPOTLIGHT_NAME = 'painting-overhead-spotlight';
 const PAINTING_LIGHT_OFF_MS = 320;
 const PAINTING_LIGHT_ON_MS = 520;
+const MAX_ANIMATION_FRAME_MS = 50;
 const LONG_JUMP_CRUISE_SPEED_UNITS_PER_SECOND = 34;
 const LONG_JUMP_TURN_DURATION_RATIO = 0.46;
 const LONG_JUMP_TURN_TRAVEL_MAX_RATIO = 0.24;
@@ -1959,6 +1960,8 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
   );
 
   useEffect(() => {
+    if (useFallback) return;
+
     if (reducedMotion || !supportsWebGL()) {
       setUseFallback(true);
       setIsReady(true);
@@ -1971,14 +1974,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     if (!viewport || !stage || urls.length === 0) return;
 
     let isMounted = true;
-    setIsNavThrottled(false);
+    setIsReady(false);
+    setIsNavThrottled(true);
     let animationFrame = 0;
+    let lastAnimationFrameAt: number | null = null;
     let targetGroupIndex = 0;
     let currentGroupIndex = -1;
     let cameraTransition: CameraTransition | null = null;
     let requestRenderLoop = () => {};
     let isRenderReady = false;
     let preparationFrame = 0;
+    let resolvePreparationFrame: (() => void) | null = null;
+    let preparationSync: WebGLSync | null = null;
+    let pendingShaderCompilation: Promise<unknown> | null = null;
     let isDocumentVisible = document.visibilityState === 'visible';
     let isViewportVisible = true;
     const shouldRunRenderLoop = () => isDocumentVisible && isViewportVisible;
@@ -2051,8 +2059,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     );
     const webglHost = document.createElement('div');
     webglHost.className = sceneClassNames.webglLayer;
+    webglHost.style.visibility = 'hidden';
     const cssHost = document.createElement('div');
     cssHost.className = sceneClassNames.cssLayer;
+    cssHost.style.visibility = 'hidden';
     const embedCacheHost = document.createElement('div');
     embedCacheHost.setAttribute('aria-hidden', 'true');
     embedCacheHost.style.cssText = `position:fixed;left:-10000px;top:0;width:${EMBED_WIDTH_PX}px;min-height:${EMBED_HEIGHT_PX}px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;`;
@@ -2525,6 +2535,37 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
     const invalidateCssRender = () => {
       cssNeedsRender = true;
+    };
+
+    // Only one group is lit at a time. Keep its identically sized VSM buffers
+    // alive when lights fade out, then lend them to the next group's lights.
+    // Preparing group 0 therefore also pays for every later shadow allocation.
+    const availableSpotlightShadows: Array<{
+      map: THREE.WebGLRenderTarget;
+      mapPass: THREE.WebGLRenderTarget | null;
+    }> = [];
+    const releaseSpotlightShadow = (spotlight: THREE.SpotLight) => {
+      const shadow = spotlight.shadow;
+      if (!shadow.map) return;
+
+      availableSpotlightShadows.push({
+        map: shadow.map,
+        mapPass: shadow.mapPass,
+      });
+      shadow.map = null;
+      shadow.mapPass = null;
+    };
+    const acquireSpotlightShadow = (spotlight: THREE.SpotLight) => {
+      const shadow = spotlight.shadow;
+      if (shadow.map) return;
+
+      const available = availableSpotlightShadows.pop();
+      if (available) {
+        shadow.map = available.map;
+        shadow.mapPass = available.mapPass;
+      }
+      shadow.needsUpdate = true;
+      invalidateShadows();
     };
 
     const textureAnisotropy = Math.min(
@@ -4118,6 +4159,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const removeGroupCeilingSpotlight = (light: THREE.SpotLight) => {
       scene.remove(light, light.target);
+      releaseSpotlightShadow(light);
       light.shadow.dispose();
     };
 
@@ -4875,6 +4917,14 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     };
 
     const frameMaterialVariants = [walnutMaterial, goldMaterial, ebonyMaterial];
+    // Compile the source materials as well as their per-frame clones. Their
+    // program references survive virtual-frame disposal during long jumps.
+    const preparationMaterialHolders = new THREE.Group();
+    preparationMaterialHolders.visible = false;
+    [...frameMaterialVariants, plaqueMaterial].forEach((material) => {
+      preparationMaterialHolders.add(new THREE.Mesh(unitBox, material));
+    });
+    scene.add(preparationMaterialHolders);
 
     // A frame's environment glints must obey its local lighting: the shared
     // materials get a cheap per-record clone (same shader program -- only the
@@ -4944,6 +4994,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const disposeFrameRecord = (record: FrameRecord) => {
       record.group.traverse((object) => {
         if (object instanceof THREE.SpotLight) {
+          releaseSpotlightShadow(object);
           object.shadow.dispose();
           return;
         }
@@ -5144,7 +5195,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       groupIndex: number,
       requestedMode: CameraTransitionMode = 'step'
     ) => {
-      if (cameraTransition || intro.phase !== 'done') return;
+      if (!isRenderReady || cameraTransition || intro.phase !== 'done') return;
 
       const nextGroupIndex = clamp(groupIndex, 0, maxGroupIndex);
       if (nextGroupIndex === targetGroupIndex) return;
@@ -5196,7 +5247,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       setNavGroupIndex(nextGroupIndex);
       setIsNavThrottled(true);
       updateTransitionFrames(fromGroupIndex, nextGroupIndex);
-      updateEmbedVisibility(performance.now());
+      // Frame creation and cached embed attachment happen before travel starts.
+      cameraTransition.startedAt = performance.now();
+      lastAnimationFrameAt = cameraTransition.startedAt;
+      updateEmbedVisibility(cameraTransition.startedAt);
       requestRenderLoop();
     };
 
@@ -5317,28 +5371,36 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       darkenedBloomMeshes.length = 0;
     };
 
+    const beginSelectiveBloom = (
+      layer: THREE.Layers,
+      chandelierOnly: boolean
+    ) => {
+      setChandelierBloomGlowVisible(chandelierOnly);
+      setChandelierBaseVisible(!chandelierOnly);
+      activeBloomLayer = layer;
+      scene.traverseVisible(darkenVisibleNonBloomed);
+    };
+    const endSelectiveBloom = () => {
+      restoreDarkenedBloomMeshes();
+      setChandelierBloomGlowVisible(false);
+      setChandelierBaseVisible(true);
+      activeBloomLayer = bloomLayer;
+    };
+
     const renderScene = (renderCss = false) => {
       if (composer && bloomComposer && chandelierBloomComposer) {
-        setChandelierBloomGlowVisible(false);
-        activeBloomLayer = bloomLayer;
-        scene.traverseVisible(darkenVisibleNonBloomed);
+        beginSelectiveBloom(bloomLayer, false);
         try {
           bloomComposer.render();
         } finally {
-          restoreDarkenedBloomMeshes();
+          endSelectiveBloom();
         }
 
-        setChandelierBloomGlowVisible(true);
-        setChandelierBaseVisible(false);
-        activeBloomLayer = chandelierBloomLayer;
-        scene.traverseVisible(darkenVisibleNonBloomed);
+        beginSelectiveBloom(chandelierBloomLayer, true);
         try {
           chandelierBloomComposer.render();
         } finally {
-          restoreDarkenedBloomMeshes();
-          setChandelierBloomGlowVisible(false);
-          setChandelierBaseVisible(true);
-          activeBloomLayer = bloomLayer;
+          endSelectiveBloom();
         }
 
         composer.render();
@@ -5364,6 +5426,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const isVisible = factor > 0.001;
 
       spotlight.intensity = baseIntensity * factor;
+      if (isVisible) {
+        acquireSpotlightShadow(spotlight);
+      } else {
+        releaseSpotlightShadow(spotlight);
+      }
       if (spotlight.visible !== isVisible) {
         spotlight.visible = isVisible;
         if (isVisible) {
@@ -5465,6 +5532,11 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       const isVisible = factor > 0.001;
 
       spotlight.intensity = baseIntensity * factor;
+      if (isVisible) {
+        acquireSpotlightShadow(spotlight);
+      } else {
+        releaseSpotlightShadow(spotlight);
+      }
       if (spotlight.visible !== isVisible) {
         spotlight.visible = isVisible;
         if (isVisible) {
@@ -5473,18 +5545,21 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       }
     };
 
-    const updatePaintingSpotlights = (now: number | null) => {
-      activeFrames.forEach((record) => {
-        const factor = getRecordLightFactor(record, now);
-        setPaintingSpotlightFactor(record, factor);
-        record.envGlintMaterials.forEach((material) => {
-          const baseIntensity =
-            typeof material.userData.baseEnvMapIntensity === 'number'
-              ? material.userData.baseEnvMapIntensity
-              : 0;
-          material.envMapIntensity = baseIntensity * factor;
-        });
+    const setFrameLightFactor = (record: FrameRecord, factor: number) => {
+      setPaintingSpotlightFactor(record, factor);
+      record.envGlintMaterials.forEach((material) => {
+        const baseIntensity =
+          typeof material.userData.baseEnvMapIntensity === 'number'
+            ? material.userData.baseEnvMapIntensity
+            : 0;
+        material.envMapIntensity = baseIntensity * factor;
       });
+    };
+
+    const updatePaintingSpotlights = (now: number | null) => {
+      activeFrames.forEach((record) =>
+        setFrameLightFactor(record, getRecordLightFactor(record, now))
+      );
     };
 
     const updateCeilingSpotlights = (now: number | null) => {
@@ -5835,6 +5910,19 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     const renderFrame = (now: number) => {
       animationFrame = 0;
+      if (lastAnimationFrameAt !== null) {
+        // A slow frame or a hidden tab must not consume the animation. Keep
+        // the timestamps on the browser clock so async embed callbacks agree.
+        const stalledFor = Math.max(
+          0,
+          now - lastAnimationFrameAt - MAX_ANIMATION_FRAME_MS
+        );
+        if (intro.phase === 'hold') intro.startedAt += stalledFor;
+        if (intro.phase === 'travel') intro.travelStartedAt += stalledFor;
+        if (intro.phase === 'reveal') intro.revealStartedAt += stalledFor;
+        if (cameraTransition) cameraTransition.startedAt += stalledFor;
+      }
+      lastAnimationFrameAt = now;
       cameraRoll = 0;
       let pose: CameraPose;
       let isSettling = false;
@@ -5957,23 +6045,125 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     let preparationStartPose: CameraPose | null = null;
     const waitForPreparationFrame = () =>
       new Promise<void>((resolve) => {
+        if (!isMounted) {
+          resolve();
+          return;
+        }
+        resolvePreparationFrame = resolve;
         preparationFrame = window.requestAnimationFrame(() => {
           preparationFrame = 0;
+          resolvePreparationFrame = null;
           resolve();
         });
       });
 
+    const waitForPreparedGpu = async () => {
+      const gl = renderer.getContext();
+      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      if (!sync) throw new Error('Could not fence gallery preparation.');
+
+      preparationSync = sync;
+      gl.flush();
+      try {
+        while (isMounted) {
+          const status = gl.clientWaitSync(sync, 0, 0);
+          if (
+            status === gl.ALREADY_SIGNALED ||
+            status === gl.CONDITION_SATISFIED
+          ) {
+            return;
+          }
+          if (status === gl.WAIT_FAILED) {
+            throw new Error('Gallery preparation GPU fence failed.');
+          }
+          await waitForPreparationFrame();
+        }
+      } finally {
+        if (preparationSync === sync) {
+          gl.deleteSync(sync);
+          preparationSync = null;
+        }
+      }
+    };
+
+    const compilePreparationScene = async (
+      renderTarget: THREE.WebGLRenderTarget | null
+    ) => {
+      const previousRenderTarget = renderer.getRenderTarget();
+      renderer.setRenderTarget(renderTarget);
+      const compilation = renderer.compileAsync(scene, camera);
+      pendingShaderCompilation = compilation;
+      try {
+        await compilation;
+      } finally {
+        pendingShaderCompilation = null;
+        if (isMounted) renderer.setRenderTarget(previousRenderTarget);
+      }
+    };
+
+    const compileProductionShaders = async () => {
+      // Output color space and tone mapping belong to the render target, so
+      // compile with the real target bound rather than the canvas defaults.
+      await compilePreparationScene(reflectionRenderTarget);
+      if (!isMounted) return;
+
+      if (!composer || !bloomComposer || !chandelierBloomComposer) {
+        await compilePreparationScene(null);
+        return;
+      }
+
+      await compilePreparationScene(composer.renderTarget2);
+      if (!isMounted) return;
+
+      beginSelectiveBloom(bloomLayer, false);
+      try {
+        await compilePreparationScene(bloomComposer.renderTarget2);
+      } finally {
+        endSelectiveBloom();
+      }
+      if (!isMounted) return;
+
+      beginSelectiveBloom(chandelierBloomLayer, true);
+      try {
+        await compilePreparationScene(chandelierBloomComposer.renderTarget2);
+      } finally {
+        endSelectiveBloom();
+      }
+    };
+
+    const setPreparationLighting = (
+      groupIndex: number | null,
+      paintingCount = 0
+    ) => {
+      // Return every buffer before acquiring any: warmup can swap directly
+      // between groups without the normal fade-out gap that releases them.
+      activeFrames.forEach((record) => setFrameLightFactor(record, 0));
+      activeCeilingSpotlights.forEach((spotlight) =>
+        setCeilingSpotlightFactor(spotlight, 0)
+      );
+      if (groupIndex === null) return;
+
+      activeFrames.forEach((record) => {
+        const placement = getFramePlacement(record.index);
+        if (
+          placement.groupIndex === groupIndex &&
+          record.index - getGroupStart(groupIndex) < paintingCount
+        ) {
+          setFrameLightFactor(record, 1);
+        }
+      });
+      const ceilingSpotlight = activeCeilingSpotlights.get(groupIndex);
+      if (ceilingSpotlight && paintingCount > 0) {
+        setCeilingSpotlightFactor(ceilingSpotlight, 1);
+      }
+    };
+
     const renderPreparationFrame = (pose: CameraPose) => {
       applyCameraPose(pose);
       cameraRoll = 0;
-      updatePaintingSpotlights(null);
-      updateCeilingSpotlights(null);
       updateNeonSign();
       updateEmbedVisibility(null);
       camera.updateMatrixWorld();
-      // The moving intro invalidates this pass on every pose change. Render
-      // it here at the real target size so allocation, shader links, and
-      // shadow-map work are paid for behind the preparation curtain.
       reflectionDirty = true;
       renderFloorReflection(performance.now());
       renderScene(true);
@@ -5982,8 +6172,13 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const releaseGallery = () => {
       if (!isMounted) return;
 
+      scene.remove(preparationMaterialHolders);
+      webglHost.style.visibility = 'visible';
+      cssHost.style.visibility = 'visible';
+      lastAnimationFrameAt = null;
       isRenderReady = true;
       setIsReady(true);
+      setIsNavThrottled(intro.phase !== 'done');
       requestRenderLoop();
     };
 
@@ -6006,53 +6201,135 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       await waitForPreparationFrame();
       if (!isMounted || !preparationStartPose) return;
 
-      applyResize(true);
-
-      // Keep the intro lights in the scene at an imperceptible intensity from
-      // the first prepared frame onward. Their visibility, shader variants,
-      // and shadow maps therefore never change during the visible animation.
-      introLightsWarmed = true;
-      updatePaintingSpotlights(null);
-      updateCeilingSpotlights(null);
-      camera.updateMatrixWorld();
-
-      try {
-        // Compile the scene programs with the same active light set that the
-        // intro will use. The real production renders below are still
-        // required to initialize render targets, shadows, and post passes.
-        renderer.compile(scene, camera);
-        renderer.shadowMap.needsUpdate = true;
-
-        // First frame: exact intro start state. Second frame: a nearby moving
-        // pose to exercise the reflection/camera path. Final frame: restore
-        // the exact start pose before establishing the animation clock.
-        renderPreparationFrame(preparationStartPose);
+      // A loaded image is not necessarily decoded or uploaded. Initialize
+      // every gallery texture, including ones hidden at the entrance pose.
+      for (const texture of loadedTextures) {
+        if (!texture.image) continue;
+        if (texture.image instanceof HTMLImageElement) {
+          await texture.image.decode();
+          if (!isMounted) return;
+        }
+        renderer.initTexture(texture);
         await waitForPreparationFrame();
         if (!isMounted) return;
+      }
 
-        if (intro.phase !== 'done') {
-          const movingPose = intro.hasSignMoment
-            ? getIntroHoldPose(0.08)
-            : getIntroTravelPose(0.08);
-          renderPreparationFrame(movingPose);
-          await waitForPreparationFrame();
-          if (!isMounted) return;
-          renderPreparationFrame(preparationStartPose);
+      const firstGroupPaintingCount = getGroupEnd(0) - getGroupStart(0) + 1;
+      const lastGroupPaintingCount =
+        getGroupEnd(maxGroupIndex) - getGroupStart(maxGroupIndex) + 1;
+      // The intro keeps group 0's lights visible. Navigation uses zero lights
+      // while traveling, then either a full group or the smaller final group.
+      const paintingCounts = new Set([
+        firstGroupPaintingCount,
+        lastGroupPaintingCount,
+        0,
+      ]);
+
+      while (isMounted) {
+        applyResize();
+        const preparedWidth = lastRenderWidth;
+        const preparedHeight = lastRenderHeight;
+        const preparedPixelRatio = lastRenderPixelRatio;
+        if (maxGroupIndex > 0) {
+          updateActiveCeilingSpotlights([0, 1]);
         }
 
-        // WebGL queues commands asynchronously. Drain the queue before the
-        // intro clock starts so deferred driver work cannot leak into frame 0.
-        renderer.getContext().finish();
-        renderer.shadowMap.needsUpdate = false;
-      } catch {
-        // A failed optional warmup must not strand the gallery behind its
-        // curtain. The normal render path remains the fallback.
+        const culledMeshes: THREE.Mesh[] = [];
+        scene.traverse((object) => {
+          if (object instanceof THREE.Mesh && object.frustumCulled) {
+            culledMeshes.push(object);
+            object.frustumCulled = false;
+          }
+        });
+        try {
+          for (const paintingCount of paintingCounts) {
+            setPreparationLighting(paintingCount > 0 ? 0 : null, paintingCount);
+            applyCameraPose(getCameraPose(0));
+            camera.updateMatrixWorld();
+            await compileProductionShaders();
+            if (!isMounted) return;
+
+            // Real draws initialize geometry, VSM blur, both bloom pyramids,
+            // MSAA resolves, and the final screen shader. Disabling culling
+            // here includes every material/mesh variant even behind the camera.
+            invalidateShadows();
+            renderPreparationFrame(getCameraPose(0));
+            await waitForPreparationFrame();
+            if (!isMounted) return;
+          }
+        } finally {
+          culledMeshes.forEach((mesh) => {
+            mesh.frustumCulled = true;
+          });
+        }
+
+        setPreparationLighting(null);
         introLightsWarmed = true;
         updatePaintingSpotlights(null);
         updateCeilingSpotlights(null);
-      }
+        // Exercise the actual turn, hallway view, and arrival with ordinary
+        // culling restored, without advancing the intro or requesting embeds.
+        if (intro.phase !== 'done') {
+          for (const progress of [0.21, 0.42, 0.78, 1]) {
+            renderPreparationFrame(getIntroTravelPose(progress));
+            await waitForPreparationFrame();
+            if (!isMounted) return;
+          }
+        }
 
-      releaseGallery();
+        if (maxGroupIndex > 0) {
+          const preparationTransition: CameraTransition = {
+            fromGroupIndex: 0,
+            toGroupIndex: 1,
+            startedAt: 0,
+            duration: layout.transitionDuration,
+            settled: false,
+            direction: 1,
+            mode: 'step',
+            turnDuration: 0,
+            turnTravelDistance: 0,
+          };
+          setPreparationLighting(null);
+          renderPreparationFrame(
+            getTransitionPose(
+              preparationTransition,
+              PAINTING_LIGHT_OFF_MS + layout.transitionDuration * 0.5
+            ).pose
+          );
+          await waitForPreparationFrame();
+          if (!isMounted) return;
+
+          setPreparationLighting(1, getGroupEnd(1) - getGroupStart(1) + 1);
+          renderPreparationFrame(getCameraPose(1));
+          await waitForPreparationFrame();
+          if (!isMounted) return;
+        }
+
+        setPreparationLighting(null);
+        updateActiveCeilingSpotlights([0]);
+        updatePaintingSpotlights(null);
+        updateCeilingSpotlights(null);
+        renderPreparationFrame(preparationStartPose);
+        // A non-blocking fence waits for completed GPU work, not merely queued
+        // commands. The animation clock is established only after this drain.
+        await waitForPreparedGpu();
+        if (!isMounted) return;
+        await waitForPreparationFrame();
+        if (!isMounted) return;
+
+        applyResize();
+        if (
+          preparedWidth !== lastRenderWidth ||
+          preparedHeight !== lastRenderHeight ||
+          preparedPixelRatio !== lastRenderPixelRatio
+        ) {
+          // A resize replaces composer/reflection targets. Prepare the new
+          // allocations before allowing the gallery to become visible.
+          continue;
+        }
+        releaseGallery();
+        return;
+      }
     };
 
     const handleVisibilityChange = () => {
@@ -6071,7 +6348,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
     targetGroupIndex = 0;
     setNavGroupIndex(0);
-    setIsNavThrottled(intro.phase !== 'done');
+    setIsNavThrottled(true);
     const initialPose =
       intro.phase !== 'done'
         ? intro.hasSignMoment
@@ -6111,16 +6388,15 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     nextButton?.addEventListener('click', goNext);
     lastButton?.addEventListener('click', goLast);
 
-    void prepareGalleryRender().catch(() => {
+    void prepareGalleryRender().catch((error: unknown) => {
       if (!isMounted) return;
 
-      // Keep unexpected preparation failures recoverable just like a failed
-      // renderer warmup: the curtain should not permanently hide the normal
-      // fallback render path.
-      introLightsWarmed = true;
-      updatePaintingSpotlights(null);
-      updateCeilingSpotlights(null);
-      releaseGallery();
+      // Never label an unprepared 3D scene ready. Use the existing accessible
+      // gallery if GPU preparation cannot complete.
+      console.warn('Art in Life gallery preparation failed.', error);
+      setUseFallback(true);
+      setIsReady(true);
+      setIsNavThrottled(false);
     });
 
     return () => {
@@ -6129,6 +6405,12 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       window.cancelAnimationFrame(animationFrame);
       window.cancelAnimationFrame(preparationFrame);
       preparationFrame = 0;
+      resolvePreparationFrame?.();
+      resolvePreparationFrame = null;
+      if (preparationSync) {
+        renderer.getContext().deleteSync(preparationSync);
+        preparationSync = null;
+      }
       if (resizeRaf) {
         window.cancelAnimationFrame(resizeRaf);
       }
@@ -6149,37 +6431,57 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
       lastButton?.removeEventListener('click', goLast);
 
       queuedEmbedLoads.length = 0;
-      activeFrames.forEach(destroyFrameRecord);
-      activeFrames.clear();
-      [...embedCache.keys()].forEach(evictCachedEmbed);
-      activeCeilingSpotlights.forEach(removeGroupCeilingSpotlight);
-      activeCeilingSpotlights.clear();
-      neonAnchors.forEach((anchor) => scene.remove(anchor));
-      neonAnchors.length = 0;
-
-      chandelierGeometries.forEach((geometry) => geometry.dispose());
-      neonGeometries.forEach((geometry) => geometry.dispose());
-      sharedFrameRailGeometrySet.forEach((geometry) => geometry.dispose());
-      unitBox.dispose();
-      unitPlane.dispose();
-      environmentGeometries.forEach((geometry) => geometry.dispose());
-      loadedTextures.forEach((texture) => texture.dispose());
-      materials.forEach(disposeMaterial);
-      neonMaterials.forEach(disposeMaterial);
-      bloomPass?.dispose();
-      chandelierBloomPass?.dispose();
-      finalBloomPass?.dispose();
-      finalBloomMaterial?.dispose();
-      darkBloomMaterial.dispose();
-      chandelierBloomComposer?.dispose();
-      bloomComposer?.dispose();
-      composer?.dispose();
-      reflectionRenderTarget.dispose();
-      environmentRenderTarget.dispose();
-      renderer.dispose();
       webglHost.remove();
       cssHost.remove();
       embedCacheHost.remove();
+
+      const disposeSceneResources = () => {
+        activeFrames.forEach(destroyFrameRecord);
+        activeFrames.clear();
+        [...embedCache.keys()].forEach(evictCachedEmbed);
+        activeCeilingSpotlights.forEach(removeGroupCeilingSpotlight);
+        activeCeilingSpotlights.clear();
+        availableSpotlightShadows.forEach(({ map, mapPass }) => {
+          map.dispose();
+          mapPass?.dispose();
+        });
+        availableSpotlightShadows.length = 0;
+        neonAnchors.forEach((anchor) => scene.remove(anchor));
+        neonAnchors.length = 0;
+        scene.remove(preparationMaterialHolders);
+
+        chandelierGeometries.forEach((geometry) => geometry.dispose());
+        neonGeometries.forEach((geometry) => geometry.dispose());
+        sharedFrameRailGeometrySet.forEach((geometry) => geometry.dispose());
+        unitBox.dispose();
+        unitPlane.dispose();
+        environmentGeometries.forEach((geometry) => geometry.dispose());
+        loadedTextures.forEach((texture) => texture.dispose());
+        materials.forEach(disposeMaterial);
+        neonMaterials.forEach(disposeMaterial);
+        bloomPass?.dispose();
+        chandelierBloomPass?.dispose();
+        finalBloomPass?.dispose();
+        finalBloomMaterial?.dispose();
+        darkBloomMaterial.dispose();
+        chandelierBloomComposer?.dispose();
+        bloomComposer?.dispose();
+        composer?.dispose();
+        reflectionRenderTarget.dispose();
+        environmentRenderTarget.dispose();
+        renderer.dispose();
+      };
+
+      if (pendingShaderCompilation) {
+        // Three's async compiler polls material programs until linking ends.
+        // Detach immediately, but preserve those programs until it stops polling.
+        void pendingShaderCompilation.then(
+          disposeSceneResources,
+          disposeSceneResources
+        );
+      } else {
+        disposeSceneResources();
+      }
     };
   }, [
     groupCount,
@@ -6189,6 +6491,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     reducedMotion,
     sceneClassNames,
     urls,
+    useFallback,
   ]);
 
   if (useFallback) {
