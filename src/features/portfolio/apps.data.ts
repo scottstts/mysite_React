@@ -10,6 +10,10 @@ export const apps: App[] = [
     It started as a test to see Opus 5.5's capabilities, and it quickly escalated into full game development, modeling, VFX, SFX, rigging, animation, direct, art design, and storytelling, all with the help of Opus 5.5. I always say making a game can be more addictive than playing a game, it is undoubtedly true.`,
     videos: [
       {
+        videoId: 'kmueNuoSMaI',
+        title: 'Impala - Transformer',
+      },
+      {
         videoId: 'cGycngNkiZw',
         title: 'Welcome to Citadel - Transformer',
       },
