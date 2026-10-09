@@ -147,14 +147,6 @@
   }
 }
 
-.tns-fadeIn {
-  animation: fadeIn 0.6s both;
-}
-
-.tns-fadeOut {
-  animation: fadeOut 0.6s both;
-}
-
 @keyframes scanlines {
   0% {
     background-position: 0 -100vh;

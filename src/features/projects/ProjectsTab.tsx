@@ -19,8 +19,8 @@ const ProjectsTab = () => {
           Learning Journey
         </h1>
 
-        {projects.map((project, index) => (
-          <GlassCard key={project.id} className="rounded-2xl overflow-hidden">
+        {projects.map((project) => (
+          <GlassCard key={project.id}>
             <div className="p-5 md:p-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left">
                 {project.title}
@@ -40,7 +40,7 @@ const ProjectsTab = () => {
                     <ImageSlider
                       images={project.images}
                       videos={project.videos}
-                      projectId={index + 1}
+                      label={project.title}
                       autoplay={true}
                       autoplayDelay={5000}
                     />
@@ -52,7 +52,7 @@ const ProjectsTab = () => {
         ))}
 
         {/* Final quote card */}
-        <GlassCard className="rounded-2xl overflow-hidden p-8">
+        <GlassCard className="p-8">
           <p
             className="text-xl md:text-2xl text-yellow-100 mb-8 text-left"
             dangerouslySetInnerHTML={safeHtml(

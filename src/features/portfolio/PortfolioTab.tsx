@@ -45,8 +45,8 @@ const PortfolioTab = () => {
           Portfolio
         </h1>
 
-        {apps.map((app, index) => (
-          <GlassCard key={app.id} className="rounded-2xl overflow-hidden">
+        {apps.map((app) => (
+          <GlassCard key={app.id}>
             <div className="p-5 md:p-8">
               {/* Title */}
               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left leading-tight">
@@ -74,7 +74,7 @@ const PortfolioTab = () => {
                     <ImageSlider
                       images={app.images}
                       videos={app.videos || []}
-                      appId={index + 1}
+                      label={app.title}
                       autoplay={true}
                       autoplayDelay={4000}
                     />
@@ -103,7 +103,7 @@ const PortfolioTab = () => {
         ))}
 
         {/* Future Project Teaser */}
-        <GlassCard className="rounded-2xl overflow-hidden p-8 text-center">
+        <GlassCard className="p-8 text-center">
           <p
             className="text-xl md:text-2xl text-yellow-100"
             dangerouslySetInnerHTML={safeHtml(

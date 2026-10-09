@@ -1,0 +1,246 @@
+/* Media at its native shape, with a slim instrument strip beneath it. */
+
+.deck {
+  --deck-ink: rgba(226, 232, 240, 0.72);
+  --deck-ink-dim: rgba(226, 232, 240, 0.38);
+  --deck-line: rgba(255, 255, 255, 0.12);
+  --deck-signal: #fef08a;
+  position: relative;
+}
+
+.screen {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.track {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  transition: height 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: center;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.slide .image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  user-select: none;
+}
+
+.video {
+  width: 100%;
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: #000;
+  cursor: pointer;
+}
+
+.poster .posterImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+  opacity: 0.82;
+  transition: opacity 0.3s ease;
+}
+
+.posterPlay {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(4, 6, 11, 0.6);
+  color: var(--deck-signal);
+  transition:
+    border-color 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.posterPlay svg {
+  width: 26px;
+  height: 26px;
+}
+
+.poster:hover .posterImage,
+.poster:focus-visible .posterImage {
+  opacity: 1;
+}
+
+.poster:hover .posterPlay,
+.poster:focus-visible .posterPlay {
+  border-color: var(--deck-signal);
+  transform: scale(1.06);
+}
+
+.poster:focus-visible {
+  outline: 2px solid var(--deck-signal);
+  outline-offset: -2px;
+}
+
+/* Instrument strip */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.875rem;
+  padding: 0 2px;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+}
+
+.key {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--deck-line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--deck-ink);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.key svg {
+  width: 14px;
+  height: 14px;
+}
+
+.key:hover {
+  color: var(--deck-signal);
+  border-color: rgba(254, 240, 138, 0.45);
+  background: rgba(254, 240, 138, 0.05);
+}
+
+.key:active {
+  background: rgba(254, 240, 138, 0.1);
+}
+
+.key:focus-visible,
+.segment:focus-visible {
+  outline: 2px solid var(--deck-signal);
+  outline-offset: 2px;
+}
+
+.counter {
+  flex: none;
+  min-width: 4.5ch;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--deck-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.counterTotal {
+  color: var(--deck-ink-dim);
+}
+
+.segments {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.segment {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.segmentTrack {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  transition:
+    background-color 0.2s ease,
+    height 0.2s ease;
+}
+
+.segment[data-state='past'] .segmentTrack {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.segment[data-state='current'] .segmentTrack {
+  background: rgba(254, 240, 138, 0.22);
+}
+
+.segment:hover .segmentTrack {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.segment[data-state='current']:hover .segmentTrack {
+  background: rgba(254, 240, 138, 0.32);
+}
+
+.segmentFill {
+  position: absolute;
+  inset: 0;
+  background: var(--deck-signal);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation-name: segmentFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes segmentFill {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .bar {
+    gap: 0.5rem;
+  }
+
+  .segments {
+    gap: 4px;
+  }
+}
