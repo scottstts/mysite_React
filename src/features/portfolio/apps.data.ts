@@ -78,6 +78,20 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'break-that-denim',
+    title: 'Break That Denim',
+    tagline: 'Real time sim with random jump scare.',
+    description: `I created a real time realistic denim fabric simulation that runs in the browser, and I thought, hey, why not try some horror genre? And here we are.`,
+    videos: [
+      {
+        videoId: 'e6Jyt4RWa5Y',
+        title: 'Break That Denim - The Horror Beneath',
+      },
+    ],
+    link: 'https://denim.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'sandboard',
     title: 'Sandboard',
     tagline: 'Draw your line in the sand.',

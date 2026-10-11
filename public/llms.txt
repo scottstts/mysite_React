@@ -100,6 +100,18 @@ Descend past the waterline and step onto the sunlit reef where a visionary found
 
 - Link: https://pearl.scottsun.io
 
+### Break That Denim
+
+**Tagline:** Real time sim with random jump scare.
+
+**Videos:**
+
+- [Break That Denim - The Horror Beneath](https://youtu.be/e6Jyt4RWa5Y)
+
+I created a real time realistic denim fabric simulation that runs in the browser, and I thought, hey, why not try some horror genre? And here we are.
+
+- Link: https://denim.scottsun.io
+
 ### Sandboard
 
 **Tagline:** Draw your line in the sand.
