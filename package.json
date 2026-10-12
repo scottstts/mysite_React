@@ -10,7 +10,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "llms": "node scripts/generate-llms.ts"
   },
   "dependencies": {
     "@axe-core/react": "^4.10.2",

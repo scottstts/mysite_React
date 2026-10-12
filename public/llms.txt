@@ -27,18 +27,18 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 #### Highlight
 
-**Director's Cut - My Three.js Games**
+**My Three.js Games**
 
-I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies over the past year, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.
+I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.
 
-Video: [Director's Cut - My Three.js Games](https://youtu.be/o_USermt690)
+Video: [My Three.js Games](https://youtu.be/o_USermt690)
 
 #### Find me on
 
 - X: [@scottstts](https://x.com/scottstts/)
 - LinkedIn: [Scott Sun](https://www.linkedin.com/in/st-scottsun-inireland/)
 - GitHub: [scottstts](https://github.com/scottstts/)
-- Instagram: [@scottstts] (https://www.instagram.com/scottstts/)
+- Instagram: [@scottstts](https://www.instagram.com/scottstts/)
 
 ---
 
@@ -50,10 +50,10 @@ Video: [Director's Cut - My Three.js Games](https://youtu.be/o_USermt690)
 
 **Videos:**
 
-- [Transformer | Threejs Game](https://youtu.be/fX2OLoBESqE)
-- [The Bat - Transformer](https://youtu.be/hp4hpxQWYDo)
-- [Welcome to Citadel - Transformer](https://youtu.be/cGycngNkiZw)
 - [Impala - Transformer](https://youtu.be/kmueNuoSMaI)
+- [Welcome to Citadel - Transformer](https://youtu.be/cGycngNkiZw)
+- [Transformer](https://youtu.be/fX2OLoBESqE)
+- [The Bat - Transformer](https://youtu.be/hp4hpxQWYDo)
 
 My first time attempting to make a game that is actually satisfying to play, usually I am more about chill experiences.
 
@@ -85,14 +85,14 @@ Step off the tram into the first park on another world. Under a 260-metre glass 
 
 - Link: https://mars.scottsun.io
 
-### The Pearl - Underwater Sea Park
+### Pearl
 
 **Tagline:** One golden afternoon under the sea just for you.
 
 **Videos:**
 
-- [The Pearl - Underwater Sea Park](https://www.youtube.com/watch?v=WGHcX-HHC8M)
-- [The Pearl - Wild Life](https://www.youtube.com/watch?v=4Jf9Q0sxUqg)
+- [The Pearl - Underwater Sea Park](https://youtu.be/WGHcX-HHC8M)
+- [The Pearl - Wild Life](https://youtu.be/4Jf9Q0sxUqg)
 
 For one golden day, you are the only guest in the most beautiful place humans ever built — and they built it at the bottom of the sea.
 
@@ -140,6 +140,8 @@ There is no score, no objective, and no correct thing to make. The whole point i
 
 I have no reason to create this other than the fond nostalgia. And that's reason enough.
 
+Made with Blender MCP, and directly ported from Python to Three.js procedurally.
+
 - Link: https://friends3.scottsun.io
 
 ### Manifest3D
@@ -158,10 +160,10 @@ I have no reason to create this other than the fond nostalgia. And that's reason
 ![Manifest3D — manifest8](https://scottsun.io/content_imgs/manifest8.jpeg)
 
 Manifest3D is a mini procedural 3D asset factory that runs in your browser, inspired by project [Articraft](https://articraft3d.github.io/).
-    
+
 Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.
-    
-In the Manifest3D app, provide a text prompt with optional reference image attachement, and watch the agent build out the 3D asset with mechanical components.
+
+In the Manifest3D app, provide a text prompt with optional reference image attachment, and watch the agent build out the 3D asset with mechanical components.
 
 - Link: https://manifest3d.scottsun.io
 
@@ -188,7 +190,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 **Videos:**
 
 - [MyCraft | Remaster](https://youtu.be/Ab3kLACHfgU)
-- [MyCraft | Before Remaster](https://www.youtube.com/watch?v=Jxn7g5fzAto)
+- [MyCraft | Before Remaster](https://youtu.be/Jxn7g5fzAto)
 
 MyCraft is a MineCraft-like mini game that runs in your browser. It is a beautiful and immersive dream-like experience.
 
@@ -196,13 +198,13 @@ Enjoy the sunny beams, cozy view, and smooth music. And you might even build som
 
 - Link: https://mycraft.scottsun.io
 
-### Three.js Awesome Graphics Agent Skills
+### Three.js Skills
 
 **Tagline:** Your agent just got schooled on awesome 3D web graphics.
 
 **Images:**
 
-![Threejs-Skills — threejs-skills](https://scottsun.io/content_imgs/threejs-skills.jpeg)
+![Three.js Skills — threejs skills](https://scottsun.io/content_imgs/threejs-skills.jpeg)
 
 This is not an app, but I am very proud of it. It is an Agent Skills pack for creating awesome 3D graphics in games and scenes.
 
@@ -214,13 +216,15 @@ I will continue updating it as I see more awesome three.js projects. Install it 
 
 `npx threejs-awesome-graphics-agent-skills@latest install --agent codex`
 
+- Link: https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills
+
 ### Interstellar.three.js
 
 **Tagline:** My favorite film, my rendition.
 
 **Videos:**
 
-- [I recreated Interstellar in three.js | 13 iconic scenes](https://www.youtube.com/watch?v=t4VE2N5psgA)
+- [I recreated Interstellar in three.js | 13 iconic scenes](https://youtu.be/t4VE2N5psgA)
 
 Interstellar is my favorite film, I've watched it countless times, and each time it haunts me. The scale of human vs. the universe, the yearning for love, hope, and survival, a cosmic classic.
 
@@ -234,7 +238,7 @@ So I recreated the entire film using three.js scene builds and animations. I did
 
 **Videos:**
 
-- [Stellar - A Starship Simulator](https://www.youtube.com/watch?v=mVfLXr9BLsI)
+- [Stellar - A Starship Simulator](https://youtu.be/mVfLXr9BLsI)
 
 I built this Starship Simulator game in Three.js. Enjoy a journey with the Starship into the space.
 
@@ -271,7 +275,7 @@ Run locally as a CLI on local or public remote TS repos, or use the web version 
 
 **Videos:**
 
-- [IngreLab](https://www.youtube.com/watch?v=lyOfGwCf9XA)
+- [IngreLab](https://youtu.be/lyOfGwCf9XA)
 
 These days we rarely know what is in our food. High sugar, high inflammatory, ultra-processed food has taken up a huge portion of our daily food intake.
 
@@ -296,7 +300,7 @@ We all should know what we eat. IngreLab powers your "Food Intelligence".
 
 **Videos:**
 
-- [Use LearnTube | Video to insights to seconds](https://www.youtube.com/watch?v=vj1on8ByEmg)
+- [Use LearnTube | Video to insights to seconds](https://youtu.be/vj1on8ByEmg)
 
 Too many long-form podcasts and interviews and no time to watch? Just copy the video link, and LearnTube lays insights bare in seconds.
 
@@ -407,7 +411,7 @@ Programming is only a subdomain of computer science, and a programming language 
 ![Deep Learning Caught My Attention — poi](https://scottsun.io/content_imgs/poi.jpeg)
 ![Deep Learning Caught My Attention — early chatgpt](https://scottsun.io/content_imgs/early_chatgpt.jpeg)
 
-You remember that famous TV show Person of Interest? The iconic starting line was "You are being watched. … A machine that spies on you every hour of every day. … I know, because I built it". I was fascinated about that show, and it drove me down a rabbit hole of research into artificial intelligence and the state of the art (at the time of course). Interestingly the show depicted the machine as completely hard-coded by Harold while real AI systems are neural net based models. I didn't know this distinction until later.
+You remember that famous TV show Person of Interest? The iconic starting line was *"You are being watched. … A machine that spies on you every hour of every day. … I know, because I built it"*. I was fascinated about that show, and it drove me down a rabbit hole of research into artificial intelligence and the state of the art (at the time of course). Interestingly the show depicted the machine as completely hard-coded by Harold while real AI systems are neural net based models. I didn't know this distinction until later.
 
 It was around the same time that a thing called "GPT" came out of nowhere (GPT-3 and GPT-3.5 small scale beta testing had already made its name) and started to create some real buzz.
 
@@ -441,13 +445,13 @@ Later I reviewed everything I learned from the mini-GPT dev and I pre-trained a 
 
 **Videos:**
 
-- [Blender Renders](https://www.youtube.com/watch?v=3NA4uyCcUD4)
+- [Blender Renders](https://youtu.be/3NA4uyCcUD4)
 
 Today I don't even remember how it started, but somehow I decided to learn Blender. I tend to think it is because 3D modeling and rendering is another epitome for the phrase "you can just build things". And the exhilaration you get from creating something beautiful out of thin air is beyond words.
 
 Building 3D models can be extremely time-consuming, EXTREMELY! But I enjoyed every minute of it. Seeing what you are building becoming just a bit more perfect is satisfying to say the least. During my learning in a few months, I made some beautiful rendered scenes and animations into final videos, and I would lay down sound tracks for them to make them even more cinematic. Considering I did all these on my old gaming laptop with an outdated GPU (even at the time), I am really happy I was able to make these! I selected some of them which I really like and threaded them into a video cut.
 
-I also started to learn some game dev with Unity. I made a few simple but interesting games (I put two of them—SkyPool & Turbo Drift—on Google Drive with a public link. They are built so you can download it and play directly, although only built for MacOS: [Link Here](https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing)).
+I also started to learn some game dev with Unity. I made a few simple but interesting games (I put two of them—SkyPool and Turbo Drift—on Google Drive with a public link. They are built so you can download it and play directly, although only built for MacOS: [Link Here](https://drive.google.com/drive/folders/1Ynak7R-LkBaeHCJiFmLUkm4S4ULqIBBj?usp=sharing)).
 
 ### AutoDrive—3D Modeling and Unity, Meet ML (Jun. 2023)
 
@@ -457,7 +461,7 @@ I also started to learn some game dev with Unity. I made a few simple but intere
 
 **Videos:**
 
-- [AutoDrive](https://www.youtube.com/watch?v=Ur7uA-IiZck)
+- [AutoDrive](https://youtu.be/Ur7uA-IiZck)
 
 As I was having fun making game projects, I came across a library developed by the Unity team called ML-Agents. This framework allows you to develop and train robotic agents with RL in a virtual world inside the Unity game engine, sorta like a simpler version of Nvidia's Isaac Sim. This became a perfect crossover project between Blender, Unity, and ML for me.
 
@@ -517,9 +521,9 @@ But it's more than that. For those who are constantly curious, and those who alw
 
 **Videos:**
 
-- [I Trained A Small Diffusion Language Model](https://www.youtube.com/watch?v=XNq3v_CsfOE)
-- [LMCS | LLMs Playing PVP Game](https://www.youtube.com/watch?v=wXipHa1hvM8)
-- [I Turned Surrounding Environment into 3D Gaussian Splats](https://www.youtube.com/watch?v=Kqwx3ub4Lh0)
+- [I Trained A Small Diffusion Language Model](https://youtu.be/XNq3v_CsfOE)
+- [LMCS | LLMs Playing PVP Game](https://youtu.be/wXipHa1hvM8)
+- [I Turned Surrounding Environment into 3D Gaussian Splats](https://youtu.be/Kqwx3ub4Lh0)
 
 I still remember fondly how I got started on this path, drilling down on Karpathy tutorials, grinding on code, reading obscure math, and that was when there was no community, no access to today's level of AI or GPUs.
 
@@ -537,7 +541,7 @@ Of course not all projects pan out, at least not as fully expected. I had the id
 
 I would pick flawed authenticity over faked perfection any day.
 
-To borrow the ending of the *Elon Musk* biography by Walter Isaacson, "They can be reckless, cringeworthy, sometimes even toxic. They can also be crazy. Crazy enough to think they can change the world."
+To borrow the ending of the *Elon Musk* biography by Walter Isaacson, "*They can be reckless, cringeworthy, sometimes even toxic. They can also be crazy. Crazy enough to think they can change the world.*"
 
 Elon is pure, an extremely rare trait these days, especially in public figures. He always says what he means and means what he says. This is why he is always surrounded by controversies. But even among these controversies, you should never ignore the fact that he has advanced frontier exploration of modern time more than any single individual in history. In fact, this is my litmus test for people–you can disagree with his opinions all you want, sometimes I disagree with them as well. But if you would go as far as writing off all his achievements simply because you don't like what he says, I know we are not the same people.
 
