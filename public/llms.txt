@@ -144,6 +144,21 @@ Made with Blender MCP, and directly ported from Python to Three.js procedurally.
 
 - Link: https://friends3.scottsun.io
 
+### MyCraft
+
+**Tagline:** It's cozy in the browser.
+
+**Videos:**
+
+- [MyCraft | Remaster](https://youtu.be/Ab3kLACHfgU)
+- [MyCraft | Before Remaster](https://youtu.be/Jxn7g5fzAto)
+
+MyCraft is a MineCraft-like mini game that runs in your browser. It is a beautiful and immersive dream-like experience.
+
+Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.
+
+- Link: https://mycraft.scottsun.io
+
 ### Manifest3D
 
 **Tagline:** A mini procedural 3D asset factory.
@@ -153,11 +168,6 @@ Made with Blender MCP, and directly ported from Python to Three.js procedurally.
 ![Manifest3D — manifest1](https://scottsun.io/content_imgs/manifest1.jpeg)
 ![Manifest3D — manifest2](https://scottsun.io/content_imgs/manifest2.jpeg)
 ![Manifest3D — manifest3](https://scottsun.io/content_imgs/manifest3.jpeg)
-![Manifest3D — manifest4](https://scottsun.io/content_imgs/manifest4.jpeg)
-![Manifest3D — manifest5](https://scottsun.io/content_imgs/manifest5.jpeg)
-![Manifest3D — manifest6](https://scottsun.io/content_imgs/manifest6.jpeg)
-![Manifest3D — manifest7](https://scottsun.io/content_imgs/manifest7.jpeg)
-![Manifest3D — manifest8](https://scottsun.io/content_imgs/manifest8.jpeg)
 
 Manifest3D is a mini procedural 3D asset factory that runs in your browser, inspired by project [Articraft](https://articraft3d.github.io/).
 
@@ -182,21 +192,6 @@ Now we finally have the technology to build this out, or ... close enough.
 There are great personal AI assistants out there I have no doubt, but for me it is more fun to build out my own version of Jarvis, shaping it to be the way I want.
 
 - Link: https://github.com/scottstts/JARVIS.py
-
-### MyCraft
-
-**Tagline:** It's cozy in the browser.
-
-**Videos:**
-
-- [MyCraft | Remaster](https://youtu.be/Ab3kLACHfgU)
-- [MyCraft | Before Remaster](https://youtu.be/Jxn7g5fzAto)
-
-MyCraft is a MineCraft-like mini game that runs in your browser. It is a beautiful and immersive dream-like experience.
-
-Enjoy the sunny beams, cozy view, and smooth music. And you might even build something here and share it with your friends.
-
-- Link: https://mycraft.scottsun.io
 
 ### Three.js Skills
 
@@ -267,9 +262,6 @@ Run locally as a CLI on local or public remote TS repos, or use the web version 
 
 **Images:**
 
-![IngreLab — ingrelab login](https://scottsun.io/content_imgs/ingrelab_login.jpeg)
-![IngreLab — ingrelab home](https://scottsun.io/content_imgs/ingrelab_home.jpeg)
-![IngreLab — ingrelab categories](https://scottsun.io/content_imgs/ingrelab_categories.jpeg)
 ![IngreLab — ingrelab product](https://scottsun.io/content_imgs/ingrelab_product.jpeg)
 ![IngreLab — ingrelab ingredients](https://scottsun.io/content_imgs/ingrelab_ingredients.jpeg)
 
@@ -294,9 +286,6 @@ We all should know what we eat. IngreLab powers your "Food Intelligence".
 ![LearnTube — learntube1](https://scottsun.io/content_imgs/learntube1.jpeg)
 ![LearnTube — learntube2](https://scottsun.io/content_imgs/learntube2.jpeg)
 ![LearnTube — learntube3](https://scottsun.io/content_imgs/learntube3.jpeg)
-![LearnTube — learntube4](https://scottsun.io/content_imgs/learntube4.jpeg)
-![LearnTube — learntube5](https://scottsun.io/content_imgs/learntube5.jpeg)
-![LearnTube — learntube6](https://scottsun.io/content_imgs/learntube6.jpeg)
 
 **Videos:**
 
@@ -322,8 +311,6 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
 
 ![Tune It All — tuneitall1](https://scottsun.io/content_imgs/tuneitall1.jpeg)
 ![Tune It All — tuneitall2](https://scottsun.io/content_imgs/tuneitall2.jpeg)
-![Tune It All — tuneitall3](https://scottsun.io/content_imgs/tuneitall3.jpeg)
-![Tune It All — tuneitall4](https://scottsun.io/content_imgs/tuneitall4.jpeg)
 
 Tune It All is an IOS tuner app but with something extra.
 
@@ -379,7 +366,6 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
 
 ![Job Guru — jobguru1](https://scottsun.io/content_imgs/jobguru1.jpeg)
 ![Job Guru — jobguru2](https://scottsun.io/content_imgs/jobguru2.jpeg)
-![Job Guru — jobguru3](https://scottsun.io/content_imgs/jobguru3.jpeg)
 
 Job Guru is your go-to tool for creating outstanding CVs, resumes, and cover letters that make an impact. Simply input details like company information, job descriptions, specific requests, and your personal profile, and the app will customize each document to suit your needs and the role you're aiming for.
 
@@ -471,7 +457,6 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
 
 **Images:**
 
-![Different Country, MSc Business, & Certificate Phase — cs50](https://scottsun.io/content_imgs/cs50.jpeg)
 ![Different Country, MSc Business, & Certificate Phase — cs50 cert](https://scottsun.io/content_imgs/cs50_cert.jpeg)
 
 Going to a different country for a Masters study is a big change. I was excited to learn about business, and most importantly, to learn life in a different speed and spectrum.
@@ -514,10 +499,7 @@ But it's more than that. For those who are constantly curious, and those who alw
 
 **Images:**
 
-![Good Old Learning and Fun — mdlm1](https://scottsun.io/content_imgs/mdlm1.jpeg)
-![Good Old Learning and Fun — mdlm2](https://scottsun.io/content_imgs/mdlm2.jpeg)
-![Good Old Learning and Fun — mdlm3](https://scottsun.io/content_imgs/mdlm3.jpeg)
-![Good Old Learning and Fun — lmcs](https://scottsun.io/content_imgs/lmcs.jpeg)
+![Good Old Learning and Fun — mdlm](https://scottsun.io/content_imgs/mdlm.jpeg)
 
 **Videos:**
 
