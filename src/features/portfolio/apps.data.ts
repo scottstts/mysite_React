@@ -134,41 +134,6 @@ export const apps: App[] = [
     showLink: true,
   },
   {
-    id: 'manifest3d',
-    title: 'Manifest3D',
-    tagline: 'A mini procedural 3D asset factory.',
-    description: `Manifest3D is a mini procedural 3D asset factory that runs in your browser, inspired by project <a href='https://articraft3d.github.io/' target="_blank" class="text-blue-200 underline">Articraft</a>.<br><br>
-    
-    Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.<br><br>
-    
-    In the Manifest3D app, provide a text prompt with optional reference image attachment, and watch the agent build out the 3D asset with mechanical components.`,
-    images: [
-      'manifest1.jpeg',
-      'manifest2.jpeg',
-      'manifest3.jpeg',
-      'manifest4.jpeg',
-      'manifest5.jpeg',
-      'manifest6.jpeg',
-      'manifest7.jpeg',
-      'manifest8.jpeg',
-    ],
-    link: 'https://manifest3d.scottsun.io',
-    showLink: true,
-  },
-  {
-    id: 'jarvis',
-    title: 'Jarvis',
-    tagline: 'Your AI assistant should be classy.',
-    description: `Jarvis is arguably my favorite AI assistant from any sci-fi stories. He's capable, low key, intelligent, and witty. He is my idea of how a personal AI assistant should be like. Watching Iron Man has been a great inspiration.<br><br>
-
-Now we finally have the technology to build this out, or ... close enough.<br><br>
-
-There are great personal AI assistants out there I have no doubt, but for me it is more fun to build out my own version of Jarvis, shaping it to be the way I want.`,
-    images: ['jarvis.jpeg'],
-    link: 'https://github.com/scottstts/JARVIS.py',
-    showLink: true,
-  },
-  {
     id: 'mycraft',
     title: 'MyCraft',
     tagline: `It's cozy in the browser.`,
@@ -186,6 +151,32 @@ There are great personal AI assistants out there I have no doubt, but for me it 
       },
     ],
     link: 'https://mycraft.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'manifest3d',
+    title: 'Manifest3D',
+    tagline: 'A mini procedural 3D asset factory.',
+    description: `Manifest3D is a mini procedural 3D asset factory that runs in your browser, inspired by project <a href='https://articraft3d.github.io/' target="_blank" class="text-blue-200 underline">Articraft</a>.<br><br>
+    
+    Creating a procedural 3D asset using LLM without a pipeline is a high-floor, low-ceiling process. Here instead, we create a set of frameworks as the "workspace" for the AI agent, let the agent create the asset as well as its own "unit tests" inside this intentionally narrow control surface. The agent creates the asset and the semantic checklist, the engine verifies the validity, and the harness iterates through creation and repair automatically.<br><br>
+    
+    In the Manifest3D app, provide a text prompt with optional reference image attachment, and watch the agent build out the 3D asset with mechanical components.`,
+    images: ['manifest1.jpeg', 'manifest2.jpeg', 'manifest3.jpeg'],
+    link: 'https://manifest3d.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'jarvis',
+    title: 'Jarvis',
+    tagline: 'Your AI assistant should be classy.',
+    description: `Jarvis is arguably my favorite AI assistant from any sci-fi stories. He's capable, low key, intelligent, and witty. He is my idea of how a personal AI assistant should be like. Watching Iron Man has been a great inspiration.<br><br>
+
+Now we finally have the technology to build this out, or ... close enough.<br><br>
+
+There are great personal AI assistants out there I have no doubt, but for me it is more fun to build out my own version of Jarvis, shaping it to be the way I want.`,
+    images: ['jarvis.jpeg'],
+    link: 'https://github.com/scottstts/JARVIS.py',
     showLink: true,
   },
   {
@@ -257,13 +248,7 @@ There are great personal AI assistants out there I have no doubt, but for me it 
 IngreLab peels away the fancy packaging and drills down to the ingredients. You just scan the barcode, and it analyzes these health risk factors and builds a risk profile on the ingredients.<br><br>
 
 We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
-    images: [
-      'ingrelab_login.jpeg',
-      'ingrelab_home.jpeg',
-      'ingrelab_categories.jpeg',
-      'ingrelab_product.jpeg',
-      'ingrelab_ingredients.jpeg',
-    ],
+    images: ['ingrelab_product.jpeg', 'ingrelab_ingredients.jpeg'],
     videos: [
       {
         videoId: 'lyOfGwCf9XA',
@@ -286,14 +271,7 @@ We all should know what we eat. IngreLab powers your “Food Intelligence”.`,
 • Share the report with anyone with a URL or save it as a PDF<br><br>
 
 TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds.`,
-    images: [
-      'learntube1.jpeg',
-      'learntube2.jpeg',
-      'learntube3.jpeg',
-      'learntube4.jpeg',
-      'learntube5.jpeg',
-      'learntube6.jpeg',
-    ],
+    images: ['learntube1.jpeg', 'learntube2.jpeg', 'learntube3.jpeg'],
     videos: [
       {
         videoId: 'vj1on8ByEmg',
@@ -314,12 +292,7 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
     I built this app because I love guitar, but the tuner apps out there usually have inconsistent quality, and special tunings are often gated. I want an all-in-one tuner app that does everything I need, so I built it myself.<br><br>
     
     Happy practicing!`,
-    images: [
-      'tuneitall1.jpeg',
-      'tuneitall2.jpeg',
-      'tuneitall3.jpeg',
-      'tuneitall4.jpeg',
-    ],
+    images: ['tuneitall1.jpeg', 'tuneitall2.jpeg'],
     link: 'https://tuneitall.scottsun.io',
     showLink: true,
   },
@@ -365,7 +338,7 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
 What makes Job Guru truly unique is its innovative keyword match analysis. This feature meticulously compares your written document to the original job description, breaking it down sentence by sentence. It provides clear insights to ensure your application emphasizes the skills, experiences, and terms that employers care about most.<br><br>
 
 With Job Guru, you're not just writing—you're crafting a tailored, strategic application that boosts your chances of landing the job.<br><br>`,
-    images: ['jobguru1.jpeg', 'jobguru2.jpeg', 'jobguru3.jpeg'],
+    images: ['jobguru1.jpeg', 'jobguru2.jpeg'],
     showLink: false,
   },
 ];

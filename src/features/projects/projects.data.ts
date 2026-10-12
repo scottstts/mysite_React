@@ -82,7 +82,7 @@ I used Blender to develop a 3D car model, exported it to Unity, and built a conv
 In the meantime, I went into a little bit of a tech certificate phase. Did a full Harvard CS50 class, cloud certificates from Azure and AWS, as well as some advance AI engineering classes.<br><br>
                         
 But eventually, I realized that the best way to learn is after all project building. When you build, you're forced to think about things from first principles, and you're forced to go through every single technical detail instead of just going through them in your mind, which makes you super sharp in every part of the tech stack.`,
-    images: ['cs50.jpeg', 'cs50_cert.jpeg'],
+    images: ['cs50_cert.jpeg'],
     videos: [],
   },
   {
@@ -132,7 +132,7 @@ Here's another project where I put two LLMs in a pvp shooting game to compete as
 
 Of course not all projects pan out, at least not as fully expected. I had the idea of scanning my surrounding environments and turning them into an integral 3D Gaussian Splats scene that I can fully navigate and explore. I first tried the approach of training splats from scratch using depth initialization and depth supervised training. This turned out to be extremely slow and produced low quality splats. I then turn to a new approach: the Sharp-ML model to do image -> splats inference directly and find a mathematical way to merge them together. This improved the speed and quality a lot, but still not ideal. Without more learning and in-depth expertise, I decided not to go any further for now. Maybe I'll pick it up another day. <a href='https://github.com/scottstts/Dream-Brush' target="_blank" class="text-blue-200 underline">Repo Here</a>.
 `,
-    images: ['mdlm1.jpeg', 'mdlm2.jpeg', 'mdlm3.jpeg', 'lmcs.jpeg'],
+    images: ['mdlm.jpeg'],
     videos: [
       {
         videoId: 'XNq3v_CsfOE',
