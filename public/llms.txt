@@ -44,6 +44,24 @@ Video: [My Three.js Games](https://youtu.be/o_USermt690)
 
 ## Portfolio
 
+### Dyson City
+
+**Tagline:** Face the lonely star.
+
+**Videos:**
+
+- [Dyson City](https://youtu.be/gtTrVRHT4yM)
+
+In the year 2127, humanity created its first Dyson sphere around Alpha Centauri A, a 2 million kilometer diameter structure, and started the "Astro-Industrial Era." On the inner side of this lonely structure is a small city called Dyson City for research purposes. You have been elected to be the lone guardian of this city.
+
+You have your own estate in Dyson City, and you've chosen to make it a Victorian style manor. The rest of the city is a 200 acre golden scientific-industrial compound.
+
+You have your own vehicle called Aurelia to take you anywhere in this city. A fleet of research spacecraft come in every 30s for data backup and refueling.
+
+Now you're in charge.
+
+- Link: https://dyson.scottsun.io
+
 ### Transformer
 
 **Tagline:** A mechanical treat, satisfying combat.

@@ -2,6 +2,26 @@ import type { App } from '@/types/content';
 
 export const apps: App[] = [
   {
+    id: 'dyson-city',
+    title: 'Dyson City',
+    tagline: 'Face the lonely star.',
+    description: `In the year 2127, humanity created its first Dyson sphere around Alpha Centauri A, a 2 million kilometer diameter structure, and started the "Astro-Industrial Era." On the inner side of this lonely structure is a small city called Dyson City for research purposes. You have been elected to be the lone guardian of this city.<br><br>
+    
+    You have your own estate in Dyson City, and you've chosen to make it a Victorian style manor. The rest of the city is a 200 acre golden scientific-industrial compound.<br><br>
+    
+    You have your own vehicle called Aurelia to take you anywhere in this city. A fleet of research spacecraft come in every 30s for data backup and refueling.<br><br>
+
+    Now you're in charge.`,
+    videos: [
+      {
+        videoId: 'gtTrVRHT4yM',
+        title: 'Dyson City',
+      },
+    ],
+    link: 'https://dyson.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'transformer',
     title: 'Transformer',
     tagline: 'A mechanical treat, satisfying combat.',
