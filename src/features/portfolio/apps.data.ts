@@ -17,6 +17,10 @@ export const apps: App[] = [
         videoId: 'gtTrVRHT4yM',
         title: 'Dyson City',
       },
+      {
+        videoId: 'hXg9sHQ2UM0',
+        title: 'Greetings - Dyson City',
+      },
     ],
     link: 'https://dyson.scottsun.io',
     showLink: true,
