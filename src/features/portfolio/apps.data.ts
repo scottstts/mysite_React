@@ -14,6 +14,10 @@ export const apps: App[] = [
     Now you're in charge.`,
     videos: [
       {
+        videoId: 'U78CKl8d904',
+        title: 'The Terminal - Dyson City',
+      },
+      {
         videoId: 'gtTrVRHT4yM',
         title: 'Dyson City',
       },

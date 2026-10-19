@@ -50,6 +50,7 @@ Video: [My Three.js Games](https://youtu.be/o_USermt690)
 
 **Videos:**
 
+- [The Terminal - Dyson City](https://youtu.be/U78CKl8d904)
 - [Dyson City](https://youtu.be/gtTrVRHT4yM)
 - [Greetings - Dyson City](https://youtu.be/hXg9sHQ2UM0)
 
