@@ -14,12 +14,16 @@ export const apps: App[] = [
     Now you're in charge.`,
     videos: [
       {
+        videoId: 'gtTrVRHT4yM',
+        title: 'Grand Tour - Dyson City',
+      },
+      {
         videoId: 'B3BaLHv6qqM',
         title: 'The Terminal - Dyson City',
       },
       {
-        videoId: 'gtTrVRHT4yM',
-        title: 'Dyson City',
+        videoId: 'LppLCCnCXWw',
+        title: 'Open House - Dyson City',
       },
       {
         videoId: 'hXg9sHQ2UM0',
