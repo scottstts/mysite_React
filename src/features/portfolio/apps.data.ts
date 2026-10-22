@@ -22,7 +22,7 @@ export const apps: App[] = [
         title: 'The Terminal - Dyson City',
       },
       {
-        videoId: 'LppLCCnCXWw',
+        videoId: 'Y2psQc6GEb0',
         title: 'Open House - Dyson City',
       },
       {

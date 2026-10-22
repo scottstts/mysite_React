@@ -52,7 +52,7 @@ Video: [My Three.js Games](https://youtu.be/o_USermt690)
 
 - [Grand Tour - Dyson City](https://youtu.be/gtTrVRHT4yM)
 - [The Terminal - Dyson City](https://youtu.be/B3BaLHv6qqM)
-- [Open House - Dyson City](https://youtu.be/LppLCCnCXWw)
+- [Open House - Dyson City](https://youtu.be/Y2psQc6GEb0)
 - [Greetings - Dyson City](https://youtu.be/hXg9sHQ2UM0)
 
 In the year 2127, humanity created its first Dyson sphere around Alpha Centauri A, a 2 million kilometer diameter structure, and started the "Astro-Industrial Era." On the inner side of this lonely structure is a small city called Dyson City for research purposes. You have been elected to be the lone guardian of this city.
