@@ -12,16 +12,22 @@ export function findVideoIds(source) {
     source,
     ts.ScriptTarget.Latest
   );
+  const add = (literal) => {
+    const id = literal.text.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(id)) ids.add(id);
+  };
   const visit = (node) => {
-    if (
-      ts.isPropertyAssignment(node) &&
-      /^(videoId|youtubeId)$/.test(
-        node.name.getText(tree).replace(/['"]/g, '')
-      ) &&
-      ts.isStringLiteralLike(node.initializer)
-    ) {
-      const id = node.initializer.text.trim();
-      if (/^[a-zA-Z0-9_-]{11}$/.test(id)) ids.add(id);
+    if (ts.isPropertyAssignment(node)) {
+      const name = node.name.getText(tree).replace(/['"]/g, '');
+      const value = node.initializer;
+      if (/^(videoId|youtubeId)$/.test(name) && ts.isStringLiteralLike(value)) {
+        add(value);
+      } else if (
+        /^(videoIds|youtubeIds)$/.test(name) &&
+        ts.isArrayLiteralExpression(value)
+      ) {
+        value.elements.filter(ts.isStringLiteralLike).forEach(add);
+      }
     }
     ts.forEachChild(node, visit);
   };

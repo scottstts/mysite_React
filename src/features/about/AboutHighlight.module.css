@@ -196,7 +196,7 @@
   background: rgb(14 12 25 / 70%);
 }
 
-.copy {
+.copyInner {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   grid-template-areas: 'heading description';
@@ -221,7 +221,10 @@
 }
 
 .eyebrow {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.9rem;
   margin: 0;
   color: var(--highlight-accent);
   font-family: Outfit, Inter, system-ui, sans-serif;
@@ -260,8 +263,7 @@
   overflow-wrap: anywhere;
 }
 
-.description,
-.youtubeLink.youtubeLink {
+.description {
   /* Darken around each glyph, keeping the surrounding page completely open. */
   -webkit-text-stroke: 1.5px rgb(3 7 17 / 90%);
   paint-order: stroke fill;
@@ -271,27 +273,254 @@
     0 0 14px rgb(3 7 17 / 95%);
 }
 
-.youtubeLink {
-  /* Keep the link outside the row that centers the title against the body. */
-  grid-column: 2;
-  justify-self: start;
+.eyebrowCount {
   display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 44px;
-  margin-top: 0;
-  color: #e9e0ff;
-  font-family: Outfit, Inter, system-ui, sans-serif;
-  font-size: 0.8rem;
-  text-decoration: none;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid rgb(196 175 255 / 35%);
+  color: #f2ebff;
+  font-variant-numeric: tabular-nums;
 }
 
-.youtubeLink span {
-  transition: transform 200ms ease;
+.eyebrowTotal {
+  color: rgb(196 175 255 / 55%);
 }
 
-.youtubeLink:hover span {
-  transform: translate(2px, -2px);
+.copy,
+.stage {
+  min-width: 0;
+}
+
+.stage {
+  touch-action: pan-y;
+}
+
+.reel {
+  /* One housing: flush keys bracket a perforated filmstrip. */
+  --reel-line: rgb(196 175 255 / 16%);
+  display: flex;
+  align-items: stretch;
+  margin-top: -0.25rem;
+  overflow: hidden;
+  border: 1px solid var(--reel-line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(19 17 34 / 82%), rgb(9 10 20 / 88%));
+  box-shadow:
+    inset 0 1px 0 rgb(242 235 255 / 6%),
+    0 18px 40px -28px rgb(0 0 0 / 80%);
+  backdrop-filter: blur(10px);
+}
+
+.reelKeys {
+  flex: none;
+  display: flex;
+}
+
+.reelKey {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  padding: 0;
+  border: 0;
+  color: rgb(233 224 255 / 70%);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+
+.reelKey + .reelKey,
+.reelKeys + .strip,
+.strip + .reelKeys {
+  border-left: 1px solid var(--reel-line);
+}
+
+.reelKey svg {
+  width: 14px;
+  height: 14px;
+}
+
+.reelKey:active {
+  background: rgb(139 92 246 / 22%);
+}
+
+.reelKey:focus-visible {
+  outline: 2px solid var(--highlight-accent);
+  outline-offset: -4px;
+}
+
+.frame:focus-visible {
+  outline: 2px solid var(--highlight-accent);
+  outline-offset: 2px;
+}
+
+.strip {
+  --perf: rgb(196 175 255 / 24%);
+  position: relative;
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.7rem 0.6rem 0.6rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.6rem;
+  scrollbar-width: none;
+  background:
+    radial-gradient(circle, var(--perf) 1.1px, transparent 1.6px) 0 3px / 11px
+      6px repeat-x,
+    radial-gradient(circle, var(--perf) 1.1px, transparent 1.6px) 0
+      calc(100% - 1px) / 11px 6px repeat-x;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.frame {
+  flex: 0 0 clamp(5.5rem, 15vw, 7.75rem);
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.frameImage {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  background: linear-gradient(150deg, #131322, #090a14 60%);
+  box-shadow: 0 0 0 1px rgb(196 175 255 / 14%);
+  transition: box-shadow 250ms ease;
+}
+
+.thumbImage,
+.thumbBlank {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.thumbImage {
+  object-fit: cover;
+  filter: grayscale(0.85) brightness(0.55);
+  transition:
+    filter 300ms ease,
+    transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.thumbBlank {
+  background: radial-gradient(
+    ellipse at 50% 120%,
+    rgb(139 92 246 / 30%),
+    transparent 70%
+  );
+}
+
+.frameNumber {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.35rem;
+  color: rgb(242 235 255 / 75%);
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 3px #030711;
+}
+
+.frame {
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* The active frame's rail fills while the reel waits to advance. */
+.frameProgress {
+  position: relative;
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: rgb(196 175 255 / 12%);
+}
+
+.frame[data-active='true'] .frameProgress {
+  background: rgb(196 175 255 / 25%);
+}
+
+.frameProgressFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #8b5cf6, #f2ebff);
+  box-shadow: 0 0 8px rgb(196 175 255 / 70%);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation-name: frameProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes frameProgress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.frame[data-active='true'] .frameImage {
+  box-shadow:
+    0 0 0 1px var(--highlight-accent),
+    0 0 18px -4px rgb(139 92 246 / 80%);
+}
+
+.frame[data-active='true'] .thumbImage {
+  filter: none;
+}
+
+.frame[data-active='true'] .frameNumber {
+  color: #191026;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  background: #f2ebff;
+  text-shadow: none;
+}
+
+@media (hover: hover) {
+  .reelKey:hover {
+    color: #f2ebff;
+    background: rgb(139 92 246 / 14%);
+  }
+
+  .frame:hover .thumbImage {
+    filter: grayscale(0.2) brightness(0.85);
+    transform: scale(1.05);
+  }
+
+  .frame[data-active='true']:hover .thumbImage {
+    filter: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .reelKey {
+    width: 2.35rem;
+  }
+
+  .strip {
+    gap: 0.4rem;
+    padding-inline: 0.45rem;
+  }
 }
 
 @media (hover: hover) {
@@ -312,7 +541,7 @@
 }
 
 @media (max-width: 760px) {
-  .copy {
+  .copyInner {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'heading'
@@ -327,14 +556,10 @@
   .headingGroup::after {
     content: none;
   }
-
-  .youtubeLink {
-    grid-column: 1;
-  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .section[data-visible='true'] .screen {
+  .section[data-visible='true'] .stage {
     animation: arrive 700ms 120ms both;
   }
 
@@ -352,5 +577,31 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stageInner {
+    animation: stageIn 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+/* Mount animations run on first render too; keep that first pass invisible. */
+.section[data-visible='false'] .stageInner {
+  animation: none;
+}
+
+/* A projector-style fade up: the new reel brightens in from black. */
+@keyframes stageIn {
+  from {
+    opacity: 0;
+    filter: brightness(0.35) blur(4px);
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: scale(1);
   }
 }

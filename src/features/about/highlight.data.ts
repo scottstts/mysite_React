@@ -1,9 +1,17 @@
-// Edit these three fields to feature a video on the About page.
-// Use only the YouTube ID (the part after "v="), not the full URL.
-// An empty or invalid ID keeps the designed placeholder visible.
+// The title and description stay fixed; add as many videos as you like.
+// Videos appear in this order. Use only the YouTube ID (the part after "v="),
+// not the full URL. An empty or invalid ID shows the designed placeholder.
 export const aboutHighlight = {
-  youtubeId: 'o_USermt690',
   title: 'My Three.js Games',
   description:
     'I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.',
+  youtubeIds: [
+    'o_USermt690',
+    'BXV8TlibtR0',
+    'B3BaLHv6qqM',
+    'Y2psQc6GEb0',
+    'CyIb1XJU9SQ',
+    '-i1vPXEoNXg',
+    'kmueNuoSMaI',
+  ],
 };

@@ -21,6 +21,19 @@ test('discovers new content IDs, deduplicates them, and ignores comments', () =>
   );
 });
 
+test('reads ID lists alongside single IDs', () => {
+  assert.deepEqual(
+    findVideoIds(`
+      export const highlight = {
+        title: 'youtubeIds',
+        youtubeIds: ['abcdefghijk', ' lmnopqrstuv ', 'invalid', 'abcdefghijk'],
+        videoIds: ['zyxwvutsrqp'],
+      };
+    `),
+    ['abcdefghijk', 'lmnopqrstuv', 'zyxwvutsrqp']
+  );
+});
+
 test('uses the largest playback format, not thumbnail or embed dimensions', () => {
   const data = {
     streamingData: {

@@ -8,6 +8,10 @@ import {
 import { useInView } from 'framer-motion';
 import type { VideoSlideData } from '@/types/content';
 import YouTubeEmbed from '@/ui-kit/YouTubeEmbed/YouTubeEmbed';
+import {
+  useDocumentVisible,
+  usePrefersReducedMotion,
+} from '@/lib/mediaSignals';
 import styles from './ImageSlider.module.css';
 
 interface ImageSliderProps {
@@ -21,37 +25,6 @@ interface ImageSliderProps {
 type Slide =
   | { type: 'image'; src: string; alt: string; id: string }
   | ({ type: 'video'; id: string } & VideoSlideData);
-
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-
-const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(
-    () => window.matchMedia(REDUCED_MOTION_QUERY).matches
-  );
-
-  useEffect(() => {
-    const query = window.matchMedia(REDUCED_MOTION_QUERY);
-    const update = () => setReduced(query.matches);
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  return reduced;
-};
-
-const useDocumentVisible = () => {
-  const [visible, setVisible] = useState(
-    () => document.visibilityState === 'visible'
-  );
-
-  useEffect(() => {
-    const update = () => setVisible(document.visibilityState === 'visible');
-    document.addEventListener('visibilitychange', update);
-    return () => document.removeEventListener('visibilitychange', update);
-  }, []);
-
-  return visible;
-};
 
 const Chevron = ({ direction }: { direction: 'prev' | 'next' }) => (
   <svg viewBox="0 0 16 16" aria-hidden="true">
