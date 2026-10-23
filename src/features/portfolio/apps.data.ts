@@ -14,8 +14,8 @@ export const apps: App[] = [
     Now you're in charge.`,
     videos: [
       {
-        videoId: 'gtTrVRHT4yM',
-        title: 'Grand Tour - Dyson City',
+        videoId: 'BXV8TlibtR0',
+        title: 'Intro - Dyson City',
       },
       {
         videoId: 'B3BaLHv6qqM',
@@ -28,6 +28,10 @@ export const apps: App[] = [
       {
         videoId: 'hXg9sHQ2UM0',
         title: 'Greetings - Dyson City',
+      },
+      {
+        videoId: 'gtTrVRHT4yM',
+        title: 'Grand Tour - Dyson City',
       },
     ],
     link: 'https://dyson.scottsun.io',
