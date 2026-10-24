@@ -84,6 +84,20 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'pond-line',
+    title: 'Pond Line',
+    tagline: 'A summer festival.',
+    description: `I had a dream, a summer festival lost at sea, a lonely train touched by sunlight. So many colors I lost count, and I also lost myself in the dream.`,
+    videos: [
+      {
+        videoId: 'cmRjrTWqX2Y',
+        title: '夏祭り - Pond Line',
+      },
+    ],
+    link: 'https://pondline.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'elysium',
     title: 'Elysium',
     tagline: 'Weary traveler, visit the first park on Mars.',
