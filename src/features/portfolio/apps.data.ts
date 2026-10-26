@@ -84,6 +84,22 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'liminal-dreams',
+    title: 'Liminal Dreams',
+    tagline: 'Happily lost.',
+    description: `You fall asleep somewhere ordinary, and you wake up inside a doorway.<br><br>
+    
+    It is the kind of doorway you have walked through a thousand times without looking, and now it is glowing, faintly, the way a window glows at the end of a long hallway in late afternoon. Beyond it there is nobody. There never is.`,
+    videos: [
+      {
+        videoId: '7bx1y7FifOA',
+        title: 'Liminal Dreams',
+      },
+    ],
+    link: 'https://liminal.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'pond-line',
     title: 'Pond Line',
     tagline: 'A summer festival.',
