@@ -117,9 +117,19 @@ function renderAbout(): string {
     `**${aboutHighlight.title}**`,
     aboutHighlight.description,
   ];
-  if (aboutHighlight.youtubeId) {
+  // Same validation as AboutHighlight.tsx: invalid IDs render as placeholders.
+  const videoIds = aboutHighlight.youtubeIds
+    .map((id) => id.trim())
+    .filter((id) => /^[a-zA-Z0-9_-]{11}$/.test(id));
+  if (videoIds.length) {
     highlight.push(
-      `Video: [${aboutHighlight.title}](${youtubeUrl(aboutHighlight.youtubeId)})`
+      '**Videos:**',
+      videoIds
+        .map(
+          (id, i) =>
+            `- [${aboutHighlight.title} — Video ${i + 1}](${youtubeUrl(id)})`
+        )
+        .join('\n')
     );
   }
   const socials = [

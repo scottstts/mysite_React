@@ -31,6 +31,16 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.
 
+**Videos:**
+
+- [My Three.js Games — Video 1](https://youtu.be/o_USermt690)
+- [My Three.js Games — Video 2](https://youtu.be/sH4emb3Sff8)
+- [My Three.js Games — Video 3](https://youtu.be/B3BaLHv6qqM)
+- [My Three.js Games — Video 4](https://youtu.be/Y2psQc6GEb0)
+- [My Three.js Games — Video 5](https://youtu.be/CyIb1XJU9SQ)
+- [My Three.js Games — Video 6](https://youtu.be/-i1vPXEoNXg)
+- [My Three.js Games — Video 7](https://youtu.be/kmueNuoSMaI)
+
 #### Find me on
 
 - X: [@scottstts](https://x.com/scottstts/)
