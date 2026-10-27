@@ -7,7 +7,7 @@ export const aboutHighlight = {
     'I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.',
   youtubeIds: [
     'o_USermt690',
-    'BXV8TlibtR0',
+    'sH4emb3Sff8',
     'B3BaLHv6qqM',
     'Y2psQc6GEb0',
     'CyIb1XJU9SQ',
