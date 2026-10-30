@@ -114,6 +114,44 @@ export const apps: App[] = [
     showLink: true,
   },
   {
+    id: 'threejs-quick-art',
+    title: 'Three.js Quick Art',
+    tagline: 'Whatever inspiration strikes at the moment.',
+    description: `These are what I call "Three.js Quick Art", artistic scenes built in Three.js. There is no specific genre, no anthology, no theme, only beauty. What you see is what the inspiration brought at the moment.`,
+    videos: [
+      {
+        videoId: 'rR4fQqp4kGM',
+        title: 'Towards the Beyond',
+      },
+      {
+        videoId: 'A68Ky-ah3ew',
+        title: 'Wander',
+      },
+      {
+        videoId: 'OBmgdJ1-u-I',
+        title: 'Tin Thinker',
+      },
+      {
+        videoId: 'EkVINE6j-NU',
+        title: 'Whisked Away',
+      },
+      {
+        videoId: 'IseukdpsX5w',
+        title: 'Sea Breeze',
+      },
+      {
+        videoId: 'ZLXoi_Px9gU',
+        title: 'Sink Village',
+      },
+      {
+        videoId: 'V3pfAfvDO0E',
+        title: 'Fallen Titan',
+      },
+    ],
+    link: 'https://jelly.scottsun.io',
+    showLink: true,
+  },
+  {
     id: 'elysium',
     title: 'Elysium',
     tagline: 'Weary traveler, visit the first park on Mars.',

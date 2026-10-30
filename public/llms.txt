@@ -130,6 +130,24 @@ I had a dream, a summer festival lost at sea, a lonely train touched by sunlight
 
 - Link: https://pondline.scottsun.io
 
+### Three.js Quick Art
+
+**Tagline:** Whatever inspiration strikes at the moment.
+
+**Videos:**
+
+- [Towards the Beyond](https://youtu.be/rR4fQqp4kGM)
+- [Wander](https://youtu.be/A68Ky-ah3ew)
+- [Tin Thinker](https://youtu.be/OBmgdJ1-u-I)
+- [Whisked Away](https://youtu.be/EkVINE6j-NU)
+- [Sea Breeze](https://youtu.be/IseukdpsX5w)
+- [Sink Village](https://youtu.be/ZLXoi_Px9gU)
+- [Fallen Titan](https://youtu.be/V3pfAfvDO0E)
+
+These are what I call "Three.js Quick Art", artistic scenes built in Three.js. There is no specific genre, no anthology, no theme, only beauty. What you see is what the inspiration brought at the moment.
+
+- Link: https://jelly.scottsun.io
+
 ### Elysium
 
 **Tagline:** Weary traveler, visit the first park on Mars.
