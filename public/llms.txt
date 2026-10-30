@@ -146,8 +146,6 @@ I had a dream, a summer festival lost at sea, a lonely train touched by sunlight
 
 These are what I call "Three.js Quick Art", artistic scenes built in Three.js. There is no specific genre, no anthology, no theme, only beauty. What you see is what the inspiration brought at the moment.
 
-- Link: https://jelly.scottsun.io
-
 ### Elysium
 
 **Tagline:** Weary traveler, visit the first park on Mars.
@@ -331,27 +329,6 @@ Run locally as a CLI on local or public remote TS repos, or use the web version 
 
 - Link: https://tg.scottsun.io
 
-### IngreLab
-
-**Tagline:** Food Intelligence.
-
-**Images:**
-
-![IngreLab — ingrelab product](https://scottsun.io/content_imgs/ingrelab_product.jpeg)
-![IngreLab — ingrelab ingredients](https://scottsun.io/content_imgs/ingrelab_ingredients.jpeg)
-
-**Videos:**
-
-- [IngreLab](https://youtu.be/lyOfGwCf9XA)
-
-These days we rarely know what is in our food. High sugar, high inflammatory, ultra-processed food has taken up a huge portion of our daily food intake.
-
-IngreLab peels away the fancy packaging and drills down to the ingredients. You just scan the barcode, and it analyzes these health risk factors and builds a risk profile on the ingredients.
-
-We all should know what we eat. IngreLab powers your "Food Intelligence".
-
-- Link: https://ingrelab.scottsun.io
-
 ### LearnTube
 
 **Tagline:** Video to insights in seconds.
@@ -378,25 +355,6 @@ TL;DW (Too Long; Don't Watch) summaries or in-depth explorations, all in seconds
 
 - Link: https://learntube.scottsun.io
 
-### Tune It All
-
-**Tagline:** The only guitar pal you need.
-
-**Images:**
-
-![Tune It All — tuneitall1](https://scottsun.io/content_imgs/tuneitall1.jpeg)
-![Tune It All — tuneitall2](https://scottsun.io/content_imgs/tuneitall2.jpeg)
-
-Tune It All is an IOS tuner app but with something extra.
-
-In here, you can tune any guitar, bass, ukulele in any tuning you can think of. You can also compose your own string orchestra backing track with any chord you want. Beautiful playing with beautiful tracks.
-
-I built this app because I love guitar, but the tuner apps out there usually have inconsistent quality, and special tunings are often gated. I want an all-in-one tuner app that does everything I need, so I built it myself.
-
-Happy practicing!
-
-- Link: https://tuneitall.scottsun.io
-
 ### Voxelit
 
 **Tagline:** Voxel scene to code.
@@ -414,9 +372,49 @@ Have fun building it, and enjoy the convenience using it.
 
 - Link: https://vx.scottsun.io
 
+### IngreLab
+
+**Status:** Sunset
+
+**Tagline:** Food Intelligence.
+
+**Images:**
+
+![IngreLab — ingrelab product](https://scottsun.io/content_imgs/ingrelab_product.jpeg)
+![IngreLab — ingrelab ingredients](https://scottsun.io/content_imgs/ingrelab_ingredients.jpeg)
+
+**Videos:**
+
+- [IngreLab](https://youtu.be/lyOfGwCf9XA)
+
+These days we rarely know what is in our food. High sugar, high inflammatory, ultra-processed food has taken up a huge portion of our daily food intake.
+
+IngreLab peels away the fancy packaging and drills down to the ingredients. You just scan the barcode, and it analyzes these health risk factors and builds a risk profile on the ingredients.
+
+We all should know what we eat. IngreLab powers your "Food Intelligence".
+
+### Tune It All
+
+**Status:** Sunset
+
+**Tagline:** The only guitar pal you need.
+
+**Images:**
+
+![Tune It All — tuneitall1](https://scottsun.io/content_imgs/tuneitall1.jpeg)
+![Tune It All — tuneitall2](https://scottsun.io/content_imgs/tuneitall2.jpeg)
+
+Tune It All is an IOS tuner app but with something extra.
+
+In here, you can tune any guitar, bass, ukulele in any tuning you can think of. You can also compose your own string orchestra backing track with any chord you want. Beautiful playing with beautiful tracks.
+
+I built this app because I love guitar, but the tuner apps out there usually have inconsistent quality, and special tunings are often gated. I want an all-in-one tuner app that does everything I need, so I built it myself.
+
+Happy practicing!
+
 ### ImgSherlock
 
-**Status:** No Longer Deployed
+**Status:** Sunset
 
 **Tagline:** MLLM vs. MLLM.
 
@@ -433,7 +431,7 @@ ImgSherlock is a web app that allows you to upload an image, identify if it's li
 
 ### Job Guru
 
-**Status:** No Longer Deployed
+**Status:** Sunset
 
 **Tagline:** Ingenious job landing craft.
 
