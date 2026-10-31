@@ -7,7 +7,7 @@ import { about } from '../src/features/about/about.data.ts';
 import { aboutHighlight } from '../src/features/about/highlight.data.ts';
 import { inspirations } from '../src/features/inspirations/inspirations.data.ts';
 import { apps } from '../src/features/portfolio/apps.data.ts';
-import { projects } from '../src/features/projects/projects.data.ts';
+import { journey } from '../src/features/journey/journey.data.ts';
 import type { AppStatusValue, VideoSlideData } from '../src/types/content.ts';
 
 const SITE_URL = 'https://scottsun.io';
@@ -135,12 +135,12 @@ function renderPortfolio(): string {
 }
 
 function renderLearningJourney(): string {
-  const entries = projects.map((project) =>
+  const entries = journey.map((entry) =>
     [
-      `### ${project.title} (${project.date})`,
-      ...renderImages(project.title, project.images),
-      ...renderVideos(project.videos),
-      htmlToMarkdown(project.description),
+      `### ${entry.title} (${entry.date})`,
+      ...renderImages(entry.title, entry.images),
+      ...renderVideos(entry.videos),
+      htmlToMarkdown(entry.description),
     ].join('\n\n')
   );
   return ['## Learning Journey', ...entries].join('\n\n');

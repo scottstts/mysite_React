@@ -20,20 +20,22 @@ interface CurtainOptions {
 const COLS = 30;
 const ROWS = 46;
 const FULLNESS = 1.6; // fabric width / rod width
-const STEP = 1 / 60;
-const ITERATIONS = 7;
+// 30 steps a second: the wall draws at 20 fps between page changes, and a
+// sheer curtain's slow motion needs no more
+const STEP = 1 / 30;
+const ITERATIONS = 8;
 const GRAVITY = -7.5;
-const DAMPING = 0.985;
+const DAMPING = 0.97; // per step: 0.985 per 1/60 s
 
 // fabric density across the panel (0..1 of light stopped)
+// One stripe's width, tiled STRIPES times across the panel; the hem and
+// heading bands run the full height.
+const STRIPES = 11;
 function fabricTexture() {
-  const W = 512;
+  const W = 48;
   const H = 2048;
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const g = canvas.getContext('2d')!;
-  const img = g.createImageData(W, H);
+  // whole RGBA texels written at once; row 0 is the hem (bottom, unflipped)
+  const pixels = new Uint32Array(W * H);
   let seed = 7;
   const random = () => {
     seed = (seed * 16807) % 2147483647;
@@ -42,27 +44,25 @@ function fabricTexture() {
   for (let y = 0; y < H; y++) {
     const v = y / H; // 0 at the hem, 1 at the heading
     for (let x = 0; x < W; x++) {
-      const u = x / W;
+      const stripe = x / W;
       let density = 0.48;
       // woven satin stripes in the voile
-      const stripe = (u * 11) % 1;
       if (stripe < 0.12) density = 0.72;
       if (stripe > 0.5 && stripe < 0.53) density = 0.55;
       // the doubled hem and the heading tape
       if (v < 0.045) density = 0.86;
       else if (v < 0.052) density = 0.5;
       if (v > 0.965) density = 0.95;
-      const i = (y * W + x) * 4;
-      const k = random() < density ? 255 : 0;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = k;
-      img.data[i + 3] = 255;
+      pixels[y * W + x] = random() < density ? 0xffffffff : 0xff000000;
     }
   }
-  g.putImageData(img, 0, 0);
-  const texture = new THREE.CanvasTexture(canvas);
+  const texture = new THREE.DataTexture(new Uint8Array(pixels.buffer), W, H);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.set(STRIPES, 1);
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
   texture.generateMipmaps = false;
+  texture.needsUpdate = true;
   return texture;
 }
 
@@ -129,7 +129,26 @@ export function createCurtain({
       if (r + 2 < ROWS) link(a, index(c, r + 2), dy * 2, 0.25);
     }
   }
-  const linkData = new Float32Array(links);
+  // flattened for the solver: endpoints (as position offsets), rest length,
+  // stiffness, and how much of the correction each end takes (a pinned end
+  // takes none, its partner all of it)
+  const linkCount = links.length / 4;
+  const linkA = new Int32Array(linkCount);
+  const linkB = new Int32Array(linkCount);
+  const linkRest = new Float32Array(linkCount);
+  const linkK = new Float32Array(linkCount);
+  const shareA = new Float32Array(linkCount);
+  const shareB = new Float32Array(linkCount);
+  for (let l = 0; l < linkCount; l++) {
+    const a = links[l * 4];
+    const b = links[l * 4 + 1];
+    linkA[l] = a * 3;
+    linkB[l] = b * 3;
+    linkRest[l] = links[l * 4 + 2];
+    linkK[l] = links[l * 4 + 3];
+    shareA[l] = pinned[a] ? 0 : pinned[b] ? 2 : 1;
+    shareB[l] = pinned[b] ? 0 : pinned[a] ? 2 : 1;
+  }
 
   const geometry = new THREE.BufferGeometry();
   const positionAttr = new THREE.BufferAttribute(pos, 3);
@@ -187,9 +206,6 @@ export function createCurtain({
     return wind;
   };
 
-  const normal = new THREE.Vector3();
-  const a = new THREE.Vector3();
-  const b = new THREE.Vector3();
   let time = 0;
   let accumulator = 0;
 
@@ -197,71 +213,75 @@ export function createCurtain({
     time += STEP;
     const w = calm ? wind.set(0, 0, 0) : windAt(time);
     const gust = calm ? 0 : 1;
+    const S2 = STEP * STEP;
     for (let r = 1; r < ROWS; r++) {
       const hemWeight = r === ROWS - 1 ? 2.4 : r > ROWS - 4 ? 1.4 : 1;
+      const rowFlutter = gust * 0.6 * Math.sin(time * 1.7 + r * 0.21);
+      const up = (r - 1) * COLS * 3;
+      const down = Math.min(ROWS - 1, r + 1) * COLS * 3;
+      const row = r * COLS * 3;
       for (let c = 0; c < COLS; c++) {
-        const n = index(c, r);
-        const i = n * 3;
+        const i = row + c * 3;
         // the cloth's facing decides how much the wind can push it
-        const cl = Math.max(0, c - 1);
-        const cr = Math.min(COLS - 1, c + 1);
-        const ru = r - 1;
-        const rd = Math.min(ROWS - 1, r + 1);
-        a.set(
-          pos[index(cr, r) * 3] - pos[index(cl, r) * 3],
-          pos[index(cr, r) * 3 + 1] - pos[index(cl, r) * 3 + 1],
-          pos[index(cr, r) * 3 + 2] - pos[index(cl, r) * 3 + 2]
-        );
-        b.set(
-          pos[index(c, rd) * 3] - pos[index(c, ru) * 3],
-          pos[index(c, rd) * 3 + 1] - pos[index(c, ru) * 3 + 1],
-          pos[index(c, rd) * 3 + 2] - pos[index(c, ru) * 3 + 2]
-        );
-        normal.crossVectors(a, b).normalize();
-        const vx = (pos[i] - prev[i]) / STEP;
-        const vy = (pos[i + 1] - prev[i + 1]) / STEP;
-        const vz = (pos[i + 2] - prev[i + 2]) / STEP;
-        const push =
-          normal.x * (w.x - vx) + normal.y * (w.y - vy) + normal.z * (w.z - vz);
-        // a little turbulence so neighbouring folds don't move in lockstep
-        const flutter =
-          gust *
-          0.6 *
-          Math.sin(time * 3.1 + c * 0.9 + r * 0.37) *
-          Math.sin(time * 1.7 + r * 0.21);
-        const ax = (normal.x * push * 1.6 + flutter * 0.4) / hemWeight;
-        const ay = GRAVITY + (normal.y * push * 1.6) / hemWeight;
-        const az = (normal.z * push * 1.6 + flutter) / hemWeight;
+        const cl = row + Math.max(0, c - 1) * 3;
+        const cr = row + Math.min(COLS - 1, c + 1) * 3;
+        const ax0 = pos[cr] - pos[cl];
+        const ay0 = pos[cr + 1] - pos[cl + 1];
+        const az0 = pos[cr + 2] - pos[cl + 2];
+        const bx0 = pos[down + c * 3] - pos[up + c * 3];
+        const by0 = pos[down + c * 3 + 1] - pos[up + c * 3 + 1];
+        const bz0 = pos[down + c * 3 + 2] - pos[up + c * 3 + 2];
+        let nx = ay0 * bz0 - az0 * by0;
+        let ny = az0 * bx0 - ax0 * bz0;
+        let nz = ax0 * by0 - ay0 * bx0;
+        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+        nx /= nl;
+        ny /= nl;
+        nz /= nl;
         const x = pos[i];
         const y = pos[i + 1];
         const z = pos[i + 2];
-        pos[i] += (x - prev[i]) * DAMPING + ax * STEP * STEP;
-        pos[i + 1] += (y - prev[i + 1]) * DAMPING + ay * STEP * STEP;
-        pos[i + 2] += (z - prev[i + 2]) * DAMPING + az * STEP * STEP;
+        const vx = (x - prev[i]) / STEP;
+        const vy = (y - prev[i + 1]) / STEP;
+        const vz = (z - prev[i + 2]) / STEP;
+        const push =
+          (nx * (w.x - vx) + ny * (w.y - vy) + nz * (w.z - vz)) * 1.6;
+        // a little turbulence so neighbouring folds don't move in lockstep
+        const flutter = rowFlutter * Math.sin(time * 3.1 + c * 0.9 + r * 0.37);
+        pos[i] +=
+          (x - prev[i]) * DAMPING +
+          ((nx * push + flutter * 0.4) / hemWeight) * S2;
+        pos[i + 1] +=
+          (y - prev[i + 1]) * DAMPING +
+          (GRAVITY + (ny * push) / hemWeight) * S2;
+        pos[i + 2] +=
+          (z - prev[i + 2]) * DAMPING +
+          ((nz * push + flutter) / hemWeight) * S2;
         prev[i] = x;
         prev[i + 1] = y;
         prev[i + 2] = z;
       }
     }
     for (let k = 0; k < ITERATIONS; k++) {
-      for (let l = 0; l < linkData.length; l += 4) {
-        const p = linkData[l] * 3;
-        const q = linkData[l + 1] * 3;
+      for (let l = 0; l < linkCount; l++) {
+        const p = linkA[l];
+        const q = linkB[l];
         const ex = pos[q] - pos[p];
         const ey = pos[q + 1] - pos[p + 1];
         const ez = pos[q + 2] - pos[p + 2];
         const d = Math.sqrt(ex * ex + ey * ey + ez * ez) || 1e-6;
+        const rest = linkRest[l];
         // fabric resists stretching, not crumpling
-        if (d < linkData[l + 2] && linkData[l + 3] < 1) continue;
-        const f = ((d - linkData[l + 2]) / d) * 0.5 * linkData[l + 3];
-        const pp = pinned[linkData[l]] ? 0 : pinned[linkData[l + 1]] ? 2 : 1;
-        const qq = pinned[linkData[l + 1]] ? 0 : pinned[linkData[l]] ? 2 : 1;
-        pos[p] += ex * f * pp;
-        pos[p + 1] += ey * f * pp;
-        pos[p + 2] += ez * f * pp;
-        pos[q] -= ex * f * qq;
-        pos[q + 1] -= ey * f * qq;
-        pos[q + 2] -= ez * f * qq;
+        if (d < rest && linkK[l] < 1) continue;
+        const f = ((d - rest) / d) * 0.5 * linkK[l];
+        const fp = f * shareA[l];
+        const fq = f * shareB[l];
+        pos[p] += ex * fp;
+        pos[p + 1] += ey * fp;
+        pos[p + 2] += ez * fp;
+        pos[q] -= ex * fq;
+        pos[q + 1] -= ey * fq;
+        pos[q + 2] -= ez * fq;
       }
       for (let c = 0; c < COLS; c++) {
         const i = index(c, 0) * 3;

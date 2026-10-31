@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { imageRatio, imageUrl } from '@/lib/images';
 import Ending from '@/ui-kit/Ending/Ending';
 import Paragraphs from '@/ui-kit/Paragraphs/Paragraphs';
@@ -14,13 +13,6 @@ const InspirationsTab = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Inspirations - Scott Sun</title>
-        <meta
-          name="description"
-          content="Scott Sun's inspirations - people who inspire and motivate through their brilliance and hard work in AI and technology."
-        />
-      </Helmet>
       <div className="grid page-head">
         <h1>My Inspirations</h1>
       </div>

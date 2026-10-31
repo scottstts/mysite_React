@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 import { LiftContext, type LiftRequest } from './liftContext';
 import './Lift.css';
+import Icon from '@/ui-kit/Icon/Icon';
 
 const SETTLE_MS = 650;
 const PAD = 28; // the print's paper border, both sides
@@ -117,19 +118,19 @@ const LiftView = ({ request, onClosed }: LiftViewProps) => {
       <div className={`lift-ui${on}`}>
         {many && (
           <button aria-label="Previous" onClick={() => step(-1)}>
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+            <Icon name="fa-solid fa-arrow-left" />
           </button>
         )}
         <span className="cap">{label}</span>
         {many && (
           <button aria-label="Next" onClick={() => step(1)}>
-            <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            <Icon name="fa-solid fa-arrow-right" />
           </button>
         )}
       </div>
       <div className={`lift-x${on}`}>
         <button ref={closeRef} aria-label="Close" onClick={close}>
-          <i className="fa-solid fa-xmark" aria-hidden="true" />
+          <Icon name="fa-solid fa-xmark" />
         </button>
       </div>
     </div>,

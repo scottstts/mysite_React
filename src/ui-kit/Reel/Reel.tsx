@@ -15,6 +15,7 @@ import {
 } from '@/lib/youtube';
 import type { VideoSlideData } from '@/types/content';
 import './Reel.css';
+import Icon from '@/ui-kit/Icon/Icon';
 
 const REEL_MS = 5200;
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -135,7 +136,7 @@ const Reel = ({ videos }: ReelProps) => {
               aria-label="Close film"
               onClick={() => setPlaying(false)}
             >
-              <i className="fa-solid fa-xmark" aria-hidden="true" />
+              <Icon name="fa-solid fa-xmark" />
             </button>
           </div>
         )}

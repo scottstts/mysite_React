@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { TabId } from '@/types/content';
+import Icon from '@/ui-kit/Icon/Icon';
 
 export interface Tab {
   id: TabId;
@@ -79,7 +80,7 @@ const Header = ({ tabs, activeTab }: HeaderProps) => {
               aria-label={compact ? tab.label : undefined}
               title={compact ? tab.label : undefined}
             >
-              <i className={tab.icon} aria-hidden="true" />
+              <Icon name={tab.icon} fixedWidth />
               <span className="label">{tab.label}</span>
             </Link>
           );

@@ -1,6 +1,6 @@
 export type TabId =
   | 'about'
-  | 'projects'
+  | 'journey'
   | 'portfolio'
   | 'inspirations'
   | 'art-in-life';
@@ -10,7 +10,7 @@ export interface VideoSlideData {
   title: string;
 }
 
-export interface Project {
+export interface JourneyEntry {
   id: string;
   title: string;
   date: string;

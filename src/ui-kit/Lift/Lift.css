@@ -41,6 +41,7 @@
   justify-content: center;
   align-items: center;
   gap: 22px;
+  padding: 0 16px;
   opacity: 0;
   transition: opacity 0.4s 0.25s;
   font-size: 14px;
@@ -63,6 +64,7 @@
   place-items: center;
   background: rgba(251, 248, 241, 0.8);
   box-shadow: 0 4px 14px rgba(60, 40, 18, 0.18);
+  flex: none;
   font-size: 16px;
   line-height: 1;
   color: var(--ink);
@@ -84,8 +86,11 @@
   outline-offset: 2px;
 }
 
+/* the caption gives way so the arrows always stay on screen */
 .lift-ui .cap {
-  min-width: 220px;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: min(220px, 100%);
   text-align: center;
   font-style: italic;
 }

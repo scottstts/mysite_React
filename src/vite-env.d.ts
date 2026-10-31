@@ -20,6 +20,12 @@ declare module 'virtual:image-ratios' {
   export default ratios;
 }
 
+declare module 'virtual:icons' {
+  // 'solid fire': [width, height, path]
+  const icons: Record<string, [number, number, string]>;
+  export default icons;
+}
+
 declare module '*.glb' {
   const src: string;
   export default src;

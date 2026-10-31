@@ -1,5 +1,4 @@
 import React, { Suspense, useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { artInLifeUrls } from './artInLife.data';
 import styles from './ArtInLifeTab.module.css';
 
@@ -24,14 +23,6 @@ const ArtInLifeTab = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Art in Life - Scott Sun</title>
-        <meta
-          name="description"
-          content="A collection of natural scenery photos presented as a quiet gallery walk."
-        />
-      </Helmet>
-
       <section className={styles.galleryPage} aria-label="Art in Life gallery">
         <Suspense
           fallback={

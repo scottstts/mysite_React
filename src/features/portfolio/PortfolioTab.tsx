@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { safeHtml } from '@/lib/safeHtml';
 import Ending from '@/ui-kit/Ending/Ending';
 import PrintStack from '@/ui-kit/PrintStack/PrintStack';
 import Reel from '@/ui-kit/Reel/Reel';
 import type { App } from '@/types/content';
 import { apps, portfolioEnding } from './apps.data';
+import Icon from '@/ui-kit/Icon/Icon';
 
 const statusLabel = ({ status }: App) =>
   typeof status === 'string' ? status : (status?.label ?? '');
@@ -23,7 +23,7 @@ const Visit = ({ app }: { app: App }) => {
         rel="noopener noreferrer"
       >
         {/github\.com/.test(app.link) ? 'Source on GitHub' : host(app.link)}
-        <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+        <Icon name="fa-solid fa-arrow-right" />
       </a>
     );
   }
@@ -68,13 +68,6 @@ const TitleRow = ({ app }: { app: App }) => {
 const PortfolioTab = () => {
   return (
     <>
-      <Helmet>
-        <title>Portfolio - Scott Sun</title>
-        <meta
-          name="description"
-          content="Scott Sun's apps and projects - Vacation Planner and Transcrilate. Practical solutions built with modern technologies."
-        />
-      </Helmet>
       <div className="grid page-head">
         <h1>Portfolio</h1>
       </div>

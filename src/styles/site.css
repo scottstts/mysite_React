@@ -1,8 +1,10 @@
 :root {
   --ink: #231e17;
-  --ink-2: #6c6253;
-  --ink-3: #a1968a;
-  --cue: #a8441d;
+  /* secondary text and links hold 4.5:1 even on the shadowed plaster
+     (about #bcb09e at its darkest); --ink-3 is for icons and rules, 3:1 */
+  --ink-2: #4d4337;
+  --ink-3: #7f7262;
+  --cue: #7a2a0c;
   --paper: #fbf8f1;
   --gut: clamp(18px, 4.5vw, 84px);
   /* everything on the wall casts shadow away from the window */
@@ -46,6 +48,15 @@ a {
 button {
   font: inherit;
   color: inherit;
+}
+
+/* inline SVG icons (see src/lib/icons.ts): 1em tall, on the baseline */
+.icon {
+  display: inline-block;
+  height: 1em;
+  vertical-align: -0.125em;
+  overflow: visible;
+  flex: none;
 }
 
 :focus-visible {
@@ -140,7 +151,7 @@ nav.tabs,
   pointer-events: none;
 }
 
-nav.tabs i {
+nav.tabs .icon {
   display: none;
 }
 
@@ -148,11 +159,9 @@ nav.tabs.compact {
   gap: clamp(18px, 6vw, 34px);
 }
 
-nav.tabs.compact i {
+nav.tabs.compact .icon {
   display: block;
   font-size: 18px;
-  width: 1.25em;
-  text-align: center;
 }
 
 nav.tabs.compact .label {
@@ -279,8 +288,7 @@ h1.smallcaps {
   overflow-wrap: anywhere;
 }
 
-.prose i.fa-solid,
-.prose i.fa-regular {
+.prose .icon {
   color: var(--cue);
   font-size: 0.8em;
 }
@@ -623,7 +631,7 @@ h1.smallcaps {
   text-decoration: none;
 }
 
-.work .visit i {
+.work .visit .icon {
   font-size: 0.75em;
 }
 
@@ -751,8 +759,7 @@ h1.smallcaps {
   color: var(--ink);
 }
 
-.epilogue p i.fa-solid,
-.epilogue p i.fa-regular {
+.epilogue p .icon {
   color: var(--cue);
   font-size: 0.7em;
 }
@@ -817,7 +824,7 @@ footer.foot a:hover {
   color: var(--ink);
 }
 
-footer.foot i {
+footer.foot .icon {
   font-size: 12px;
 }
 

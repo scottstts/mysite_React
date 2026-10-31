@@ -18,7 +18,9 @@ Technology has also been historically proven to be the only robust, consistent, 
 
 Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular">into the unknown</span>.`,
   socialsHeading: 'Find me on',
-  // `icon` is a Font Awesome class: https://fontawesome.com/search?ic=brands
+  // `icon` is any Font Awesome Free 6 icon's classes (https://fontawesome.com/search?ic=free),
+  // the same as <i class="…"> icons in the text; it's built into the site as
+  // inline SVG, nothing else to install.
   socials: [
     {
       name: 'GitHub',

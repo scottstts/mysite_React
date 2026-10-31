@@ -1,7 +1,7 @@
 // The title and description stay fixed; add as many videos as you like.
 // Videos appear in this order. Use only the YouTube ID (the part after "v="),
 // not the full URL; invalid IDs are skipped. A film's title comes from its
-// entry in apps.data.ts or projects.data.ts, otherwise from YouTube.
+// entry in apps.data.ts or journey.data.ts, otherwise from YouTube.
 export const aboutHighlight = {
   title: 'Build Dreams',
   description:

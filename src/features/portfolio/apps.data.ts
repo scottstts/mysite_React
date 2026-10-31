@@ -9,7 +9,7 @@ export const apps: App[] = [
     
     You have your own estate in Dyson City, and you've chosen to make it a Victorian style manor. The rest of the city is a 200 acre golden scientific-industrial compound.<br><br>
     
-    You have your own vehicle called Aurelia to take you anywhere in this city. A fleet of research spacecraft come in every 30s for data backup and refueling.<br><br>
+    You have your own AI called Aurelia to guide you in this city. A fleet of research spacecraft come in every 30s for data backup and refueling.<br><br>
 
     Now you're in charge.`,
     videos: [

@@ -1,6 +1,6 @@
-import type { Project, PageEnding } from '@/types/content';
+import type { JourneyEntry, PageEnding } from '@/types/content';
 
-export const projects: Project[] = [
+export const journey: JourneyEntry[] = [
   {
     id: 'programming-start',
     title: 'Picked Up Programming Before the ChatGPT Moment',

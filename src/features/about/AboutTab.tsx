@@ -1,16 +1,16 @@
-import { Helmet } from 'react-helmet-async';
 import { safeHtml } from '@/lib/safeHtml';
 import Paragraphs from '@/ui-kit/Paragraphs/Paragraphs';
 import Reel from '@/ui-kit/Reel/Reel';
 import { apps } from '@/features/portfolio/apps.data';
-import { projects } from '@/features/projects/projects.data';
+import { journey } from '@/features/journey/journey.data';
 import type { VideoSlideData } from '@/types/content';
 import { about } from './about.data';
 import { aboutHighlight } from './highlight.data';
+import Icon from '@/ui-kit/Icon/Icon';
 
 // A highlight film keeps the title it has elsewhere on the site; a film that
 // isn't anywhere else takes YouTube's own title.
-const knownVideos = [...apps, ...projects].flatMap(
+const knownVideos = [...apps, ...journey].flatMap(
   (entry) => entry.videos ?? []
 );
 const highlightVideos: VideoSlideData[] = aboutHighlight.youtubeIds
@@ -27,13 +27,6 @@ const highlightVideos: VideoSlideData[] = aboutHighlight.youtubeIds
 const AboutTab = () => {
   return (
     <>
-      <Helmet>
-        <title>About - Scott Sun</title>
-        <meta
-          name="description"
-          content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist. Learn about my mission and source of strength."
-        />
-      </Helmet>
       <div className="grid about-hero">
         <h1 className="smallcaps">{about.title}</h1>
         <p className="lead" dangerouslySetInnerHTML={safeHtml(about.lead)} />
@@ -58,7 +51,7 @@ const AboutTab = () => {
             <li key={social.href}>
               <a href={social.href} target="_blank" rel="noopener noreferrer">
                 <span className="ic">
-                  <i className={social.icon} aria-hidden="true" />
+                  <Icon name={social.icon} />
                 </span>
                 <span className="tx">
                   <b>{social.name}</b>

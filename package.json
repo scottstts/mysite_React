@@ -11,22 +11,24 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "llms": "node scripts/generate-llms.ts"
+    "llms": "node scripts/generate-llms.ts",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {
-    "@axe-core/react": "^4.10.2",
     "dompurify": "^3.2.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-helmet-async": "^2.0.5",
     "react-router-dom": "^7.6.2",
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.10.2",
     "@eslint/js": "^9.29.0",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.0",
     "@vitejs/plugin-react": "^4.5.2",
     "eslint": "^9.29.0",

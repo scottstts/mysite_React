@@ -101,59 +101,6 @@ export const ball = (r: number, x = 0, y = 0, z = 0) => {
   return mesh(geometry);
 };
 
-// A flat outline given thickness along the sun's direction, so holes in it
-// stay open in the shadow (a hole cut straight through a slab closes up when
-// the light comes in at an angle).
-export const plate = (
-  shape: THREE.Shape,
-  depth: number,
-  curveSegments = 24
-) => {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: false,
-    curveSegments,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  // prettier-ignore
-  const s = new THREE.Matrix4().set(
-    1, 0, SUN.x / SUN.z, 0,
-    0, 1, SUN.y / SUN.z, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1
-  );
-  geometry.applyMatrix4(s);
-  return mesh(geometry);
-};
-
-export const roundedRect = (
-  w: number,
-  h: number,
-  r: number,
-  cx = 0,
-  cy = 0
-) => {
-  const x = cx - w / 2;
-  const y = cy - h / 2;
-  const s = new THREE.Shape();
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h);
-  s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r);
-  s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-};
-
-export const circlePath = (r: number, cx = 0, cy = 0) => {
-  const p = new THREE.Path();
-  p.absarc(cx, cy, r, 0, Math.PI * 2, true);
-  return p;
-};
-
 // A coil: springs read beautifully in shadow.
 export const spring = (
   a: THREE.Vector3,

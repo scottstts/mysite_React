@@ -45,15 +45,25 @@ const PrintStack = ({ images, caption }: PrintStackProps) => {
 
   useEffect(() => {
     if (!cycling) return;
+    let swap = 0;
     const timer = window.setInterval(() => {
       if (ref.current?.matches(':hover')) return;
       setOut(true);
-      window.setTimeout(() => {
+      swap = window.setTimeout(() => {
+        swap = 0;
         setOrder((current) => [...current.slice(1), current[0]]);
         setOut(false);
       }, OUT_MS);
     }, STACK_MS);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      // a print caught mid-swap finishes going under
+      if (swap) {
+        window.clearTimeout(swap);
+        setOrder((current) => [...current.slice(1), current[0]]);
+        setOut(false);
+      }
+    };
   }, [cycling]);
 
   // Each print is its photo at its true shape plus an even paper border,

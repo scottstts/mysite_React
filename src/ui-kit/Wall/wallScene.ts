@@ -37,47 +37,53 @@ export interface Wall {
 // plaster: a fine procedural tooth, lit by the scene, so shadows sit in the surface
 function plasterTexture() {
   const N = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = N;
-  const g = canvas.getContext('2d')!;
-  const img = g.createImageData(N, N);
-  const hash = (x: number, y: number) => {
-    const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-    return s - Math.floor(s);
-  };
-  const noise = (x: number, y: number, P: number) => {
-    const xi = Math.floor(x);
-    const yi = Math.floor(y);
-    const xf = x - xi;
-    const yf = y - yi;
-    const u = xf * xf * (3 - 2 * xf);
-    const v = yf * yf * (3 - 2 * yf);
-    const a = hash(xi % P, yi % P);
-    const b = hash((xi + 1) % P, yi % P);
-    const c = hash(xi % P, (yi + 1) % P);
-    const d = hash((xi + 1) % P, (yi + 1) % P);
-    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-  };
+  // value noise from small precomputed lattices, three octaves, tiling
+  const lattice = (P: number) =>
+    Float32Array.from({ length: P * P }, (_, i) => {
+      const s =
+        Math.sin((i % P) * 127.1 + Math.floor(i / P) * 311.7) * 43758.5453;
+      return s - Math.floor(s);
+    });
+  const octaves = [
+    [6, 0.5],
+    [24, 0.3],
+    [128, 0.2],
+  ].map(([P, weight]) => ({ P, weight, values: lattice(P) }));
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  const data = new Uint8Array(N * N * 4);
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
-      const u = x / N;
-      const v = y / N;
-      const n =
-        noise(u * 6, v * 6, 6) * 0.5 +
-        noise(u * 24, v * 24, 24) * 0.3 +
-        noise(u * 128, v * 128, 128) * 0.2;
+      let n = 0;
+      for (const { P, weight, values } of octaves) {
+        const fx = (x / N) * P;
+        const fy = (y / N) * P;
+        const xi = Math.floor(fx);
+        const yi = Math.floor(fy);
+        const u = smooth(fx - xi);
+        const v = smooth(fy - yi);
+        const x1 = (xi + 1) % P;
+        const y1 = (yi + 1) % P;
+        const a = values[yi * P + xi];
+        const b = values[yi * P + x1];
+        const c = values[y1 * P + xi];
+        const d = values[y1 * P + x1];
+        n += (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * weight;
+      }
       const k = 236 + (n - 0.5) * 16;
       const i = (y * N + x) * 4;
-      img.data[i] = k;
-      img.data[i + 1] = k * 0.975;
-      img.data[i + 2] = k * 0.94;
-      img.data[i + 3] = 255;
+      data[i] = k;
+      data[i + 1] = k * 0.975;
+      data[i + 2] = k * 0.94;
+      data[i + 3] = 255;
     }
   }
-  g.putImageData(img, 0, 0);
-  const texture = new THREE.CanvasTexture(canvas);
+  const texture = new THREE.DataTexture(data, N, N);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
   return texture;
 }
 
@@ -164,7 +170,9 @@ export function createWall(
     rodZ: -0.3,
   });
   frame.add(curtain.mesh);
-  curtain.settle(4);
+  // hang for a moment before it's seen; it finishes settling as the wall
+  // fades in
+  curtain.settle(1);
 
   // a monstera at the right end of the sill: always there
   const plant = createPlant();
@@ -194,7 +202,7 @@ export function createWall(
   const pieces: Partial<Record<TabId, Piece>> = {};
   const builders: Partial<Record<TabId, () => THREE.Group>> = {
     about: telescope,
-    projects: deskSet,
+    journey: deskSet,
     portfolio: robot,
     inspirations: satellite,
   };

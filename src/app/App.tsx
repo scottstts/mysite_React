@@ -5,6 +5,7 @@ import { LiftProvider } from '@/ui-kit/Lift/Lift';
 import Wall from '@/ui-kit/Wall/Wall';
 import type { TabId } from '@/types/content';
 import '@/styles/site.css';
+import Icon from '@/ui-kit/Icon/Icon';
 
 // Each tab is its own chunk, loaded when it's first opened.
 const tabViews: Record<
@@ -12,7 +13,7 @@ const tabViews: Record<
   React.LazyExoticComponent<() => React.ReactNode>
 > = {
   about: React.lazy(() => import('@/features/about/AboutTab')),
-  projects: React.lazy(() => import('@/features/projects/ProjectsTab')),
+  journey: React.lazy(() => import('@/features/journey/JourneyTab')),
   portfolio: React.lazy(() => import('@/features/portfolio/PortfolioTab')),
   inspirations: React.lazy(
     () => import('@/features/inspirations/InspirationsTab')
@@ -30,7 +31,7 @@ const tabs: Tab[] = [
     icon: 'fa-regular fa-address-card',
   },
   {
-    id: 'projects',
+    id: 'journey',
     label: 'Learning Journey',
     path: '/journey',
     icon: 'fa-solid fa-route',
@@ -57,7 +58,7 @@ const tabs: Tab[] = [
 
 const titles: Record<TabId, string> = {
   about: 'About - Scott Sun',
-  projects: 'Learning Journey - Scott Sun',
+  journey: 'Learning Journey - Scott Sun',
   portfolio: 'Portfolio - Scott Sun',
   inspirations: 'Inspirations - Scott Sun',
   'art-in-life': 'Art in Life - Scott Sun',
@@ -66,7 +67,7 @@ const titles: Record<TabId, string> = {
 const tabFromPath = (pathname: string): TabId => {
   switch (pathname) {
     case '/journey':
-      return 'projects';
+      return 'journey';
     case '/portfolio':
     case '/apps':
       return 'portfolio';
@@ -119,15 +120,11 @@ function App() {
             <span>Scott Sun</span>
             <nav aria-label="Site">
               <a
-                href="https://github.com/scottstts/mysite_React"
+                href="https://scottsun.io/llms.txt"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <i className="fa-solid fa-code" aria-hidden="true"></i>
-                Source
-              </a>
-              <a href="https://scottsun.io/llms.txt" target="_blank">
-                <i className="fa-solid fa-robot" aria-hidden="true"></i>
+                <Icon name="fa-solid fa-robot" />
                 llms.txt
               </a>
             </nav>
