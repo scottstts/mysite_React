@@ -1,4 +1,4 @@
-import type { Project } from '@/types/content';
+import type { Project, PageEnding } from '@/types/content';
 
 export const projects: Project[] = [
   {
@@ -149,3 +149,10 @@ Of course not all projects pan out, at least not as fully expected. I had the id
     ],
   },
 ];
+
+// The closing line at the bottom of the page. `image` (optional) is a file in
+// public/content_imgs, shown as a print under the line.
+export const journeyEnding: PageEnding = {
+  text: `I love this Naval tweet! There is immense joy for me in learning interesting and useful new things. I will never stop learning. It has been a long journey. I am super excited about what's to come <i class="fa-solid fa-fire" aria-hidden="true"></i>!`,
+  image: 'naval_tweet.jpeg',
+};

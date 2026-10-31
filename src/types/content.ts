@@ -45,9 +45,23 @@ export interface Inspiration {
   image: string;
 }
 
-export interface NavigationTab {
-  id: TabId;
-  label: string;
-  path: string;
-  iconClass: string;
+export interface SocialLink {
+  name: string;
+  handle: string;
+  href: string;
+  icon: string;
+}
+
+export interface AboutContent {
+  title: string;
+  heading: string;
+  lead: string;
+  body: string;
+  socialsHeading: string;
+  socials: SocialLink[];
+}
+
+export interface PageEnding {
+  text: string;
+  image?: string;
 }

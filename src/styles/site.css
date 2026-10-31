@@ -1,0 +1,918 @@
+:root {
+  --ink: #231e17;
+  --ink-2: #6c6253;
+  --ink-3: #a1968a;
+  --cue: #a8441d;
+  --paper: #fbf8f1;
+  --gut: clamp(18px, 4.5vw, 84px);
+  /* everything on the wall casts shadow away from the window */
+  --pin:
+    14px 20px 30px -12px rgba(74, 52, 28, 0.4),
+    3px 4px 7px -2px rgba(74, 52, 28, 0.18);
+  --ease: cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #d9cfc0;
+}
+
+body {
+  margin: 0;
+  /* nothing may scroll the page sideways */
+  overflow-x: clip;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: 'Literata', Georgia, serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  /* symbols render as text, never as colour emoji */
+  font-variant-emoji: text;
+  background: transparent;
+}
+
+body.in-art {
+  background: #eee6d9;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ---------------- the wall ---------------- */
+canvas.wall {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+  pointer-events: none;
+}
+
+canvas.wall.lit {
+  opacity: 1;
+}
+
+.site {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------- header ---------------- */
+header.top {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px var(--gut) 16px;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* ink on the wall, like the type */
+.mark img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+  mix-blend-mode: multiply;
+}
+
+/* always one line; labels give way to icons when they don't fit */
+nav.tabs,
+.tabs-measure {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: clamp(16px, 2.4vw, 36px);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* parked off the left edge, where it can never widen the page */
+.tabs-measure {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+nav.tabs i {
+  display: none;
+}
+
+nav.tabs.compact {
+  gap: clamp(18px, 6vw, 34px);
+}
+
+nav.tabs.compact i {
+  display: block;
+  font-size: 18px;
+  width: 1.25em;
+  text-align: center;
+}
+
+nav.tabs.compact .label {
+  display: none;
+}
+
+nav.tabs a {
+  text-decoration: none;
+  color: var(--ink-2);
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+nav.tabs a:hover {
+  color: var(--ink);
+}
+
+nav.tabs a.on {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+/* the gallery fills the screen; the header rests on top of it */
+body.in-art header.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+
+/* ---------------- pages ---------------- */
+main {
+  padding: 0 var(--gut);
+  /* prints swapping in a stack never widen the page */
+  overflow-x: clip;
+}
+
+body.in-art main {
+  padding: 0;
+}
+
+.view {
+  animation: settle 0.7s var(--ease);
+}
+
+.view-pending {
+  min-height: 70vh;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: clamp(16px, 2.2vw, 40px);
+}
+
+.grid > * {
+  min-width: 0;
+}
+
+.smallcaps {
+  font-size: 12.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 450;
+}
+
+h1.smallcaps {
+  margin: 0;
+}
+
+/* ---------------- prose: the data files' inline markup ---------------- */
+.prose {
+  font-size: 18px;
+  line-height: 1.66;
+  font-weight: 380;
+  color: #2a241c;
+}
+
+.prose .italic {
+  font-style: italic;
+}
+
+.prose .font-semibold {
+  font-weight: 560;
+}
+
+.prose a,
+.prose .text-blue-200 {
+  color: var(--cue);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.prose .text-yellow-200,
+.prose .text-yellow-100 {
+  color: var(--ink);
+  font-weight: 520;
+}
+
+.prose .cmd-text {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.78em;
+  background: rgba(255, 250, 240, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(35, 30, 23, 0.12);
+  /* a command keeps to its column: it wraps between words, and a long
+     package name breaks where it must */
+  display: inline-block;
+  max-width: 100%;
+  padding: 4px 9px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.prose i.fa-solid,
+.prose i.fa-regular {
+  color: var(--cue);
+  font-size: 0.8em;
+}
+
+.highlight-glow,
+.eater-regular {
+  font-style: italic;
+}
+
+/* ---------------- a print: a photo on paper, pinned to the wall ---------------- */
+.print {
+  all: unset;
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  cursor: zoom-in;
+  background: var(--paper);
+  padding: var(--b, 10px);
+  box-shadow: var(--pin);
+}
+
+.print img {
+  display: block;
+  width: 100%;
+}
+
+.print:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ---------------- ABOUT ---------------- */
+.about-hero {
+  padding: clamp(60px, 14vh, 160px) 0 clamp(60px, 10vh, 120px);
+}
+
+.about-hero .smallcaps {
+  grid-column: 1 / -1;
+}
+
+.about-hero .lead {
+  grid-column: 1 / span 9;
+  margin: 18px 0 0;
+  font-size: clamp(34px, 4.9vw, 78px);
+  line-height: 1.08;
+  font-weight: 250;
+  letter-spacing: -0.024em;
+  font-variation-settings: 'opsz' 72;
+}
+
+.about-hero .lead .highlight-glow {
+  font-weight: 340;
+}
+
+.essay {
+  align-items: start;
+  padding-top: 40px;
+}
+
+.essay h2 {
+  grid-column: 1 / span 3;
+  margin: 0;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 26px;
+}
+
+.essay .prose {
+  grid-column: 4 / -1;
+  columns: 2 340px;
+  column-gap: clamp(28px, 3vw, 56px);
+}
+
+/* paragraphs set in columns (see Paragraphs): one blank line between them,
+   as a bottom margin so a column never opens on an empty line */
+.essay .prose p,
+.person .prose p {
+  margin: 0 0 1.66em;
+}
+
+.essay .prose p:last-child,
+.person .prose p:last-child {
+  margin-bottom: 0;
+}
+
+.feature {
+  margin-top: clamp(110px, 15vh, 180px);
+  align-items: start;
+}
+
+.feature .media {
+  grid-column: 1 / span 8;
+}
+
+.feature .copy {
+  grid-column: 9 / -1;
+  padding-top: 8px;
+}
+
+.feature h2 {
+  margin: 0 0 16px;
+  font-weight: 300;
+  font-size: clamp(30px, 3.2vw, 48px);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  font-variation-settings: 'opsz' 72;
+}
+
+.feature p {
+  margin: 0;
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* find me: equal cells, same structure */
+.social {
+  margin-top: clamp(110px, 15vh, 180px);
+  align-items: start;
+}
+
+.social .smallcaps {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-bottom: 18px;
+}
+
+.social ul {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(10px, 1.4vw, 20px);
+}
+
+/* one inset on every side; the arrow sits in the top-right corner at that same inset */
+.social a {
+  --in: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--in) calc(var(--in) + 22px) var(--in) var(--in);
+  text-decoration: none;
+  background: rgba(251, 248, 241, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(35, 30, 23, 0.08);
+  border-radius: 3px;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s,
+    transform 0.3s var(--ease);
+}
+
+.social a:hover {
+  background: rgba(251, 248, 241, 0.9);
+  box-shadow:
+    inset 0 0 0 1px rgba(35, 30, 23, 0.12),
+    var(--pin);
+  transform: translateY(-2px);
+}
+
+.social .ic {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 16px;
+}
+
+.social .tx {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  max-height: 40px;
+}
+
+.social b {
+  font-weight: 450;
+  font-size: 17px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.social small {
+  font-size: 13.5px;
+  line-height: 18px;
+  font-style: italic;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.social .go {
+  position: absolute;
+  top: var(--in);
+  right: var(--in);
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--ink-3);
+  transition:
+    color 0.3s,
+    transform 0.3s var(--ease);
+}
+
+.social a:hover .go {
+  color: var(--cue);
+  transform: translate(2px, -2px);
+}
+
+@media (max-width: 1100px) {
+  .social ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.about-tail {
+  height: clamp(56px, 8vh, 96px);
+}
+
+.page-head {
+  padding: clamp(50px, 10vh, 120px) 0 clamp(50px, 8vh, 100px);
+}
+
+.page-head h1 {
+  grid-column: 1 / span 8;
+  margin: 0;
+  font-weight: 250;
+  font-size: clamp(48px, 7vw, 120px);
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  font-variation-settings: 'opsz' 72;
+}
+
+/* ---------------- JOURNEY ---------------- */
+.chapter {
+  align-items: start;
+  padding: 40px 0 clamp(90px, 12vh, 150px);
+}
+
+.chapter .head {
+  grid-column: 1 / span 3;
+}
+
+.chapter .date {
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.chapter h2 {
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(26px, 2.4vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 72;
+}
+
+.chapter .prose {
+  grid-column: 4 / span 5;
+}
+
+.chapter .side {
+  grid-column: 9 / -1;
+  display: grid;
+  gap: 44px;
+  padding-top: 6px;
+}
+
+/* ---------------- PORTFOLIO ---------------- */
+.work {
+  align-items: start;
+  padding: 30px 0 clamp(100px, 14vh, 180px);
+}
+
+/* one line when everything fits, otherwise one line each (see TitleRow) */
+.work .title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px 22px;
+  margin-bottom: 30px;
+}
+
+/* every item keeps its natural width, so the fit can be measured */
+.work .title > * {
+  flex: none;
+  max-width: 100%;
+}
+
+.work .title.stacked {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.work .title.stacked .visit,
+.work .title.stacked .sunset {
+  align-self: flex-end;
+}
+
+.work h2 {
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(38px, 4.8vw, 76px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variation-settings: 'opsz' 72;
+}
+
+.work .tag {
+  font-style: italic;
+  font-size: clamp(18px, 1.5vw, 23px);
+  color: var(--ink-2);
+  font-weight: 320;
+}
+
+.work .visit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: var(--cue);
+  text-decoration: none;
+}
+
+.work .visit i {
+  font-size: 0.75em;
+}
+
+.work .visit:hover {
+  text-decoration: underline;
+}
+
+.work .sunset {
+  margin-left: auto;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.work .media {
+  grid-column: 1 / span 7;
+  display: grid;
+  gap: 44px;
+}
+
+.work .copy {
+  grid-column: 9 / -1;
+}
+
+.work.flip .media {
+  grid-column: 6 / -1;
+  grid-row: 2;
+}
+
+.work.flip .copy {
+  grid-column: 1 / span 4;
+  grid-row: 2;
+}
+
+/* a work with nothing to show reads as a single column */
+.work.text-only .copy {
+  grid-column: 1 / span 8;
+}
+
+.work.is-sunset h2 {
+  color: var(--ink-2);
+}
+
+.work.is-sunset img {
+  filter: saturate(0.55);
+}
+
+/* ---------------- INSPIRATIONS ---------------- */
+.person {
+  align-items: start;
+  padding: 30px 0 clamp(90px, 12vh, 150px);
+}
+
+.person .photo {
+  grid-column: 1 / span 4;
+}
+
+.person .photo .print {
+  transform: rotate(var(--rot));
+}
+
+.person .photo .print img {
+  height: auto;
+}
+
+.person .copy {
+  grid-column: 6 / -1;
+}
+
+.person h2 {
+  margin: 0 0 22px;
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.person .prose {
+  columns: 2 320px;
+  column-gap: 48px;
+}
+
+/* the lead quote spans both columns */
+.person .prose p.quote {
+  column-span: all;
+  font-size: clamp(30px, 2.8vw, 46px);
+  line-height: 1.16;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.7em;
+  font-variation-settings: 'opsz' 72;
+}
+
+.person .prose p.quote .text-yellow-200 {
+  font-weight: 270;
+}
+
+/* ---------------- the ending of each page ---------------- */
+.epilogue {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0 0 clamp(56px, 8vh, 96px);
+}
+
+.epilogue .inner {
+  max-width: 880px;
+}
+
+.epilogue .mark-end {
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--ink-3);
+  margin: 0 auto 36px;
+}
+
+.epilogue p {
+  margin: 0;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(24px, 2.4vw, 38px);
+  line-height: 1.42;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.epilogue p i.fa-solid,
+.epilogue p i.fa-regular {
+  color: var(--cue);
+  font-size: 0.7em;
+}
+
+.epilogue .note {
+  all: unset;
+  cursor: zoom-in;
+  display: inline-block;
+  margin-top: 58px;
+  background: var(--paper);
+  padding: 14px;
+  box-shadow: var(--pin);
+  transform: rotate(-1.2deg);
+  transition: transform 0.5s var(--ease);
+}
+
+.epilogue .note:hover {
+  transform: rotate(0) translateY(-3px);
+}
+
+.epilogue .note:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.epilogue .note img {
+  display: block;
+  width: min(560px, 76vw);
+  height: auto;
+}
+
+/* ---------------- footer ---------------- */
+footer.foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin: 0 var(--gut);
+  padding: 22px 0 30px;
+  border-top: 1px solid rgba(35, 30, 23, 0.14);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+footer.foot nav {
+  display: flex;
+  gap: 26px;
+}
+
+footer.foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink-2);
+  transition: color 0.2s;
+}
+
+footer.foot a:hover {
+  color: var(--ink);
+}
+
+footer.foot i {
+  font-size: 12px;
+}
+
+/* ---------------- phones ---------------- */
+@media (max-width: 900px) {
+  header.top {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  nav.tabs,
+  .tabs-measure {
+    font-size: 15px;
+  }
+
+  .grid > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  .work .media,
+  .feature .media {
+    margin-bottom: 30px;
+  }
+
+  /* the Journey's prints and films follow its essay */
+  .chapter .side {
+    margin-top: 40px;
+  }
+
+  .chapter,
+  .work,
+  .person {
+    padding-bottom: 72px;
+  }
+
+  .chapter .head {
+    margin-bottom: 18px;
+  }
+
+  /* keep project titles clearly below the page title (48px here) */
+  .work h2 {
+    font-size: clamp(28px, 8vw, 38px);
+  }
+
+  .person .photo {
+    max-width: 300px;
+    margin-bottom: 30px;
+  }
+
+  .social ul {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .social a {
+    --in: 16px;
+  }
+}
+
+/* The gallery was built on Tailwind's base reset; keep it there, in the base
+   layer, so the gallery's own styles always win. */
+@layer base {
+  .art-room *,
+  .art-room ::before,
+  .art-room ::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+
+  .art-room img,
+  .art-room svg,
+  .art-room video,
+  .art-room canvas,
+  .art-room iframe {
+    display: block;
+    vertical-align: middle;
+  }
+
+  .art-room img,
+  .art-room video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .art-room button {
+    font: inherit;
+    color: inherit;
+    background-color: transparent;
+    border-radius: 0;
+  }
+
+  .art-room ol,
+  .art-room ul {
+    list-style: none;
+  }
+
+  .art-room h1,
+  .art-room h2,
+  .art-room h3,
+  .art-room h4,
+  .art-room h5,
+  .art-room h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .art-room a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+}

@@ -1,8 +1,28 @@
 import { Helmet } from 'react-helmet-async';
-import GlassCard from '@/ui-kit/GlassCard/GlassCard';
-import SocialConstellation from './SocialConstellation';
-import AboutHighlight from './AboutHighlight';
 import { safeHtml } from '@/lib/safeHtml';
+import Paragraphs from '@/ui-kit/Paragraphs/Paragraphs';
+import Reel from '@/ui-kit/Reel/Reel';
+import { apps } from '@/features/portfolio/apps.data';
+import { projects } from '@/features/projects/projects.data';
+import type { VideoSlideData } from '@/types/content';
+import { about } from './about.data';
+import { aboutHighlight } from './highlight.data';
+
+// A highlight film keeps the title it has elsewhere on the site; a film that
+// isn't anywhere else takes YouTube's own title.
+const knownVideos = [...apps, ...projects].flatMap(
+  (entry) => entry.videos ?? []
+);
+const highlightVideos: VideoSlideData[] = aboutHighlight.youtubeIds
+  .map((id) => id.trim())
+  .filter((id) => /^[a-zA-Z0-9_-]{11}$/.test(id))
+  .map(
+    (id) =>
+      knownVideos.find((video) => video.videoId === id) ?? {
+        videoId: id,
+        title: '',
+      }
+  );
 
 const AboutTab = () => {
   return (
@@ -14,46 +34,46 @@ const AboutTab = () => {
           content="Scott Sun | Frontier AI Chaser and Builder. Techno Optimist. Learn about my mission and source of strength."
         />
       </Helmet>
-      <div className="about-tab space-y-8">
-        <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
-          Techno Optimist
-        </h1>
-
-        <GlassCard className="p-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left">
-            Into The Unknown
-          </h2>
-          <p className="text-lg text-white font-bold italic leading-relaxed mb-8 text-left">
-            <br />
-            From the infinite potential of energy to the total actualization of
-            entropy,{' '}
-            <span className="highlight-glow text-xl">intelligence</span> charts
-            a course for the pursuit of{' '}
-            <span className="highlight-glow text-xl">meaning</span>,{' '}
-            <span className="highlight-glow text-xl">mission</span> and{' '}
-            <span className="highlight-glow text-xl">love</span>.<br />
-            <br />
-          </p>
-          <p
-            className="text-lg text-white leading-relaxed text-left"
-            dangerouslySetInnerHTML={safeHtml(`I believe that all problems are eventually solvable through technology without introducing any additional externality. Technology evolves—gradually or rapidly—to match the complexity of problems. Today's flawed solutions will never capture how easily these problems may be resolved in the future.<br /><br />
-
-            Technology emerges from the interactions between intelligent entities and the universe they inhabit, while intelligence improves and evolves through technology. Technology is not only an external manifestation of intelligence but it stands as the ultimate culmination.<br /><br />
-
-            Intelligence is the meta-problem underlying all challenges. Once intelligence is solved, we indirectly unlock solutions to every problem. The acceleration of ASI injects a second-order surge into all frontier sciences and engineering, placing us at an inflection point where the future will be unrecognizably better.<br /><br />
-
-            The exponential growth of compute power, digital data and artifacts, and nn-based AI signals a broad intelligence revolution in both scale and depth.<br /><br />
-
-            Technology has also been historically proven to be the only robust, consistent, and effective means to combat various social disparities, both directly and indirectly.<br /><br />
-
-            Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is <span class="eater-regular text-xl">into the unknown</span>.`)}
-          />
-        </GlassCard>
-
-        <AboutHighlight />
-
-        <SocialConstellation />
+      <div className="grid about-hero">
+        <h1 className="smallcaps">{about.title}</h1>
+        <p className="lead" dangerouslySetInnerHTML={safeHtml(about.lead)} />
       </div>
+      <div className="grid essay">
+        <h2>{about.heading}</h2>
+        <Paragraphs html={about.body} />
+      </div>
+      <div className="grid feature">
+        <div className="media">
+          <Reel videos={highlightVideos} />
+        </div>
+        <div className="copy">
+          <h2>{aboutHighlight.title}</h2>
+          <p>{aboutHighlight.description}</p>
+        </div>
+      </div>
+      <div className="grid social">
+        <h2 className="smallcaps">{about.socialsHeading}</h2>
+        <ul>
+          {about.socials.map((social) => (
+            <li key={social.href}>
+              <a href={social.href} target="_blank" rel="noopener noreferrer">
+                <span className="ic">
+                  <i className={social.icon} aria-hidden="true" />
+                </span>
+                <span className="tx">
+                  <b>{social.name}</b>
+                  <small>{social.handle}</small>
+                </span>
+                {/* drawn, not a character: phones render ↗ as an emoji */}
+                <svg className="go" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M3 9 9 3M4 3h5v5" />
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="about-tail" />
     </>
   );
 };

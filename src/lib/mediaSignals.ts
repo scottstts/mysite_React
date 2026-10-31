@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -29,4 +29,22 @@ export const useDocumentVisible = () => {
   }, []);
 
   return visible;
+};
+
+// Auto-advancing blocks run only while this much of them is on screen.
+export const useInView = (ref: RefObject<Element | null>, threshold = 0.35) => {
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref, threshold]);
+
+  return inView;
 };

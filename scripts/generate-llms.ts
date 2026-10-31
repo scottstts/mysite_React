@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import { about } from '../src/features/about/about.data.ts';
 import { aboutHighlight } from '../src/features/about/highlight.data.ts';
 import { inspirations } from '../src/features/inspirations/inspirations.data.ts';
 import { apps } from '../src/features/portfolio/apps.data.ts';
@@ -15,40 +16,6 @@ const SOURCE_URL = 'https://github.com/scottstts/mysite_React';
 const OUTPUT_PATH = fileURLToPath(
   new URL('../public/llms.txt', import.meta.url)
 );
-
-// Static About copy (lives in JSX, not in a data file).
-const ABOUT_INTRO = `### Techno Optimist
-
-#### Into The Unknown
-
-From the infinite potential of energy to the total actualization of entropy, **intelligence** charts a course for the pursuit of **meaning**, **mission** and **love**.
-
-I believe that all problems are eventually solvable through technology without introducing any additional externality. Technology evolves—gradually or rapidly—to match the complexity of problems. Today's flawed solutions will never capture how easily these problems may be resolved in the future.
-
-Technology emerges from the interactions between intelligent entities and the universe they inhabit, while intelligence improves and evolves through technology. Technology is not only an external manifestation of intelligence but it stands as the ultimate culmination.
-
-Intelligence is the meta-problem underlying all challenges. Once intelligence is solved, we indirectly unlock solutions to every problem. The acceleration of ASI injects a second-order surge into all frontier sciences and engineering, placing us at an inflection point where the future will be unrecognizably better.
-
-The exponential growth of compute power, digital data & artifacts, and nn-based AI signals a broad intelligence revolution in both scale and depth.
-
-Technology has also been historically proven to be the only robust, consistent, and effective means to combat various social disparities, both directly and indirectly.
-
-Acceleration follows an exponential curve while human imagination remains confined to linear velocity. A fundamental transformation may be daunting, yet it is equally if not more exhilarating, for the only way forward is *into the unknown*.`;
-
-const SOCIALS = [
-  { name: 'X', label: '@scottstts', href: 'https://x.com/scottstts/' },
-  {
-    name: 'LinkedIn',
-    label: 'Scott Sun',
-    href: 'https://www.linkedin.com/in/st-scottsun-inireland/',
-  },
-  { name: 'GitHub', label: 'scottstts', href: 'https://github.com/scottstts/' },
-  {
-    name: 'Instagram',
-    label: '@scottstts',
-    href: 'https://www.instagram.com/scottstts/',
-  },
-];
 
 // Convert the limited HTML used in data descriptions into Markdown.
 function htmlToMarkdown(html: string): string {
@@ -66,8 +33,13 @@ function htmlToMarkdown(html: string): string {
       )
       .replace(
         /<span\s+class="([^"]*)">([\s\S]*?)<\/span>/g,
-        (_, cls: string, text: string) =>
-          cls.split(/\s+/).includes('italic') ? `*${text}*` : text
+        (_, cls: string, text: string) => {
+          const classes = cls.split(/\s+/);
+          if (classes.includes('highlight-glow')) return `**${text}**`;
+          if (classes.includes('italic') || classes.includes('eater-regular'))
+            return `*${text}*`;
+          return text;
+        }
       )
       .replace(/<br\s*\/?>/g, '\n')
       // Drop any remaining tags
@@ -112,12 +84,18 @@ const statusLabel = (status: AppStatusValue) =>
   typeof status === 'string' ? status : status.label;
 
 function renderAbout(): string {
+  const intro = [
+    `### ${about.title}`,
+    `#### ${about.heading}`,
+    htmlToMarkdown(about.lead),
+    htmlToMarkdown(about.body),
+  ];
   const highlight = [
     '#### Highlight',
     `**${aboutHighlight.title}**`,
     aboutHighlight.description,
   ];
-  // Same validation as AboutHighlight.tsx: invalid IDs render as placeholders.
+  // Same validation as AboutTab.tsx: invalid IDs are skipped.
   const videoIds = aboutHighlight.youtubeIds
     .map((id) => id.trim())
     .filter((id) => /^[a-zA-Z0-9_-]{11}$/.test(id));
@@ -133,10 +111,12 @@ function renderAbout(): string {
     );
   }
   const socials = [
-    '#### Find me on',
-    SOCIALS.map((s) => `- ${s.name}: [${s.label}](${s.href})`).join('\n'),
+    `#### ${about.socialsHeading}`,
+    about.socials
+      .map((s) => `- ${s.name}: [${s.handle}](${s.href})`)
+      .join('\n'),
   ];
-  return ['## About', ABOUT_INTRO, ...highlight, ...socials].join('\n\n');
+  return ['## About', ...intro, ...highlight, ...socials].join('\n\n');
 }
 
 function renderPortfolio(): string {

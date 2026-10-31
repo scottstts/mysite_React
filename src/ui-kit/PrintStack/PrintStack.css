@@ -1,0 +1,57 @@
+.stack {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 22px;
+}
+
+.stack .print {
+  position: absolute;
+  transform: translate(calc(var(--d) * 7px), calc(var(--d) * 6px))
+    rotate(calc(var(--rot) * 1deg));
+  transition:
+    transform 0.9s var(--ease),
+    box-shadow 0.9s;
+}
+
+.stack .print img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stack .print.out {
+  transform: translate(58%, -6%) rotate(7deg);
+  transition: transform 0.55s cubic-bezier(0.5, 0, 0.7, 0.4);
+  z-index: 30 !important;
+}
+
+.stack:hover .print[data-top]:not(.out) {
+  transform: translate(-3px, -5px);
+}
+
+.stack-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+.stack-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.stack-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(35, 30, 23, 0.2);
+  transition: background 0.3s;
+}
+
+.stack-dots i.on {
+  background: var(--ink);
+}

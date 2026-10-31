@@ -7,9 +7,17 @@ declare module '*.module.css' {
 
 declare module '*.css';
 
-declare module 'virtual:youtube-dimensions' {
-  const dimensions: Record<string, readonly [number, number]>;
-  export default dimensions;
+declare module 'virtual:youtube-meta' {
+  const meta: Record<
+    string,
+    { w: number; h: number; len: number; title: string }
+  >;
+  export default meta;
+}
+
+declare module 'virtual:image-ratios' {
+  const ratios: Record<string, number>;
+  export default ratios;
 }
 
 declare module '*.glb' {
@@ -23,36 +31,6 @@ interface InstagramApi {
   };
 }
 
-interface YouTubePlayer {
-  destroy: () => void;
-  getPlayerState: () => number;
-}
-
-interface YouTubePlayerEvent {
-  data: number;
-  target: YouTubePlayer;
-}
-
-interface YouTubePlayerOptions {
-  events?: {
-    onReady?: (_event: { target: YouTubePlayer }) => void;
-    onStateChange?: (_event: YouTubePlayerEvent) => void;
-  };
-}
-
-interface YouTubeApi {
-  Player: new (
-    _elementId: string,
-    _options?: YouTubePlayerOptions
-  ) => YouTubePlayer;
-}
-
 interface Window {
-  YT?: YouTubeApi;
-  onYouTubeIframeAPIReady?: () => void;
   instgrm?: InstagramApi;
-}
-
-interface WindowEventMap {
-  'intro-video-complete': Event;
 }

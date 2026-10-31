@@ -1,4 +1,4 @@
-import type { App } from '@/types/content';
+import type { App, PageEnding } from '@/types/content';
 
 export const apps: App[] = [
   {
@@ -459,3 +459,9 @@ With Job Guru, you're not just writing—you're crafting a tailored, strategic a
     showLink: false,
   },
 ];
+
+// The closing line at the bottom of the page. `image` (optional) is a file in
+// public/content_imgs, shown as a print under the line.
+export const portfolioEnding: PageEnding = {
+  text: `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink" aria-hidden="true"></i>`,
+};

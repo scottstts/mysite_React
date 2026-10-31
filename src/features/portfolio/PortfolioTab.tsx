@@ -1,33 +1,68 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import GlassCard from '@/ui-kit/GlassCard/GlassCard';
-import ImageSlider from '@/ui-kit/ImageSlider/ImageSlider';
-import { apps } from './apps.data';
 import { safeHtml } from '@/lib/safeHtml';
-import type { AppStatusValue } from '@/types/content';
+import Ending from '@/ui-kit/Ending/Ending';
+import PrintStack from '@/ui-kit/PrintStack/PrintStack';
+import Reel from '@/ui-kit/Reel/Reel';
+import type { App } from '@/types/content';
+import { apps, portfolioEnding } from './apps.data';
 
-const baseStampClasses =
-  'relative inline-flex items-center justify-center self-center rounded-full border border-transparent px-3 md:px-4 py-1.5 md:py-2 uppercase tracking-[0.14em] font-medium leading-none whitespace-nowrap backdrop-blur-[12px] text-[0.62rem] md:text-[0.68rem] text-slate-100/90 shadow-[0_6px_20px_rgba(8,15,33,0.35)]';
+const statusLabel = ({ status }: App) =>
+  typeof status === 'string' ? status : (status?.label ?? '');
 
-const statusStyles: Record<string, string> = {
-  'no-longer-deployed':
-    'bg-[linear-gradient(120deg,_rgba(99,102,241,0.16),_rgba(14,165,233,0.08))] border-white/20 shadow-[0_12px_32px_rgba(2,6,23,0.55)] backdrop-blur-[14px]',
+const host = (url: string) =>
+  url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+const Visit = ({ app }: { app: App }) => {
+  if (app.showLink && app.link) {
+    return (
+      <a
+        className="visit"
+        href={app.link}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {/github\.com/.test(app.link) ? 'Source on GitHub' : host(app.link)}
+        <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+      </a>
+    );
+  }
+  const sunset = statusLabel(app);
+  return sunset ? <span className="sunset">{sunset}</span> : null;
 };
 
-interface StatusStampProps {
-  status?: AppStatusValue;
-}
+// Title, tagline and link share one line only when all three fit; otherwise
+// each gets its own line, the link set to the right.
+const TitleRow = ({ app }: { app: App }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [stacked, setStacked] = useState(false);
 
-const StatusStamp = ({ status }: StatusStampProps) => {
-  if (!status) return null;
+  useLayoutEffect(() => {
+    const row = ref.current;
+    if (!row) return;
+    const fit = () => {
+      // items keep their natural width in both layouts, so the sum is stable
+      const items = [...row.children] as HTMLElement[];
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+      const need =
+        items.reduce((sum, item) => sum + item.offsetWidth, 0) +
+        gap * (items.length - 1);
+      setStacked(need > row.clientWidth);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(row);
+    void document.fonts?.ready.then(fit);
+    return () => observer.disconnect();
+  }, []);
 
-  const normalizedStatus =
-    typeof status === 'string' ? { type: status, label: status } : status;
-
-  const { type, label } = normalizedStatus;
-  const style =
-    statusStyles[type] || 'bg-slate-500/10 text-slate-200 border-slate-500/40';
-
-  return <span className={`${baseStampClasses} ${style}`}>{label}</span>;
+  return (
+    <div ref={ref} className={`title${stacked ? ' stacked' : ''}`}>
+      <h2>{app.title}</h2>
+      <span className="tag">{app.tagline}</span>
+      <Visit app={app} />
+    </div>
+  );
 };
 
 const PortfolioTab = () => {
@@ -40,78 +75,36 @@ const PortfolioTab = () => {
           content="Scott Sun's apps and projects - Vacation Planner and Transcrilate. Practical solutions built with modern technologies."
         />
       </Helmet>
-      <div className="portfolio-tab space-y-8">
-        <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
-          Portfolio
-        </h1>
-
-        {apps.map((app) => (
-          <GlassCard key={app.id}>
-            <div className="p-5 md:p-8">
-              {/* Title */}
-              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-200 text-left leading-tight">
-                <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <span className="leading-tight">{app.title}</span>
-                  <StatusStamp status={app.status} />
-                </span>
-              </h2>
-
-              {/* Description */}
-              <p className="text-white text-base md:text-lg mb-8 leading-relaxed text-left">
-                <span className="glass-card-tagline font-semibold text-yellow-200">
-                  {app.tagline}
-                </span>
-                <br />
-                <br />
-                <span dangerouslySetInnerHTML={safeHtml(app.description)} />
-              </p>
-
-              {/* Slider Container */}
-              {((app.images && app.images.length > 0) ||
-                (app.videos && app.videos.length > 0)) && (
-                <div className="relative mt-8">
-                  <div className="slider-container p-3 md:p-4">
-                    <ImageSlider
-                      images={app.images}
-                      videos={app.videos || []}
-                      label={app.title}
-                      autoplay={true}
-                      autoplayDelay={4000}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Button */}
-              {app.showLink && app.link && (
-                <div className="mt-6 text-left">
-                  <a
-                    href={app.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="view-button inline-flex items-center gap-1.5 px-6 py-3 text-base md:text-lg font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 transition-all duration-200"
-                  >
-                    Check out{' '}
-                    <span className="font-semibold text-yellow-200">
-                      {app.title}
-                    </span>
-                  </a>
-                </div>
+      <div className="grid page-head">
+        <h1>Portfolio</h1>
+      </div>
+      {apps.map((app, index) => {
+        const videos = app.videos ?? [];
+        const images = app.images ?? [];
+        const classes = [
+          'grid',
+          'work',
+          index % 2 ? 'flip' : '',
+          app.status ? 'is-sunset' : '',
+          videos.length || images.length ? '' : 'text-only',
+        ];
+        return (
+          <article key={app.id} className={classes.filter(Boolean).join(' ')}>
+            <TitleRow app={app} />
+            <div className="media">
+              {videos.length > 0 && <Reel videos={videos} />}
+              {images.length > 0 && (
+                <PrintStack images={images} caption={app.title} />
               )}
             </div>
-          </GlassCard>
-        ))}
-
-        {/* Future Project Teaser */}
-        <GlassCard className="p-8 text-center">
-          <p
-            className="text-xl md:text-2xl text-yellow-100"
-            dangerouslySetInnerHTML={safeHtml(
-              `I'm sure a new idea will hit me soon... <i class="fa-solid fa-face-laugh-wink" aria-hidden="true"></i>`
-            )}
-          />
-        </GlassCard>
-      </div>
+            <div
+              className="copy prose"
+              dangerouslySetInnerHTML={safeHtml(app.description)}
+            />
+          </article>
+        );
+      })}
+      <Ending ending={portfolioEnding} />
     </>
   );
 };

@@ -1,9 +1,17 @@
+import type { CSSProperties } from 'react';
 import { Helmet } from 'react-helmet-async';
-import GlassCard from '@/ui-kit/GlassCard/GlassCard';
-import { inspirations } from './inspirations.data';
-import { safeHtml } from '@/lib/safeHtml';
+import { imageRatio, imageUrl } from '@/lib/images';
+import Ending from '@/ui-kit/Ending/Ending';
+import Paragraphs from '@/ui-kit/Paragraphs/Paragraphs';
+import { useLift } from '@/ui-kit/Lift/liftContext';
+import { inspirations, inspirationsEnding } from './inspirations.data';
+
+// each portrait is pinned at its own small angle
+const TILT = [-1.4, 1, -0.6, 1.3, -1, 0.8];
 
 const InspirationsTab = () => {
+  const { lift } = useLift();
+
   return (
     <>
       <Helmet>
@@ -13,48 +21,47 @@ const InspirationsTab = () => {
           content="Scott Sun's inspirations - people who inspire and motivate through their brilliance and hard work in AI and technology."
         />
       </Helmet>
-      <div className="inspirations-tab space-y-8">
-        <h1 className="page-title text-4xl md:text-5xl font-bold text-center mb-12 fade-in">
-          My Inspirations
-        </h1>
-
-        <div className="space-y-12">
-          {inspirations.map((inspiration) => (
-            <GlassCard key={inspiration.id}>
-              <div className="p-5 md:p-8 flex flex-col gap-6">
-                {/* Title */}
-                <h2 className="text-2xl md:text-3xl font-bold -mb-2 text-gray-200">
-                  {inspiration.name}
-                </h2>
-
-                {/* Description */}
-                <p
-                  className="text-white text-base md:text-lg leading-relaxed"
-                  dangerouslySetInnerHTML={safeHtml(inspiration.description)}
-                />
-
-                {/* Image - matching original structure exactly */}
-                <img
-                  src={`/content_imgs/${inspiration.image}`}
-                  loading="lazy"
-                  alt={inspiration.name.toLowerCase()}
-                  className="rounded-xl w-full object-cover"
-                />
-              </div>
-            </GlassCard>
-          ))}
-
-          {/* Final quote card */}
-          <GlassCard className="p-8 text-left">
-            <p
-              className="text-xl md:text-2xl text-yellow-100"
-              dangerouslySetInnerHTML={safeHtml(
-                `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart" aria-hidden="true"></i>`
-              )}
-            />
-          </GlassCard>
-        </div>
+      <div className="grid page-head">
+        <h1>My Inspirations</h1>
       </div>
+      {inspirations.map((person, index) => (
+        <article key={person.id} className="grid person">
+          <div className="photo">
+            <button
+              className="print"
+              aria-label={`Open portrait of ${person.name}`}
+              style={
+                { '--rot': `${TILT[index % TILT.length]}deg` } as CSSProperties
+              }
+              onClick={(event) =>
+                lift({
+                  items: [
+                    {
+                      src: imageUrl(person.image),
+                      ratio: imageRatio(person.image),
+                    },
+                  ],
+                  index: 0,
+                  from: event.currentTarget,
+                  caption: person.name,
+                })
+              }
+            >
+              <img
+                src={imageUrl(person.image)}
+                alt={person.name}
+                loading="lazy"
+                style={{ aspectRatio: imageRatio(person.image) }}
+              />
+            </button>
+          </div>
+          <div className="copy">
+            <h2>{person.name}</h2>
+            <Paragraphs html={person.description} />
+          </div>
+        </article>
+      ))}
+      <Ending ending={inspirationsEnding} />
     </>
   );
 };

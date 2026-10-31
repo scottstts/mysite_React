@@ -1,25 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
-import tailwindcss from '@tailwindcss/vite';
 import crawlable from './vite-plugin-crawlable.js';
-import youtubeDimensions from './vite-plugin-youtube-dimensions.js';
+import imageRatios from './vite-plugin-image-ratios.js';
+import youtubeMeta from './vite-plugin-youtube-meta.js';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), crawlable(), youtubeDimensions()],
+  plugins: [react(), crawlable(), youtubeMeta(), imageRatios()],
   assetsInclude: ['**/*.glb'],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        // Let Rollup handle chunking naturally for better tree-shaking
-        // Three.js will still be in a separate chunk due to dynamic import in Stars.jsx
-      },
     },
   },
 });

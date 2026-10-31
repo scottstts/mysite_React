@@ -2,8 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import './index.css';
-import './styles/glassCardEffect.css';
 import App from '@/app/App';
 
 // Add @axe-core/react for accessibility testing in development

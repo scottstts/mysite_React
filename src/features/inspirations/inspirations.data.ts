@@ -1,4 +1,4 @@
-import type { Inspiration } from '@/types/content';
+import type { Inspiration, PageEnding } from '@/types/content';
 
 export const inspirations: Inspiration[] = [
   {
@@ -72,3 +72,9 @@ There is a profound wisdom from him and his philosophy that I find extremely enc
     image: 'pieter_levels.jpeg',
   },
 ];
+
+// The closing line at the bottom of the page. `image` (optional) is a file in
+// public/content_imgs, shown as a print under the line.
+export const inspirationsEnding: PageEnding = {
+  text: `I'm grateful that they exist. Our timeline is infinitely better with them in it. And whenever life gets difficult, which is often, I receive visceral strength and courage watching their brilliance and hard work in action! <i class="fa-regular fa-heart" aria-hidden="true"></i>`,
+};
