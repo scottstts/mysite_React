@@ -13,28 +13,42 @@ import './Lift.css';
 import Icon from '@/ui-kit/Icon/Icon';
 
 const SETTLE_MS = 650;
-const PAD = 28; // the print's paper border, both sides
+const BORDER = 14; // the lifted print's paper border
 
+// The print on the wall: its true size around its centre (prints hang at a
+// slight tilt, which would inflate a bounding box) and its own border.
 const rectOf = (element: HTMLElement) => {
-  const { left, top, width, height } = element.getBoundingClientRect();
-  return { left, top, width, height };
+  const box = element.getBoundingClientRect();
+  const width = element.offsetWidth;
+  const height = element.offsetHeight;
+  return {
+    left: box.left + (box.width - width) / 2,
+    top: box.top + (box.height - height) / 2,
+    width,
+    height,
+    padding: parseFloat(getComputedStyle(element).paddingLeft) || 0,
+  };
 };
 
 // The largest print of this shape that fits the middle of the screen.
+// The largest print of this shape that fits the middle of the screen, with
+// an even border all round.
 const targetRect = (ratio: number) => {
+  const pad = BORDER * 2;
   const maxW = window.innerWidth * 0.86;
   const maxH = window.innerHeight * 0.78;
   let width = maxW;
-  let height = width / ratio + PAD;
+  let height = (width - pad) / ratio + pad;
   if (height > maxH) {
     height = maxH;
-    width = (height - PAD) * ratio + PAD;
+    width = (height - pad) * ratio + pad;
   }
   return {
     left: (window.innerWidth - width) / 2,
     top: (window.innerHeight - height) / 2 - 18,
     width,
     height,
+    padding: BORDER,
   };
 };
 
@@ -110,6 +124,8 @@ const LiftView = ({ request, onClosed }: LiftViewProps) => {
           top: rect.top,
           width: rect.width,
           height: rect.height,
+          // the border grows from the print's own to the lifted one, and back
+          padding: rect.padding,
           transition: phase === 'enter' ? 'none' : undefined,
         }}
       >
