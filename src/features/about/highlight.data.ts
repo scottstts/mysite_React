@@ -3,7 +3,7 @@
 // not the full URL; invalid IDs are skipped. A film's title comes from its
 // entry in apps.data.ts or projects.data.ts, otherwise from YouTube.
 export const aboutHighlight = {
-  title: 'My Three.js Games',
+  title: 'Build Dreams',
   description:
     'I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.',
   youtubeIds: [

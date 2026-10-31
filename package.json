@@ -20,7 +20,7 @@
     "react-dom": "^19.1.0",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^7.6.2",
-    "three": "^0.184.0"
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

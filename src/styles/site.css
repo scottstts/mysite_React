@@ -54,11 +54,14 @@ button {
 }
 
 /* ---------------- the wall ---------------- */
+/* the large viewport: a phone's toolbar coming and going doesn't resize it */
 canvas.wall {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100lvh;
   z-index: 0;
   display: block;
   opacity: 0;
@@ -76,14 +79,27 @@ canvas.wall.lit {
 }
 
 /* ---------------- header ---------------- */
+/* pinned; clear over the wall at the top of the page, frosted once the page
+   scrolls under it */
 header.top {
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   padding: 22px var(--gut) 16px;
+  transition:
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
+
+header.top.scrolled {
+  background-color: rgba(222, 213, 199, 0.78);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 1px 0 rgba(35, 30, 23, 0.08);
 }
 
 .mark {
@@ -807,9 +823,13 @@ footer.foot i {
 
 /* ---------------- phones ---------------- */
 @media (max-width: 900px) {
+  /* one line: the logo on the left, the tabs (icons when tight) on the right */
   header.top {
-    flex-direction: column;
-    gap: 10px;
+    gap: 16px;
+  }
+
+  .mark span {
+    display: none;
   }
 
   nav.tabs,

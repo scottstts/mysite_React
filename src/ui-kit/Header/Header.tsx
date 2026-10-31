@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { TabId } from '@/types/content';
 
@@ -21,6 +21,7 @@ const Header = ({ tabs, activeTab }: HeaderProps) => {
   const markRef = useRef<HTMLAnchorElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [compact, setCompact] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const inArt = activeTab === 'art-in-life';
 
   useLayoutEffect(() => {
@@ -49,8 +50,19 @@ const Header = ({ tabs, activeTab }: HeaderProps) => {
     return () => observer.disconnect();
   }, [inArt]);
 
+  // the bar takes a backing once content scrolls beneath it
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 4);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
-    <header ref={headerRef} className="top">
+    <header
+      ref={headerRef}
+      className={`top${scrolled && !inArt ? ' scrolled' : ''}`}
+    >
       <Link ref={markRef} className="mark" to="/">
         <img src="/static_assets/logo.png" alt="" width="34" height="34" />
         <span>Scott Sun</span>

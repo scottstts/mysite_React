@@ -72,12 +72,12 @@ export const apps: App[] = [
   {
     id: 'jelly-baby',
     title: 'Jelly Baby',
-    tagline: 'Bouncy fun.',
+    tagline: 'Gelatinous fun.',
     description: `Started as a jelly physics simulation demo which seemed well received, so I goofed off and made this Jelly Baby game with the same physics engine and softbody kernel.`,
     videos: [
       {
         videoId: 'CyIb1XJU9SQ',
-        title: 'Bouncy Jelly Baby Game',
+        title: 'Jelly Baby',
       },
     ],
     link: 'https://jelly.scottsun.io',

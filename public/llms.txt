@@ -27,20 +27,20 @@ Acceleration follows an exponential curve while human imagination remains confin
 
 #### Highlight
 
-**My Three.js Games**
+**Build Dreams**
 
 I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.
 
 **Videos:**
 
-- [My Three.js Games — Video 1](https://youtu.be/o_USermt690)
-- [My Three.js Games — Video 2](https://youtu.be/sH4emb3Sff8)
-- [My Three.js Games — Video 3](https://youtu.be/B3BaLHv6qqM)
-- [My Three.js Games — Video 4](https://youtu.be/Y2psQc6GEb0)
-- [My Three.js Games — Video 5](https://youtu.be/CyIb1XJU9SQ)
-- [My Three.js Games — Video 6](https://youtu.be/-i1vPXEoNXg)
-- [My Three.js Games — Video 7](https://youtu.be/kmueNuoSMaI)
-- [My Three.js Games — Video 8](https://youtu.be/4aNivsxDA_Y)
+- [Build Dreams — Video 1](https://youtu.be/o_USermt690)
+- [Build Dreams — Video 2](https://youtu.be/sH4emb3Sff8)
+- [Build Dreams — Video 3](https://youtu.be/B3BaLHv6qqM)
+- [Build Dreams — Video 4](https://youtu.be/Y2psQc6GEb0)
+- [Build Dreams — Video 5](https://youtu.be/CyIb1XJU9SQ)
+- [Build Dreams — Video 6](https://youtu.be/-i1vPXEoNXg)
+- [Build Dreams — Video 7](https://youtu.be/kmueNuoSMaI)
+- [Build Dreams — Video 8](https://youtu.be/4aNivsxDA_Y)
 
 #### Find me on
 
@@ -95,11 +95,11 @@ It started as a test to see Opus 5.5's capabilities, and it quickly escalated in
 
 ### Jelly Baby
 
-**Tagline:** Bouncy fun.
+**Tagline:** Gelatinous fun.
 
 **Videos:**
 
-- [Bouncy Jelly Baby Game](https://youtu.be/CyIb1XJU9SQ)
+- [Jelly Baby](https://youtu.be/CyIb1XJU9SQ)
 
 Started as a jelly physics simulation demo which seemed well received, so I goofed off and made this Jelly Baby game with the same physics engine and softbody kernel.
 
