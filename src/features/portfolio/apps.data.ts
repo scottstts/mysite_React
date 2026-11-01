@@ -120,7 +120,7 @@ export const apps: App[] = [
     description: `These are what I call "Three.js Quick Art", artistic scenes built in Three.js. There is no specific genre, no anthology, no theme, only beauty. What you see is what the inspiration brought at the moment.`,
     videos: [
       {
-        videoId: '4aNivsxDA_Y',
+        videoId: 'plTevQHbv44',
         title: 'Hollow Holo',
       },
       {
