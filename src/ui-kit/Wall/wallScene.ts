@@ -43,6 +43,25 @@ const FABRIC_TILE_PX = 320;
 // the knit is a neutral white; this warms it to the page's palette
 const FABRIC_TINT = 0xfaf4eb;
 
+// Browser zoom (cmd +/-) makes a CSS pixel span more of the screen. The wall
+// isn't page content, so it undoes that: the cloth and the render resolution
+// are sized in unzoomed pixels. Zoom shows in devicePixelRatio, but so does the
+// display's own density; outer/inner width separates the two, and display
+// densities come in steps, so the nearest step is the display's own.
+const DENSITIES = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 3.5, 4];
+function browserZoom() {
+  const dpr = window.devicePixelRatio || 1;
+  const outer = window.outerWidth;
+  const inner = window.innerWidth;
+  const rough = outer && inner ? outer / inner : 1;
+  if (!(rough > 0.2 && rough < 6)) return 1;
+  const guess = dpr / rough;
+  const native = DENSITIES.reduce((best, d) =>
+    Math.abs(d - guess) < Math.abs(best - guess) ? d : best
+  );
+  return dpr / native;
+}
+
 function fabricTextures() {
   const loader = new THREE.TextureLoader();
   const load = (name: string, color: boolean) =>
@@ -63,13 +82,13 @@ export function createWall(
   canvas: HTMLCanvasElement,
   onFirstFrame: () => void
 ): Wall {
-  // Soft by nature: no MSAA, and never more than one pixel per CSS pixel.
+  // Soft by nature: no MSAA, and never more than one pixel per unzoomed CSS
+  // pixel (set in resize, since zoom can change).
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: false,
     powerPreference: 'low-power',
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.VSMShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -266,8 +285,10 @@ export function createWall(
   const resize = () => {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    if (!width || !height || framed === `${width}x${height}`) return false;
-    framed = `${width}x${height}`;
+    const zoom = browserZoom();
+    const key = `${width}x${height}@${zoom.toFixed(3)}`;
+    if (!width || !height || framed === key) return false;
+    framed = key;
     const a = width / height;
     if (a >= 1) {
       const vh = Math.max(VH, 14 / a);
@@ -287,9 +308,10 @@ export function createWall(
       camera.bottom = lightTop - (x1 - x0) / a;
     }
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, zoom));
     renderer.setSize(width, height, false);
-    // one tile of cloth spans FABRIC_TILE_PX on screen
-    const pxPerUnit = height / (camera.top - camera.bottom);
+    // one tile of cloth spans FABRIC_TILE_PX unzoomed pixels on screen
+    const pxPerUnit = (height * zoom) / (camera.top - camera.bottom);
     tileRepeat = (WALL_SIZE * pxPerUnit) / FABRIC_TILE_PX;
     for (const t of [cloth.map, cloth.normalMap, cloth.roughnessMap])
       t?.repeat.set(tileRepeat, tileRepeat);
