@@ -15,6 +15,8 @@ interface HeaderProps {
   activeTab: TabId;
 }
 
+const VEIL_RANGE = 120;
+
 // The tabs always sit on one line. When their labels don't fit the room the
 // header leaves them, they become icons.
 const Header = ({ tabs, activeTab }: HeaderProps) => {
@@ -22,7 +24,6 @@ const Header = ({ tabs, activeTab }: HeaderProps) => {
   const markRef = useRef<HTMLAnchorElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [compact, setCompact] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const inArt = activeTab === 'art-in-life';
 
   useLayoutEffect(() => {
@@ -51,19 +52,34 @@ const Header = ({ tabs, activeTab }: HeaderProps) => {
     return () => observer.disconnect();
   }, [inArt]);
 
-  // the bar takes a backing once content scrolls beneath it
+  // the bar's backing fades in as content scrolls beneath it, fully there
+  // once the page has moved VEIL_RANGE pixels
   useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 4);
+    const header = headerRef.current;
+    if (!header) return;
+    if (inArt) {
+      header.style.setProperty('--veil', '0');
+      return;
+    }
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const veil = Math.min(Math.max(window.scrollY / VEIL_RANGE, 0), 1);
+      header.style.setProperty('--veil', veil.toFixed(3));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, []);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [inArt]);
 
   return (
-    <header
-      ref={headerRef}
-      className={`top${scrolled && !inArt ? ' scrolled' : ''}`}
-    >
+    <header ref={headerRef} className="top">
       <Link ref={markRef} className="mark" to="/">
         <img src="/static_assets/logo.png" alt="" width="34" height="34" />
         <span>Scott Sun</span>

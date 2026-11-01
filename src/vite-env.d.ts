@@ -26,11 +26,6 @@ declare module 'virtual:icons' {
   export default icons;
 }
 
-declare module '*.glb' {
-  const src: string;
-  export default src;
-}
-
 interface InstagramApi {
   Embeds: {
     process: (_element?: Element | Document) => void;

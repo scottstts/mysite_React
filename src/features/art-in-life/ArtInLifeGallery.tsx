@@ -9,15 +9,18 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createInstagramEmbedHtml } from './artInLife.data';
 import styles from './ArtInLifeTab.module.css';
-import walnutFrameTextureUrl from '@/assets/textures/aged-walnut-frame.webp';
-import goldFrameTextureUrl from '@/assets/textures/antique-gold-frame.webp';
-import ebonyFrameTextureUrl from '@/assets/textures/dark-ebony-frame.webp';
-import floorBaseTextureUrl from '@/assets/textures/gallery-floor-base.jpg';
-import floorNormalTextureUrl from '@/assets/textures/gallery-floor-normal.webp';
-import matBoardTextureUrl from '@/assets/textures/gallery-mat-board.webp';
-import plasterBumpTextureUrl from '@/assets/textures/gallery-plaster-bump.webp';
-import plasterTextureUrl from '@/assets/textures/gallery-plaster.webp';
-import neonSignGlbUrl from '@/assets/art_in_life_neon.glb';
+
+// served as-is from public/3d_assets
+const GALLERY_TEXTURES = '/3d_assets/gallery_textures';
+const walnutFrameTextureUrl = `${GALLERY_TEXTURES}/aged-walnut-frame.webp`;
+const goldFrameTextureUrl = `${GALLERY_TEXTURES}/antique-gold-frame.webp`;
+const ebonyFrameTextureUrl = `${GALLERY_TEXTURES}/dark-ebony-frame.webp`;
+const floorBaseTextureUrl = `${GALLERY_TEXTURES}/gallery-floor-base.jpg`;
+const floorNormalTextureUrl = `${GALLERY_TEXTURES}/gallery-floor-normal.webp`;
+const matBoardTextureUrl = `${GALLERY_TEXTURES}/gallery-mat-board.webp`;
+const plasterBumpTextureUrl = `${GALLERY_TEXTURES}/gallery-plaster-bump.webp`;
+const plasterTextureUrl = `${GALLERY_TEXTURES}/gallery-plaster.webp`;
+const neonSignGlbUrl = '/3d_assets/glb/art_in_life_neon.glb';
 
 interface ArtInLifeGalleryProps {
   urls: string[];

@@ -9,7 +9,6 @@ import youtubeMeta from './vite-plugin-youtube-meta.js';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), crawlable(), youtubeMeta(), imageRatios(), icons()],
-  assetsInclude: ['**/*.glb'],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

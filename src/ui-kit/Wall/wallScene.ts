@@ -34,57 +34,29 @@ export interface Wall {
   dispose: () => void;
 }
 
-// plaster: a fine procedural tooth, lit by the scene, so shadows sit in the surface
-function plasterTexture() {
-  const N = 512;
-  // value noise from small precomputed lattices, three octaves, tiling
-  const lattice = (P: number) =>
-    Float32Array.from({ length: P * P }, (_, i) => {
-      const s =
-        Math.sin((i % P) * 127.1 + Math.floor(i / P) * 311.7) * 43758.5453;
-      return s - Math.floor(s);
+// fabric: a fine knit, lit by the scene, so shadows sit in the cloth. The
+// maps tile at a fixed size on screen, so the stitches read the same on every
+// display; at about 3px a stitch (~96 across a tile) they're true to life,
+// and small and shallow enough that text stays easy to read over them.
+const FABRIC = '/3d_assets/bg_textures';
+const FABRIC_TILE_PX = 320;
+// the knit is a neutral white; this warms it to the page's palette
+const FABRIC_TINT = 0xfaf4eb;
+
+function fabricTextures() {
+  const loader = new THREE.TextureLoader();
+  const load = (name: string, color: boolean) =>
+    loader.loadAsync(`${FABRIC}/${name}`).then((texture) => {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = 4;
+      if (color) texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
     });
-  const octaves = [
-    [6, 0.5],
-    [24, 0.3],
-    [128, 0.2],
-  ].map(([P, weight]) => ({ P, weight, values: lattice(P) }));
-  const smooth = (t: number) => t * t * (3 - 2 * t);
-  const data = new Uint8Array(N * N * 4);
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      let n = 0;
-      for (const { P, weight, values } of octaves) {
-        const fx = (x / N) * P;
-        const fy = (y / N) * P;
-        const xi = Math.floor(fx);
-        const yi = Math.floor(fy);
-        const u = smooth(fx - xi);
-        const v = smooth(fy - yi);
-        const x1 = (xi + 1) % P;
-        const y1 = (yi + 1) % P;
-        const a = values[yi * P + xi];
-        const b = values[yi * P + x1];
-        const c = values[y1 * P + xi];
-        const d = values[y1 * P + x1];
-        n += (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * weight;
-      }
-      const k = 236 + (n - 0.5) * 16;
-      const i = (y * N + x) * 4;
-      data[i] = k;
-      data[i + 1] = k * 0.975;
-      data[i + 2] = k * 0.94;
-      data[i + 3] = 255;
-    }
-  }
-  const texture = new THREE.DataTexture(data, N, N);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.needsUpdate = true;
-  return texture;
+  return Promise.all([
+    load('fabric-base.webp', true),
+    load('fabric-normal.webp', false),
+    load('fabric-roughness.webp', false),
+  ]);
 }
 
 export function createWall(
@@ -108,12 +80,38 @@ export function createWall(
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 1);
   camera.position.set(0, 0, 0.5);
 
-  const plaster = plasterTexture();
-  plaster.repeat.set(8, 8);
+  const WALL_SIZE = 60;
+  const cloth = new THREE.MeshStandardMaterial({
+    color: FABRIC_TINT,
+    roughness: 1,
+    metalness: 0,
+    normalScale: new THREE.Vector2(0.35, 0.35),
+  });
   const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    new THREE.MeshLambertMaterial({ color: 0xffffff, map: plaster })
+    new THREE.PlaneGeometry(WALL_SIZE, WALL_SIZE),
+    cloth
   );
+  // the wall is only drawn once the cloth has arrived; if it can't, the
+  // plain tint stands in
+  let ready = false;
+  let disposed = false;
+  let tileRepeat = 1;
+  fabricTextures()
+    .then(([map, normalMap, roughnessMap]) => {
+      if (disposed) {
+        [map, normalMap, roughnessMap].forEach((t) => t.dispose());
+        return;
+      }
+      for (const t of [map, normalMap, roughnessMap])
+        t.repeat.set(tileRepeat, tileRepeat);
+      Object.assign(cloth, { map, normalMap, roughnessMap });
+      cloth.needsUpdate = true;
+    })
+    .catch(() => {})
+    .finally(() => {
+      ready = true;
+      if (!disposed) kick();
+    });
   wall.receiveShadow = true;
   // receivers are drawn into a VSM shadow map too; keeping the wall out of it
   // avoids the wall shadowing its own grain, and saves the pass
@@ -129,7 +127,7 @@ export function createWall(
   sun.shadow.radius = SHADOW_RADIUS;
   sun.shadow.blurSamples = SHADOW_SAMPLES;
   // every caster is metres from the wall, so a firm bias costs no contact
-  // and keeps the lit plaster free of shadow-map grain
+  // and keeps the lit cloth free of shadow-map grain
   sun.shadow.bias = -0.003;
   scene.add(sun, sun.target);
   scene.add(new THREE.HemisphereLight(0xf1efea, 0xdccdb2, 2.65));
@@ -290,6 +288,11 @@ export function createWall(
     }
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
+    // one tile of cloth spans FABRIC_TILE_PX on screen
+    const pxPerUnit = height / (camera.top - camera.bottom);
+    tileRepeat = (WALL_SIZE * pxPerUnit) / FABRIC_TILE_PX;
+    for (const t of [cloth.map, cloth.normalMap, cloth.roughnessMap])
+      t?.repeat.set(tileRepeat, tileRepeat);
     // the shadow map covers what's in view, centred on it, at the same
     // resolution on every screen so shadows are equally crisp everywhere
     const cx = (camera.left + camera.right) / 2;
@@ -362,7 +365,7 @@ export function createWall(
   // one fresh frame now, then whatever pace the state calls for
   const kick = () => {
     stop();
-    if (state.active) raf = requestAnimationFrame(draw);
+    if (state.active && ready) raf = requestAnimationFrame(draw);
   };
 
   const onResize = () => {
@@ -376,8 +379,11 @@ export function createWall(
       kick();
     },
     dispose() {
+      disposed = true;
       stop();
       window.removeEventListener('resize', onResize);
+      cloth.normalMap?.dispose();
+      cloth.roughnessMap?.dispose();
       scene.traverse((node) => {
         const mesh = node as THREE.Mesh;
         if (!mesh.isMesh) return;
