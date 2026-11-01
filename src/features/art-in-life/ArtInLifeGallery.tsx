@@ -174,6 +174,8 @@ const EMBED_ASPECT_RATIO = EMBED_WIDTH_PX / EMBED_HEIGHT_PX;
 const MAX_CACHED_INSTAGRAM_IFRAMES = 30;
 const INSTAGRAM_EMBED_LOAD_TIMEOUT_MS = 8000;
 const INSTAGRAM_EMBED_SETTLE_MS = 900;
+const INSTAGRAM_EMBED_RETRY_MS = 2500;
+const INSTAGRAM_EMBED_MAX_ATTEMPTS = 3;
 const FRAME_RAIL_Z_OFFSET = 0.055;
 const FRAME_INNER_RIM_T = 0;
 const FRAME_CARD_SIZE_SCALE = 1;
@@ -844,6 +846,22 @@ const isInstagramEmbedIframeHealthy = (
 
 const isInstagramMessageOrigin = (origin: string): boolean =>
   origin === 'https://www.instagram.com' || origin === 'https://instagram.com';
+
+// A card joins the page only once the CSS layer first renders it, which for
+// the opening group is after the gallery finishes preparing. Instagram can't
+// build an embed inside a detached card, so loads wait for it here.
+const waitForConnected = (
+  element: HTMLElement,
+  isCurrent: () => boolean
+): Promise<boolean> =>
+  new Promise((resolve) => {
+    const check = () => {
+      if (!isCurrent()) resolve(false);
+      else if (element.isConnected) resolve(true);
+      else window.setTimeout(check, 100);
+    };
+    check();
+  });
 
 const waitForHealthyInstagramEmbed = (
   container: HTMLElement,
@@ -2000,6 +2018,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
     const maxConcurrentEmbedLoads = isMobile ? 1 : 2;
     let activeEmbedLoadCount = 0;
     let embedRequestSequence = 0;
+    const embedLoadAttempts = new Map<string, number>();
     const activeCeilingSpotlights = new Map<number, THREE.SpotLight>();
     const maxGroupIndex = Math.max(0, groupCount - 1);
     const groupSpan = Math.max(0, (layout.groupSize - 1) * layout.spacing);
@@ -4826,7 +4845,10 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
         try {
           await loadInstagramEmbedScript();
-          if (!isRecordEmbedRequestCurrent(record, requestId)) return;
+          const connected = await waitForConnected(record.element, () =>
+            isRecordEmbedRequestCurrent(record, requestId)
+          );
+          if (!connected) return;
 
           record.element.innerHTML = createMountedEmbedHtml(url);
           updateEmbedRecordVisibility(record, null);
@@ -4864,6 +4886,7 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
 
           embedCache.set(cacheKey, cacheEntry);
           embedCacheOrder.push(cacheKey);
+          embedLoadAttempts.delete(cacheKey);
           record.cacheKey = cacheKey;
           record.embedMounted = true;
           record.embedRequested = false;
@@ -4886,6 +4909,21 @@ const ArtInLifeGallery = ({ urls }: ArtInLifeGalleryProps) => {
           updateEmbedRecordVisibility(record, null);
           invalidateCssRender();
           requestRenderLoop();
+
+          // try again while the card is still on the group in view
+          const attempts = (embedLoadAttempts.get(cacheKey) ?? 0) + 1;
+          embedLoadAttempts.set(cacheKey, attempts);
+          if (attempts < INSTAGRAM_EMBED_MAX_ATTEMPTS) {
+            window.setTimeout(() => {
+              if (
+                isMounted &&
+                activeFrames.get(record.index) === record &&
+                getFramePlacement(record.index).groupIndex === targetGroupIndex
+              ) {
+                requestEmbedForRecord(record);
+              }
+            }, INSTAGRAM_EMBED_RETRY_MS);
+          }
         }
       });
     };
