@@ -54,6 +54,51 @@ const Reel = ({ videos }: ReelProps) => {
   // Posters load as the reel reaches them, one ahead.
   const [reached, setReached] = useState(() => new Set([0, 1]));
   const running = many && visible && !playing && !reduced;
+  // The strip keeps its frames one size and scrolls when they overflow.
+  const strip = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ prev: false, next: false });
+
+  useEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const prev = el.scrollLeft > 1;
+      const next = el.scrollLeft < max - 1;
+      setEdges((old) =>
+        old.prev === prev && old.next === next ? old : { prev, next }
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    el.addEventListener('scroll', measure, { passive: true });
+    return () => {
+      observer.disconnect();
+      el.removeEventListener('scroll', measure);
+    };
+  }, [films.length]);
+
+  // Bring the current frame into view as the reel advances.
+  useEffect(() => {
+    const el = strip.current;
+    const thumb = el?.children[current] as HTMLElement | undefined;
+    if (!el || !thumb) return;
+    const pad = parseFloat(getComputedStyle(el).paddingLeft) || 0;
+    const start = thumb.offsetLeft - pad;
+    const end = thumb.offsetLeft + thumb.offsetWidth + pad;
+    let left: number | undefined;
+    if (start < el.scrollLeft) left = start;
+    else if (end > el.scrollLeft + el.clientWidth) left = end - el.clientWidth;
+    if (left !== undefined)
+      el.scrollTo({ left, behavior: reduced ? 'auto' : 'smooth' });
+  }, [current, reduced]);
+
+  const page = (dir: 1 | -1) =>
+    strip.current?.scrollBy({
+      left: dir * strip.current.clientWidth * 0.8,
+      behavior: reduced ? 'auto' : 'smooth',
+    });
 
   useEffect(() => {
     const next = (current + 1) % films.length;
@@ -89,7 +134,6 @@ const Reel = ({ videos }: ReelProps) => {
       style={
         {
           '--dur': `${REEL_MS}ms`,
-          '--n': Math.max(films.length, 6),
         } as CSSProperties
       }
     >
@@ -142,34 +186,52 @@ const Reel = ({ videos }: ReelProps) => {
         )}
       </div>
       {many && (
-        <div className="reel-strip">
-          {films.map((item, index) => {
-            const on = index === current;
-            return (
-              <button
-                key={index}
-                className={`reel-thumb${on ? ' on' : ''}${on && running ? ' running' : ''}`}
-                aria-label={item.title}
-                aria-current={on}
-                onClick={() => show(index)}
-              >
-                <span className="im">
-                  <img
-                    src={posterUrl(item.id, 'mqdefault')}
-                    alt=""
-                    loading="lazy"
-                  />
-                </span>
-                <span className="bar">
-                  {/* a fresh bar restarts its fill each time the film comes up */}
-                  <i key={on && running ? `run-${index}` : 'idle'} />
-                </span>
-                {item.length > 0 && (
-                  <span className="len">{formatLength(item.length)}</span>
-                )}
-              </button>
-            );
-          })}
+        <div className="reel-rail">
+          <div ref={strip} className="reel-strip">
+            {films.map((item, index) => {
+              const on = index === current;
+              return (
+                <button
+                  key={index}
+                  className={`reel-thumb${on ? ' on' : ''}${on && running ? ' running' : ''}`}
+                  aria-label={item.title}
+                  aria-current={on}
+                  onClick={() => show(index)}
+                >
+                  <span className="im">
+                    <img
+                      src={posterUrl(item.id, 'mqdefault')}
+                      alt=""
+                      loading="lazy"
+                    />
+                  </span>
+                  <span className="bar">
+                    {/* a fresh bar restarts its fill each time the film comes up */}
+                    <i key={on && running ? `run-${index}` : 'idle'} />
+                  </span>
+                  {item.length > 0 && (
+                    <span className="len">{formatLength(item.length)}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            className={`reel-arrow prev${edges.prev ? ' on' : ''}`}
+            aria-label="Earlier films"
+            tabIndex={edges.prev ? 0 : -1}
+            onClick={() => page(-1)}
+          >
+            <Icon name="fa-solid fa-chevron-left" />
+          </button>
+          <button
+            className={`reel-arrow next${edges.next ? ' on' : ''}`}
+            aria-label="Later films"
+            tabIndex={edges.next ? 0 : -1}
+            onClick={() => page(1)}
+          >
+            <Icon name="fa-solid fa-chevron-right" />
+          </button>
         </div>
       )}
     </div>

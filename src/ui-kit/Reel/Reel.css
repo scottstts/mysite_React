@@ -1,6 +1,8 @@
 /* One container for every film. */
 .reel {
   --r: 3px;
+  /* as a grid item it would otherwise widen to fit the whole strip */
+  min-width: 0;
 }
 
 .reel-stage {
@@ -178,19 +180,88 @@
   background: rgba(251, 246, 236, 0.3);
 }
 
-/* The strip: a contact sheet of the reel; the active frame fills as it plays. */
+/* The strip: a contact sheet of the reel; the active frame fills as it plays.
+   Frames keep one size; when they outrun the width the strip scrolls and
+   arrows page through it. */
+.reel-rail {
+  --thumb: 112px;
+  --gutter: 4px;
+  position: relative;
+  margin: calc(14px - var(--gutter)) calc(-1 * var(--gutter)) 0;
+}
+
 .reel-strip {
-  display: grid;
-  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  position: relative;
+  display: flex;
   gap: clamp(6px, 0.7vw, 10px);
-  margin-top: 14px;
+  /* room for the frames' shadow and focus ring, which overflow would clip */
+  padding: var(--gutter) var(--gutter) 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  scrollbar-width: none;
+}
+
+.reel-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .reel-thumb {
   all: unset;
   display: block;
   cursor: pointer;
+  flex: 0 0 var(--thumb);
   min-width: 0;
+  scroll-snap-align: start;
+}
+
+.reel-arrow {
+  position: absolute;
+  z-index: 1;
+  /* centred on the frames, not the bar and length beneath them */
+  top: calc(var(--gutter) + var(--thumb) * 9 / 32);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(251, 246, 236, 0.92);
+  color: var(--ink);
+  box-shadow: 0 2px 10px -2px rgba(35, 30, 23, 0.4);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition:
+    opacity 0.25s,
+    background 0.2s;
+}
+
+.reel-arrow.prev {
+  left: 0;
+}
+
+.reel-arrow.next {
+  right: 0;
+}
+
+.reel-arrow.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.reel-arrow:hover {
+  background: #fbf6ec;
+}
+
+.reel-arrow:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .reel-thumb:focus-visible .im {
