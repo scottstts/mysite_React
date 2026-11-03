@@ -128,6 +128,10 @@ export const apps: App[] = [
         title: 'Towards the Beyond',
       },
       {
+        videoId: 'pcEuHU8u8WY',
+        title: 'Sun Gate',
+      },
+      {
         videoId: 'A68Ky-ah3ew',
         title: 'Wander',
       },
