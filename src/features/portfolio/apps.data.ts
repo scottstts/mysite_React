@@ -124,12 +124,16 @@ export const apps: App[] = [
         title: 'Hollow Holo',
       },
       {
-        videoId: 'rR4fQqp4kGM',
-        title: 'Towards the Beyond',
+        videoId: 'l9DRDeeOk8E',
+        title: 'Wave Runner',
       },
       {
         videoId: 'Umy_HitiBM4',
         title: 'Sun Gate',
+      },
+      {
+        videoId: 'rR4fQqp4kGM',
+        title: 'Towards the Beyond',
       },
       {
         videoId: 'A68Ky-ah3ew',
