@@ -9,6 +9,7 @@ export const aboutHighlight = {
   youtubeIds: [
     'o_USermt690',
     'sH4emb3Sff8',
+    'ZglqdqyrCR0',
     'B3BaLHv6qqM',
     'Y2psQc6GEb0',
     'CyIb1XJU9SQ',
