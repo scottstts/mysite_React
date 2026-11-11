@@ -128,12 +128,20 @@ export const apps: App[] = [
         title: 'Hollow Holo',
       },
       {
+        videoId: 'Umy_HitiBM4',
+        title: 'Sun Gate',
+      },
+      {
+        videoId: 'NQuTxfM5uPw',
+        title: 'Roadside',
+      },
+      {
         videoId: 'l9DRDeeOk8E',
         title: 'Wave Runner',
       },
       {
-        videoId: 'Umy_HitiBM4',
-        title: 'Sun Gate',
+        videoId: '5ZFdoK9JFSY',
+        title: "Dragon's Nest",
       },
       {
         videoId: 'rR4fQqp4kGM',
@@ -146,6 +154,10 @@ export const apps: App[] = [
       {
         videoId: 'OBmgdJ1-u-I',
         title: 'Tin Thinker',
+      },
+      {
+        videoId: 'dppHYE_oqOM',
+        title: 'Town Color',
       },
       {
         videoId: 'EkVINE6j-NU',
