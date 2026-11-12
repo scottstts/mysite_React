@@ -144,8 +144,16 @@ export const apps: App[] = [
         title: "Dragon's Nest",
       },
       {
+        videoId: 'gWWDo9dUy4E',
+        title: 'Arcadia',
+      },
+      {
         videoId: 'rR4fQqp4kGM',
         title: 'Towards the Beyond',
+      },
+      {
+        videoId: 'yJYUjAjzXUk',
+        title: 'Celestial Palace',
       },
       {
         videoId: 'A68Ky-ah3ew',
