@@ -128,8 +128,20 @@ export const apps: App[] = [
         title: 'Hollow Holo',
       },
       {
+        videoId: 'o0zF-6ROo8Q',
+        title: 'Astral Realm',
+      },
+      {
+        videoId: 'yPCPjXuyYKE',
+        title: 'Ivory Kingdom',
+      },
+      {
         videoId: 'Umy_HitiBM4',
         title: 'Sun Gate',
+      },
+      {
+        videoId: 'wF5aSE3hCQQ',
+        title: 'Atlas Ascendant',
       },
       {
         videoId: 'NQuTxfM5uPw',

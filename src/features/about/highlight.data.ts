@@ -15,8 +15,8 @@ export const aboutHighlight = {
     'CyIb1XJU9SQ',
     '-i1vPXEoNXg',
     'kmueNuoSMaI',
-    '5ZFdoK9JFSY',
-    'gWWDo9dUy4E',
+    'o0zF-6ROo8Q',
+    'yPCPjXuyYKE',
     'Umy_HitiBM4',
   ],
 };
