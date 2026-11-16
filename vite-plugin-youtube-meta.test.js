@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { extractVideoMeta, findVideoIds } from './vite-plugin-youtube-meta.js';
+import {
+  RateLimitError,
+  extractVideoMeta,
+  findVideoIds,
+  resolveVideoMeta,
+} from './vite-plugin-youtube-meta.js';
 
 test('discovers new content IDs, deduplicates them, and ignores comments', () => {
   assert.deepEqual(
@@ -76,4 +81,49 @@ test('rejects blocked or missing metadata instead of guessing a ratio', () => {
   assert.throws(() =>
     extractVideoMeta('var ytInitialPlayerResponse = {"playabilityStatus":{}};')
   );
+});
+
+test('uses cached entries, fetches only new IDs, and drops unused ones', async () => {
+  const cached = {
+    aaaaaaaaaaa: { w: 1920, h: 1080, len: 60, title: 'Cached' },
+    zzzzzzzzzzz: { w: 1080, h: 1920, len: 30, title: 'No longer used' },
+  };
+  const fetched = [];
+  const { meta, failures } = await resolveVideoMeta(
+    ['bbbbbbbbbbb', 'aaaaaaaaaaa'],
+    cached,
+    async (id) => {
+      fetched.push(id);
+      return { w: 1280, h: 720, len: 10, title: 'Fresh' };
+    }
+  );
+  assert.deepEqual(fetched, ['bbbbbbbbbbb']);
+  assert.deepEqual(failures, {});
+  assert.deepEqual(Object.keys(meta), ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
+  assert.equal(meta.aaaaaaaaaaa.title, 'Cached');
+});
+
+test('reports failures without caching them', async () => {
+  const { meta, failures } = await resolveVideoMeta(
+    ['aaaaaaaaaaa', 'bbbbbbbbbbb'],
+    {},
+    async (id) => {
+      if (id === 'bbbbbbbbbbb') throw new Error('HTTP 404');
+      return { w: 1920, h: 1080, len: 1, title: '' };
+    }
+  );
+  assert.deepEqual(Object.keys(meta), ['aaaaaaaaaaa']);
+  assert.deepEqual(failures, { bbbbbbbbbbb: 'HTTP 404' });
+});
+
+test('stops requesting after a 429 and reports every unresolved ID', async () => {
+  const ids = Array.from({ length: 12 }, (_, i) => String(i).padStart(11, 'x'));
+  let calls = 0;
+  const { meta, failures } = await resolveVideoMeta(ids, {}, async () => {
+    calls++;
+    throw new RateLimitError('HTTP 429');
+  });
+  assert.equal(calls, 4); // only the requests already in flight
+  assert.deepEqual(meta, {});
+  assert.deepEqual(Object.keys(failures).sort(), [...ids].sort());
 });

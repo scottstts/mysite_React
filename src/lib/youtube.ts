@@ -8,7 +8,8 @@ export interface Film {
 }
 
 // Playback ratio, length and YouTube's own title are read at build time.
-// A video YouTube wouldn't describe falls back to a 16:9 frame.
+// Only the dev server runs without a video's metadata (the build fails
+// instead); it falls back to a 16:9 frame.
 export const getFilm = (videoId: string, title = ''): Film => {
   const meta = youtubeMeta[videoId];
   return {
