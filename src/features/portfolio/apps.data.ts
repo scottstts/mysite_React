@@ -88,36 +88,6 @@ export const apps: App[] = [
     showLink: true,
   },
   {
-    id: 'liminal-dreams',
-    title: 'Liminal Dreams',
-    tagline: 'Happily lost.',
-    description: `You fall asleep somewhere ordinary, and you wake up inside a doorway.<br><br>
-    
-    It is the kind of doorway you have walked through a thousand times without looking, and now it is glowing, faintly, the way a window glows at the end of a long hallway in late afternoon. Beyond it there is nobody. There never is.`,
-    videos: [
-      {
-        videoId: '7bx1y7FifOA',
-        title: 'Liminal Dreams',
-      },
-    ],
-    link: 'https://liminal.scottsun.io',
-    showLink: true,
-  },
-  {
-    id: 'pond-line',
-    title: 'Pond Line',
-    tagline: 'A summer festival.',
-    description: `I had a dream, a summer festival lost at sea, a lonely train touched by sunlight. So many colors I lost count, and I also lost myself in the dream.`,
-    videos: [
-      {
-        videoId: 'cmRjrTWqX2Y',
-        title: '夏祭り - Pond Line',
-      },
-    ],
-    link: 'https://pondline.scottsun.io',
-    showLink: true,
-  },
-  {
     id: 'threejs-quick-art',
     title: 'Three.js Quick Art',
     tagline: 'Whatever inspiration strikes at the moment.',
@@ -136,12 +106,24 @@ export const apps: App[] = [
         title: 'Ivory Kingdom',
       },
       {
+        videoId: '371Dy4qQYp8',
+        title: "Heaven's Threshold",
+      },
+      {
+        videoId: 'rl90th2jZTs',
+        title: 'Whale Land',
+      },
+      {
         videoId: 'Umy_HitiBM4',
         title: 'Sun Gate',
       },
       {
         videoId: 'wF5aSE3hCQQ',
         title: 'Atlas Ascendant',
+      },
+      {
+        videoId: 'LFUHPW0yz6o',
+        title: 'Aethelgard',
       },
       {
         videoId: 'NQuTxfM5uPw',
@@ -197,6 +179,36 @@ export const apps: App[] = [
       },
     ],
     showLink: false,
+  },
+  {
+    id: 'liminal-dreams',
+    title: 'Liminal Dreams',
+    tagline: 'Happily lost.',
+    description: `You fall asleep somewhere ordinary, and you wake up inside a doorway.<br><br>
+    
+    It is the kind of doorway you have walked through a thousand times without looking, and now it is glowing, faintly, the way a window glows at the end of a long hallway in late afternoon. Beyond it there is nobody. There never is.`,
+    videos: [
+      {
+        videoId: '7bx1y7FifOA',
+        title: 'Liminal Dreams',
+      },
+    ],
+    link: 'https://liminal.scottsun.io',
+    showLink: true,
+  },
+  {
+    id: 'pond-line',
+    title: 'Pond Line',
+    tagline: 'A summer festival.',
+    description: `I had a dream, a summer festival lost at sea, a lonely train touched by sunlight. So many colors I lost count, and I also lost myself in the dream.`,
+    videos: [
+      {
+        videoId: 'cmRjrTWqX2Y',
+        title: '夏祭り - Pond Line',
+      },
+    ],
+    link: 'https://pondline.scottsun.io',
+    showLink: true,
   },
   {
     id: 'elysium',
