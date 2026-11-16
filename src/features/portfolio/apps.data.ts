@@ -106,6 +106,10 @@ export const apps: App[] = [
         title: 'Ivory Kingdom',
       },
       {
+        videoId: 'tQzPCYBdIfk',
+        title: 'Crystal Dawn',
+      },
+      {
         videoId: '371Dy4qQYp8',
         title: "Heaven's Threshold",
       },

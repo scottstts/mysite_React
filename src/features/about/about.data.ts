@@ -46,5 +46,11 @@ Acceleration follows an exponential curve while human imagination remains confin
       href: 'https://www.linkedin.com/in/st-scottsun-inireland/',
       icon: 'fa-brands fa-linkedin-in',
     },
+    {
+      name: 'YouTube',
+      handle: '@scottstts',
+      href: 'https://www.youtube.com/@scottstts',
+      icon: 'fa-brands fa-youtube',
+    },
   ],
 };
