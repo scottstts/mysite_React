@@ -106,12 +106,20 @@ export const apps: App[] = [
         title: 'Ivory Kingdom',
       },
       {
+        videoId: 'y__LLY_c_tk',
+        title: 'The Hall Of Midas',
+      },
+      {
         videoId: 'tQzPCYBdIfk',
         title: 'Crystal Dawn',
       },
       {
         videoId: '371Dy4qQYp8',
         title: "Heaven's Threshold",
+      },
+      {
+        videoId: 'kGboZgJFi1Q',
+        title: 'Vaeloria',
       },
       {
         videoId: 'rl90th2jZTs',
@@ -128,6 +136,10 @@ export const apps: App[] = [
       {
         videoId: 'LFUHPW0yz6o',
         title: 'Aethelgard',
+      },
+      {
+        videoId: 'c7YQF0XwPfc',
+        title: 'The Last Reverie',
       },
       {
         videoId: 'NQuTxfM5uPw',

@@ -7,16 +7,16 @@ export const aboutHighlight = {
   description:
     'I like to dream, and I like to make that dream appear before my eyes. Making games and experiences on Three.js with AI has become one of my biggest hobbies, I get to be the architect of a world I want to visit and be immersed in. It is truly remarkable.',
   youtubeIds: [
-    'o_USermt690',
     'sH4emb3Sff8',
     'ZglqdqyrCR0',
     'B3BaLHv6qqM',
     'Y2psQc6GEb0',
+    'o0zF-6ROo8Q',
+    'yPCPjXuyYKE',
+    'y__LLY_c_tk',
     'CyIb1XJU9SQ',
     '-i1vPXEoNXg',
     'kmueNuoSMaI',
-    'o0zF-6ROo8Q',
-    'yPCPjXuyYKE',
-    'tQzPCYBdIfk',
+    'o_USermt690',
   ],
 };
