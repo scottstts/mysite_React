@@ -110,8 +110,16 @@ export const apps: App[] = [
         title: 'The Hall Of Midas',
       },
       {
+        videoId: 'BCkAOJghl0Y',
+        title: 'Palace Mirage',
+      },
+      {
         videoId: 'tQzPCYBdIfk',
         title: 'Crystal Dawn',
+      },
+      {
+        videoId: 'v9j_A1MdM3g',
+        title: 'Nocturne Lumen',
       },
       {
         videoId: '371Dy4qQYp8',
@@ -120,6 +128,10 @@ export const apps: App[] = [
       {
         videoId: 'kGboZgJFi1Q',
         title: 'Vaeloria',
+      },
+      {
+        videoId: 'JGi88N-fHNU',
+        title: 'In Bloom',
       },
       {
         videoId: 'rl90th2jZTs',
