@@ -106,6 +106,10 @@ export const apps: App[] = [
         title: 'Ivory Kingdom',
       },
       {
+        videoId: 'dAthDFdNAlw',
+        title: 'Amber Hour',
+      },
+      {
         videoId: 'y__LLY_c_tk',
         title: 'The Hall Of Midas',
       },
@@ -128,6 +132,10 @@ export const apps: App[] = [
       {
         videoId: 'kGboZgJFi1Q',
         title: 'Vaeloria',
+      },
+      {
+        videoId: 'zF11xPMPCco',
+        title: 'The Emerald Ascent',
       },
       {
         videoId: 'JGi88N-fHNU',
